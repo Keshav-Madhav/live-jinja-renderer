@@ -290,58 +290,68 @@ function getWebviewContent() {
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
     
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body, html {
-            margin: 0; padding: 0; height: 100%;
-            display: flex; flex-direction: column;
+            margin: 0; 
+            padding: 0; 
+            height: 100%;
+            display: flex; 
+            flex-direction: column;
             background-color: var(--vscode-editor-background);
             color: var(--vscode-editor-foreground);
             font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+            overflow: hidden;
         }
         .container {
             display: flex;
             flex-direction: column;
             height: 100vh;
-            padding: 10px;
-            box-sizing: border-box;
-            gap: 10px;
+            padding: 12px;
+            gap: 12px;
         }
         .header-group {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--vscode-panel-border);
             padding-bottom: 8px;
-            margin-bottom: 4px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--vscode-editorGroup-border);
         }
         h2 {
             margin: 0;
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 600;
             color: var(--vscode-foreground);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
         }
         .controls {
             display: flex;
-            gap: 16px;
+            gap: 12px;
             align-items: center;
             flex-wrap: wrap;
         }
         .control-group {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
         .control-label {
-            font-size: 12px;
-            color: var(--vscode-foreground);
-            font-weight: 500;
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            font-weight: 400;
             user-select: none;
         }
-        /* Toggle Switch Styling */
+        /* Toggle Switch Styling - VS Code native style */
         .switch {
             position: relative;
             display: inline-block;
-            width: 44px;
-            height: 24px;
+            width: 40px;
+            height: 20px;
         }
         .switch input {
             opacity: 0;
@@ -355,82 +365,85 @@ function getWebviewContent() {
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: var(--vscode-input-background);
-            border: 1px solid var(--vscode-input-border);
-            transition: all 0.3s ease;
-            border-radius: 24px;
+            background-color: var(--vscode-settings-checkboxBackground);
+            border: 1px solid var(--vscode-settings-checkboxBorder);
+            transition: all 0.15s ease;
+            border-radius: 10px;
         }
         .slider:before {
             position: absolute;
             content: "";
-            height: 18px;
-            width: 18px;
+            height: 14px;
+            width: 14px;
             left: 2px;
             bottom: 2px;
-            background-color: var(--vscode-input-foreground);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: var(--vscode-settings-checkboxForeground);
+            transition: all 0.15s ease;
             border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         .switch input:checked + .slider {
-            background-color: var(--vscode-button-background);
-            border-color: var(--vscode-button-background);
+            background-color: var(--vscode-inputOption-activeBackground);
+            border-color: var(--vscode-inputOption-activeBorder);
         }
         .switch input:checked + .slider:before {
             transform: translateX(20px);
-            background-color: var(--vscode-button-foreground);
+            background-color: var(--vscode-inputOption-activeForeground);
         }
         .switch input:disabled + .slider {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
         }
         .switch:hover input:not(:disabled) + .slider {
-            box-shadow: 0 0 4px var(--vscode-focusBorder);
+            border-color: var(--vscode-inputOption-hoverBackground);
+        }
+        .switch input:focus + .slider {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: 2px;
         }
         textarea {
             width: 100%;
-            box-sizing: border-box;
             border: 1px solid var(--vscode-input-border);
-            border-radius: 4px;
+            border-radius: 2px;
             font-family: var(--vscode-editor-font-family);
             font-size: var(--vscode-editor-font-size);
             padding: 8px;
             background-color: var(--vscode-input-background);
             color: var(--vscode-input-foreground);
             resize: none;
+            line-height: 1.4;
         }
         textarea:focus {
             outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+            border-color: var(--vscode-focusBorder);
         }
         /* Resize handle */
         .resize-handle {
-            height: 6px;
+            height: 8px;
             background: transparent;
             cursor: row-resize;
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.2s ease;
-            margin: 4px 0;
-        }
-        .resize-handle:hover {
-            background: var(--vscode-focusBorder);
-        }
-        .resize-handle:active {
-            background: var(--vscode-button-background);
+            margin: 2px 0;
+            transition: opacity 0.2s ease;
         }
         .resize-handle::before {
             content: '';
-            width: 40px;
-            height: 3px;
-            background: var(--vscode-input-border);
-            border-radius: 2px;
-            opacity: 0.5;
+            width: 30px;
+            height: 2px;
+            background: var(--vscode-sash-hoverBorder);
+            border-radius: 1px;
+            opacity: 0.3;
+            transition: opacity 0.2s ease;
         }
         .resize-handle:hover::before {
+            opacity: 0.8;
+        }
+        .resize-handle:active::before {
             opacity: 1;
-            background: var(--vscode-foreground);
+            background: var(--vscode-focusBorder);
         }
         .variables-section {
             display: flex;
@@ -452,10 +465,9 @@ function getWebviewContent() {
             display: flex;
             flex-direction: column;
             border: 1px solid var(--vscode-panel-border);
-            border-radius: 6px;
+            border-radius: 2px;
             background-color: var(--vscode-editor-background);
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         #output {
             flex: 1;
@@ -471,43 +483,45 @@ function getWebviewContent() {
         .output-footer {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            background-color: var(--vscode-editor-background);
+            gap: 6px;
+            padding: 6px 10px;
+            background-color: var(--vscode-editorGroupHeader-tabsBackground);
             border-top: 1px solid var(--vscode-panel-border);
         }
         .footer-spacer {
             flex: 1;
         }
         .footer-btn {
-            padding: 6px 12px;
-            background-color: var(--vscode-button-background);
-            color: var(--vscode-button-foreground);
-            border: none;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
+            padding: 4px 10px;
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: 1px solid transparent;
+            border-radius: 2px;
+            font-size: 11px;
+            font-weight: 400;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background-color 0.1s ease;
             white-space: nowrap;
+            font-family: var(--vscode-font-family);
         }
         .footer-btn:hover {
-            background-color: var(--vscode-button-hoverBackground);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            background-color: var(--vscode-button-secondaryHoverBackground);
         }
         .footer-btn:active {
-            transform: translateY(0);
-            box-shadow: none;
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+        .footer-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: 2px;
         }
         .footer-btn:disabled {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
-            transform: none;
         }
         .footer-btn.success {
-            background-color: #10b981;
-            color: white;
+            background-color: var(--vscode-testing-iconPassed);
+            color: var(--vscode-button-foreground);
         }
         #markdown-output {
             flex: 1;
@@ -519,33 +533,35 @@ function getWebviewContent() {
         }
         .error {
             color: var(--vscode-errorForeground);
-            border-left: 3px solid var(--vscode-errorForeground);
+            border-left: 2px solid var(--vscode-inputValidation-errorBorder);
             padding: 12px;
-            border-radius: 4px;
+            border-radius: 2px;
             background-color: var(--vscode-inputValidation-errorBackground);
+            font-size: 12px;
         }
         /* Markdown styling */
         #markdown-output h1, #markdown-output h2, #markdown-output h3,
         #markdown-output h4, #markdown-output h5, #markdown-output h6 {
-            margin-top: 24px;
-            margin-bottom: 12px;
+            margin-top: 20px;
+            margin-bottom: 10px;
             font-weight: 600;
-            line-height: 1.25;
+            line-height: 1.3;
+            color: var(--vscode-editor-foreground);
         }
         #markdown-output h1 { 
-            font-size: 2em; 
-            border-bottom: 1px solid var(--vscode-panel-border);
+            font-size: 1.8em; 
+            border-bottom: 1px solid var(--vscode-editorGroup-border);
             padding-bottom: 0.3em;
         }
         #markdown-output h2 { 
-            font-size: 1.5em;
-            border-bottom: 1px solid var(--vscode-panel-border);
-            padding-bottom: 0.3em;
+            font-size: 1.4em;
+            border-bottom: 1px solid var(--vscode-editorGroup-border);
+            padding-bottom: 0.25em;
         }
-        #markdown-output h3 { font-size: 1.25em; }
+        #markdown-output h3 { font-size: 1.2em; }
         #markdown-output h4 { font-size: 1em; }
-        #markdown-output h5 { font-size: 0.875em; }
-        #markdown-output h6 { font-size: 0.85em; opacity: 0.8; }
+        #markdown-output h5 { font-size: 0.9em; }
+        #markdown-output h6 { font-size: 0.85em; opacity: 0.75; }
         #markdown-output p { margin: 12px 0; }
         #markdown-output ul, #markdown-output ol { 
             padding-left: 2em;
@@ -554,42 +570,48 @@ function getWebviewContent() {
         #markdown-output li { margin: 4px 0; }
         #markdown-output code {
             background-color: var(--vscode-textCodeBlock-background);
-            padding: 2px 6px;
-            border-radius: 3px;
+            padding: 2px 4px;
+            border-radius: 2px;
             font-family: var(--vscode-editor-font-family);
             font-size: 0.9em;
+            border: 1px solid var(--vscode-editorWidget-border);
         }
         #markdown-output pre {
             background-color: var(--vscode-textCodeBlock-background);
-            padding: 16px;
-            border-radius: 6px;
+            padding: 12px;
+            border-radius: 2px;
             overflow-x: auto;
-            margin: 16px 0;
-            border: 1px solid var(--vscode-panel-border);
+            margin: 12px 0;
+            border: 1px solid var(--vscode-editorWidget-border);
         }
         #markdown-output pre code {
             background-color: transparent;
             padding: 0;
+            border: none;
         }
         #markdown-output blockquote {
             margin: 12px 0;
-            padding: 8px 0 8px 1em;
-            border-left: 4px solid var(--vscode-textBlockQuote-border);
+            padding: 8px 0 8px 12px;
+            border-left: 3px solid var(--vscode-textBlockQuote-border);
             color: var(--vscode-textBlockQuote-foreground);
             background-color: var(--vscode-textBlockQuote-background);
+            font-style: italic;
         }
         #markdown-output table {
             border-collapse: collapse;
             width: 100%;
-            margin: 16px 0;
+            margin: 12px 0;
+            font-size: 0.9em;
         }
         #markdown-output table th, #markdown-output table td {
-            border: 1px solid var(--vscode-panel-border);
-            padding: 8px 12px;
+            border: 1px solid var(--vscode-editorWidget-border);
+            padding: 6px 10px;
+            text-align: left;
         }
         #markdown-output table th {
-            background-color: var(--vscode-editor-inactiveSelectionBackground);
+            background-color: var(--vscode-editorWidget-background);
             font-weight: 600;
+            color: var(--vscode-foreground);
         }
         #markdown-output table tr:nth-child(even) {
             background-color: var(--vscode-list-hoverBackground);
@@ -627,30 +649,39 @@ function getWebviewContent() {
         .mermaid {
             background-color: transparent;
             text-align: center;
-            margin: 20px 0;
-            padding: 16px;
-            border-radius: 6px;
-            border: 1px solid var(--vscode-panel-border);
+            margin: 16px 0;
+            padding: 12px;
+            border-radius: 2px;
+            border: 1px solid var(--vscode-editorWidget-border);
         }
-        /* Scrollbar styling */
+        /* Scrollbar styling - VS Code native */
         ::-webkit-scrollbar {
-            width: 10px;
+            width: 14px;
             height: 10px;
         }
         ::-webkit-scrollbar-track {
-            background: var(--vscode-scrollbarSlider-background);
+            background: transparent;
         }
         ::-webkit-scrollbar-thumb {
-            background: var(--vscode-scrollbarSlider-hoverBackground);
-            border-radius: 5px;
+            background: var(--vscode-scrollbarSlider-background);
+            border: 3px solid transparent;
+            background-clip: padding-box;
+            border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
+            background: var(--vscode-scrollbarSlider-hoverBackground);
+            border: 3px solid transparent;
+            background-clip: padding-box;
+        }
+        ::-webkit-scrollbar-thumb:active {
             background: var(--vscode-scrollbarSlider-activeBackground);
+            border: 3px solid transparent;
+            background-clip: padding-box;
         }
     </style>
 </head>
 <body>
-    <div id="loading-indicator" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: var(--vscode-notifications-background); color: var(--vscode-notifications-foreground); padding: 10px 20px; border-radius: 4px; z-index: 1000; font-size: 12px; display: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">Loading...</div>
+    <div id="loading-indicator" style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: var(--vscode-notifications-background); color: var(--vscode-notifications-foreground); padding: 6px 12px; border: 1px solid var(--vscode-notifications-border); border-radius: 2px; z-index: 1000; font-size: 11px; display: none;">Loading...</div>
     
     <div class="container">
         <div class="variables-section" id="variables-section">
