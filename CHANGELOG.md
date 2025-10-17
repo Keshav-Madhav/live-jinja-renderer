@@ -4,6 +4,38 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.3] - 2025-10-17
+
+### Improved
+- **Sidebar UI Optimization**: All controls and actions now in compact three-dot menu (⋯) to maximize vertical space
+  - Toggle options (Markdown, Mermaid, Show Whitespace, Cull Whitespace) in top section
+  - Action buttons (Re-extract, Rerender, Copy) in bottom section with separator
+  - Footer buttons removed in sidebar mode to save space
+- **Panel UI**: Toggle switches and footer buttons remain visible in panel mode for larger viewing area
+- **Responsive Design**: UI automatically adapts based on whether it's in sidebar or panel mode
+- **Better UX**: Cleaner interface with more space for variables and output
+
+## [0.0.2] - 2025-10-17
+
+### Added
+- **Sidebar View**: Added persistent sidebar view in Activity Bar (default mode)
+- **Dual-mode UI**: Choose between sidebar view or panel view based on preference
+- **Multi-file support**: Sidebar automatically updates when switching between files
+- **Activity Bar icon**: Preview icon appears in the left sidebar for easy access
+- **Alternative keyboard shortcut**: `Ctrl+Alt+Shift+J` (Windows/Linux) or `Cmd+Shift+Alt+J` (Mac) for panel view
+
+### Changed
+- **Primary interface**: Sidebar view is now the default (keyboard shortcut `Ctrl+Alt+J`)
+- **Panel view**: Now an alternative option accessible via window icon or keyboard shortcut
+- Refactored extension architecture for better code organization
+- Updated documentation to reflect new UI options
+
+### Improved
+- Better VS Code integration following standard UI patterns
+- More persistent and discoverable UI
+- Less intrusive - sidebar doesn't take up editor space
+- Improved user workflow with auto-switching files
+
 ## [0.0.1] - 2025-10-17
 
 ### Added

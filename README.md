@@ -5,10 +5,14 @@ A VS Code / Cursor extension for rendering Jinja2 templates in real-time using *
 ## Features
 
 - **Authentic Python Jinja2**: Uses actual Python Jinja2 via Pyodide - 100% compatible with Python Jinja2, not a JavaScript port
+- **Flexible UI Options**: 
+  - **Sidebar View** (default): Persistent panel in the Activity Bar, similar to Source Control or Debug
+  - **Panel View**: Optional separate editor pane that opens beside your file
+  - Switch between views based on your workflow preference
 - **Real-time rendering**: See your Jinja2 templates rendered as you type
 - **Live variable updates**: Edit variables in JSON format and see instant results
-- **Side-by-side view**: Template and output displayed together
 - **Auto-sync**: Changes to the template file automatically trigger re-rendering
+- **Multi-file support**: Sidebar automatically updates when switching between files
 - **Markdown rendering**: Enable markdown mode to render output as formatted markdown
 - **Mermaid diagrams**: Render beautiful flowcharts, sequence diagrams, and more using Mermaid syntax
 - **Whitespace management**:
@@ -20,21 +24,39 @@ A VS Code / Cursor extension for rendering Jinja2 templates in real-time using *
 
 ## Usage
 
-1. Open a `.txt`, `.jinja`, `.j2`, or HTML file containing Jinja2 template syntax
-2. Click the play button (▶️) in the top-right corner of the editor
-3. A side panel will open with:
+### Sidebar View (Recommended)
+
+1. Open a `.txt`, `.jinja`, `.j2`, or plaintext file containing Jinja2 template syntax
+2. Click the **Jinja Renderer icon** (preview icon) in the Activity Bar (left sidebar)
+3. The Live Preview panel will open showing:
    - **Variables section**: Enter your template variables in JSON format
    - **Output section**: See the rendered result in real-time
    - **Control toggles**: Enable/disable markdown, mermaid, whitespace visibility, and whitespace culling
+4. The sidebar stays open as you switch between files and updates automatically
 
-Or use the keyboard shortcut:
+**Keyboard shortcut**:
 - **Mac**: `Cmd+Shift+J`
 - **Windows/Linux**: `Ctrl+Alt+J`
 
-Or use the Command Palette:
+**Command Palette**:
 - Press `Cmd+Shift+P` (or `Ctrl+Shift+P`)
-- Type "Render Jinja Template"
+- Type "Show Jinja Renderer Sidebar"
 - Press Enter
+
+### Panel View (Alternative)
+
+If you prefer to open the renderer in a separate editor pane:
+
+1. Open a `.txt`, `.jinja`, `.j2`, or plaintext file
+2. Click the **window icon** in the editor toolbar
+3. A panel opens beside your editor with the same features
+
+**Keyboard shortcut**:
+- **Mac**: `Cmd+Shift+Alt+J`
+- **Windows/Linux**: `Ctrl+Alt+Shift+J`
+
+**Command Palette**:
+- Type "Open Jinja Renderer in Panel"
 
 ## Examples
 

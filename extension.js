@@ -171,6 +171,126 @@ function extractVariablesFromTemplate(template) {
   return finalVariableStructures;
 }
 
+/**
+ * Sets up webview with template rendering capabilities
+ * @param {vscode.Webview} webview - The webview to set up
+ * @param {vscode.TextEditor} editor - The active text editor
+ * @param {vscode.ExtensionContext} context - Extension context
+ * @returns {vscode.Disposable} - The change document subscription
+ */
+function setupWebviewForEditor(webview, editor, context) {
+  const templateContent = editor.document.getText();
+  let lastTemplate = templateContent;
+  
+  // Update template if the original file changes
+  const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
+    if (e.document.uri.toString() === editor.document.uri.toString()) {
+      lastTemplate = e.document.getText();
+      
+      // Extract variables from the updated template
+      const extractedVars = extractVariablesFromTemplate(lastTemplate);
+      
+      // Send updated template and extracted variables to the webview
+      webview.postMessage({ 
+        type: 'updateTemplate',
+        template: lastTemplate,
+        extractedVariables: extractedVars
+      });
+    }
+  });
+  
+  // Handle messages from the webview
+  const messageSubscription = webview.onDidReceiveMessage(
+    message => {
+      switch (message.type) {
+        case 'ready':
+          // Extract variables from the template
+          const extractedVars = extractVariablesFromTemplate(lastTemplate);
+          
+          // Send initial template and extracted variables when webview is ready
+          webview.postMessage({
+            type: 'updateTemplate',
+            template: lastTemplate,
+            extractedVariables: extractedVars
+          });
+          return;
+        
+        case 'reextractVariables':
+          // Re-extract variables from the current template
+          const reextractedVars = extractVariablesFromTemplate(lastTemplate);
+          
+          // Send fresh extraction (this will replace existing variables)
+          webview.postMessage({
+            type: 'replaceVariables',
+            extractedVariables: reextractedVars
+          });
+          return;
+      }
+    },
+    undefined,
+    context.subscriptions
+  );
+  
+  return {
+    dispose: () => {
+      changeDocumentSubscription.dispose();
+      messageSubscription.dispose();
+    }
+  };
+}
+
+/**
+ * Webview View Provider for sidebar
+ */
+class JinjaRendererViewProvider {
+  constructor(context) {
+    this._context = context;
+    this._view = undefined;
+    this._currentEditor = undefined;
+    this._disposables = [];
+  }
+  
+  resolveWebviewView(webviewView) {
+    this._view = webviewView;
+    
+    webviewView.webview.options = {
+      enableScripts: true
+    };
+    
+    webviewView.webview.html = getWebviewContent(true); // true = sidebar mode
+    
+    // Track the active editor and update when it changes
+    const updateForActiveEditor = () => {
+      const editor = vscode.window.activeTextEditor;
+      if (editor && this._view) {
+        // Clean up previous subscriptions
+        this._disposables.forEach(d => d.dispose());
+        this._disposables = [];
+        
+        this._currentEditor = editor;
+        const subscription = setupWebviewForEditor(this._view.webview, editor, this._context);
+        this._disposables.push(subscription);
+      }
+    };
+    
+    // Update immediately
+    updateForActiveEditor();
+    
+    // Update when active editor changes
+    this._disposables.push(
+      vscode.window.onDidChangeActiveTextEditor(() => {
+        updateForActiveEditor();
+      })
+    );
+    
+    // Clean up when view is disposed
+    webviewView.onDidDispose(() => {
+      this._disposables.forEach(d => d.dispose());
+      this._disposables = [];
+    });
+  }
+}
+
 // This method is called when your extension is activated
 function activate(context) {
   try {
@@ -179,93 +299,55 @@ function activate(context) {
     
     // Show a notification to confirm activation
     vscode.window.showInformationMessage('✅ Live Jinja Renderer is now active!');
+    
+    // Register the sidebar webview view provider
+    const sidebarProvider = new JinjaRendererViewProvider(context);
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider('jinjaRendererView', sidebarProvider)
+    );
+    
+    // Register command to show sidebar
+    const showSidebarCommand = vscode.commands.registerCommand('live-jinja-tester.showSidebar', () => {
+      vscode.commands.executeCommand('jinjaRendererView.focus');
+    });
+    context.subscriptions.push(showSidebarCommand);
 
-    // Register the command
-    let disposable = vscode.commands.registerCommand('live-jinja-tester.render', function () {
-      console.log('✅ Render command triggered!');
+    // Register command to open in panel (separate editor pane)
+    const renderPanelCommand = vscode.commands.registerCommand('live-jinja-tester.render', function () {
+      console.log('✅ Render panel command triggered!');
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
         vscode.window.showInformationMessage('No active editor. Open a file to render.');
         return;
       }
 
-    // Get the text from the active file
-    const templateContent = editor.document.getText();
-    const fileName = editor.document.fileName.split('/').pop();
+      // Get the text from the active file
+      const fileName = editor.document.fileName.split(/[/\\]/).pop();
 
-    // Create a new webview panel
-    const panel = vscode.window.createWebviewPanel(
-      'jinjaRenderer', // Internal ID
-      `Render: ${fileName}`, // Title
-      vscode.ViewColumn.Beside, // Open in a new tab to the side
-      {
-        enableScripts: true // Allow JavaScript to run in the webview
-      }
-    );
-
-    // Set the webview's HTML content
-    panel.webview.html = getWebviewContent();
-
-    // Store the template content for re-rendering
-    let lastTemplate = templateContent;
-    
-    // Update template if the original file changes
-    const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
-        if (e.document.uri.toString() === editor.document.uri.toString()) {
-            lastTemplate = e.document.getText();
-            
-            // Extract variables from the updated template
-            const extractedVars = extractVariablesFromTemplate(lastTemplate);
-            
-            // Send updated template and extracted variables to the webview
-            panel.webview.postMessage({ 
-                type: 'updateTemplate',
-                template: lastTemplate,
-                extractedVariables: extractedVars
-            });
+      // Create a new webview panel
+      const panel = vscode.window.createWebviewPanel(
+        'jinjaRenderer', // Internal ID
+        `Render: ${fileName}`, // Title
+        vscode.ViewColumn.Beside, // Open in a new tab to the side
+        {
+          enableScripts: true // Allow JavaScript to run in the webview
         }
+      );
+
+      // Set the webview's HTML content (panel mode)
+      panel.webview.html = getWebviewContent(false); // false = panel mode
+
+      // Set up the webview for the current editor
+      const subscription = setupWebviewForEditor(panel.webview, editor, context);
+      
+      // Clean up the subscription when the panel is closed
+      panel.onDidDispose(() => {
+        subscription.dispose();
+      }, null, context.subscriptions);
     });
 
-    // Handle messages from the webview
-    panel.webview.onDidReceiveMessage(
-      message => {
-        switch (message.type) {
-          case 'ready':
-            // Extract variables from the template
-            const extractedVars = extractVariablesFromTemplate(lastTemplate);
-            
-            // Send initial template and extracted variables when webview is ready
-              panel.webview.postMessage({
-              type: 'updateTemplate',
-              template: lastTemplate,
-              extractedVariables: extractedVars
-            });
-            return;
-          
-          case 'reextractVariables':
-            // Re-extract variables from the current template
-            const reextractedVars = extractVariablesFromTemplate(lastTemplate);
-            
-            // Send fresh extraction (this will replace existing variables)
-            panel.webview.postMessage({
-              type: 'replaceVariables',
-              extractedVariables: reextractedVars
-            });
-            return;
-        }
-      },
-      undefined,
-      context.subscriptions
-    );
-    
-    // Clean up the subscription when the panel is closed
-    panel.onDidDispose(() => {
-        changeDocumentSubscription.dispose();
-    }, null, context.subscriptions);
-  });
-
-  context.subscriptions.push(disposable);
-  console.log('✅ Command registered successfully!');
+    context.subscriptions.push(renderPanelCommand);
+    console.log('✅ Commands registered successfully!');
   
   } catch (error) {
     console.error('❌ Error during extension activation:', error);
@@ -274,7 +356,8 @@ function activate(context) {
 }
 
 // This function creates the HTML content for the webview
-function getWebviewContent() {
+// @param {boolean} isSidebar - true if rendering for sidebar, false for panel
+function getWebviewContent(isSidebar = false) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -345,6 +428,81 @@ function getWebviewContent() {
             color: var(--vscode-descriptionForeground);
             font-weight: 400;
             user-select: none;
+        }
+        /* Menu button for sidebar mode */
+        .menu-button {
+            padding: 4px 8px;
+            background: transparent;
+            border: none;
+            color: var(--vscode-foreground);
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 2px;
+            transition: background-color 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .menu-button:hover {
+            background-color: var(--vscode-toolbar-hoverBackground);
+        }
+        .menu-button:active {
+            background-color: var(--vscode-toolbar-activeBackground);
+        }
+        /* Dropdown menu */
+        .menu-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--vscode-menu-background);
+            border: 1px solid var(--vscode-menu-border);
+            border-radius: 2px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            min-width: 200px;
+            display: none;
+        }
+        .menu-dropdown.show {
+            display: block;
+        }
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px;
+            cursor: pointer;
+            color: var(--vscode-menu-foreground);
+            font-size: 12px;
+            user-select: none;
+        }
+        .menu-item:hover {
+            background-color: var(--vscode-menu-selectionBackground);
+            color: var(--vscode-menu-selectionForeground);
+        }
+        .menu-item-label {
+            flex: 1;
+        }
+        .menu-item-check {
+            margin-left: 12px;
+            font-size: 10px;
+            opacity: 0;
+        }
+        .menu-item.checked .menu-item-check {
+            opacity: 1;
+        }
+        .menu-container {
+            position: relative;
+        }
+        .menu-separator {
+            height: 1px;
+            background: var(--vscode-menu-separatorBackground);
+            margin: 4px 0;
+        }
+        .menu-action {
+            font-weight: normal;
+        }
+        .menu-action .menu-item-label {
+            color: var(--vscode-menu-foreground);
         }
         /* Toggle Switch Styling - VS Code native style */
         .switch {
@@ -698,6 +856,41 @@ function getWebviewContent() {
         <div class="output-section" id="output-section">
             <div class="header-group">
         <h2>Output</h2>
+                ${isSidebar ? `
+                <!-- Sidebar mode: Menu button -->
+                <div class="menu-container">
+                    <button class="menu-button" id="menu-button" title="Options & Actions">⋯</button>
+                    <div class="menu-dropdown" id="menu-dropdown">
+                        <div class="menu-item" id="menu-markdown">
+                            <span class="menu-item-label">Markdown</span>
+                            <span class="menu-item-check">✓</span>
+                        </div>
+                        <div class="menu-item" id="menu-mermaid">
+                            <span class="menu-item-label">Mermaid</span>
+                            <span class="menu-item-check">✓</span>
+                        </div>
+                        <div class="menu-item" id="menu-show-whitespace">
+                            <span class="menu-item-label">Show Whitespace</span>
+                            <span class="menu-item-check">✓</span>
+                        </div>
+                        <div class="menu-item checked" id="menu-cull-whitespace">
+                            <span class="menu-item-label">Cull Whitespace</span>
+                            <span class="menu-item-check">✓</span>
+                        </div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item menu-action" id="menu-reextract">
+                            <span class="menu-item-label">🔄 Re-extract Variables</span>
+                        </div>
+                        <div class="menu-item menu-action" id="menu-rerender">
+                            <span class="menu-item-label">▶️ Rerender</span>
+                        </div>
+                        <div class="menu-item menu-action" id="menu-copy">
+                            <span class="menu-item-label">📋 Copy Output</span>
+                        </div>
+                    </div>
+                </div>
+                ` : `
+                <!-- Panel mode: Toggle switches -->
                 <div class="controls">
                     <div class="control-group">
                         <span class="control-label">Markdown</span>
@@ -728,34 +921,65 @@ function getWebviewContent() {
                         </label>
                     </div>
                 </div>
+                `}
             </div>
             <div class="output-container">
         <pre id="output"></pre>
                 <div id="markdown-output" style="display: none;"></div>
             </div>
+            ${!isSidebar ? `
             <div class="output-footer">
                 <button class="footer-btn" id="reextract-variables-btn" title="Re-extract variables from template">🔄 Re-extract Variables</button>
                 <div class="footer-spacer"></div>
                 <button class="footer-btn" id="rerender-btn" title="Manually trigger re-render">▶️ Rerender</button>
                 <button class="footer-btn" id="copy-output-btn" title="Copy output to clipboard">📋 Copy Output</button>
             </div>
+            ` : ''}
         </div>
     </div>
 
     <script>
         const vscode = acquireVsCodeApi();
+        const isSidebarMode = ${isSidebar};
         const variablesEditor = document.getElementById('variables');
         const outputDisplay = document.getElementById('output');
         const markdownOutput = document.getElementById('markdown-output');
-        const markdownToggle = document.getElementById('markdown-toggle');
-        const mermaidToggle = document.getElementById('mermaid-toggle');
-        const showWhitespaceToggle = document.getElementById('show-whitespace-toggle');
-        const cullWhitespaceToggle = document.getElementById('cull-whitespace-toggle');
         const loadingIndicator = document.getElementById('loading-indicator');
+        
+        // Get controls based on mode
+        let markdownToggle, mermaidToggle, showWhitespaceToggle, cullWhitespaceToggle;
+        let menuButton, menuDropdown;
+        let menuMarkdown, menuMermaid, menuShowWhitespace, menuCullWhitespace;
+        let menuReextract, menuRerender, menuCopy;
+        let copyOutputBtn, rerenderBtn, reextractVariablesBtn;
+        
+        if (isSidebarMode) {
+            // Sidebar mode: Menu items
+            menuButton = document.getElementById('menu-button');
+            menuDropdown = document.getElementById('menu-dropdown');
+            menuMarkdown = document.getElementById('menu-markdown');
+            menuMermaid = document.getElementById('menu-mermaid');
+            menuShowWhitespace = document.getElementById('menu-show-whitespace');
+            menuCullWhitespace = document.getElementById('menu-cull-whitespace');
+            menuReextract = document.getElementById('menu-reextract');
+            menuRerender = document.getElementById('menu-rerender');
+            menuCopy = document.getElementById('menu-copy');
+        } else {
+            // Panel mode: Toggle switches and buttons
+            markdownToggle = document.getElementById('markdown-toggle');
+            mermaidToggle = document.getElementById('mermaid-toggle');
+            showWhitespaceToggle = document.getElementById('show-whitespace-toggle');
+            cullWhitespaceToggle = document.getElementById('cull-whitespace-toggle');
+            copyOutputBtn = document.getElementById('copy-output-btn');
+            rerenderBtn = document.getElementById('rerender-btn');
+            reextractVariablesBtn = document.getElementById('reextract-variables-btn');
+        }
         
         let lastRenderedOutput = '';
         let isMarkdownMode = false;
         let isMermaidMode = false;
+        let showWhitespace = false;
+        let cullWhitespace = true; // Default on
         let currentTemplate = '';
         
         // Pyodide setup
@@ -801,7 +1025,7 @@ function getWebviewContent() {
         }
 
         // Removes extra whitespace (multiple newlines, spaces, and tabs)
-        function cullWhitespace(text) {
+        function cullWhitespaceText(text) {
             return text
                 // Collapse lines that only contain whitespace into empty lines
                 .replace(/^[ \\t]+$/gm, '')
@@ -944,8 +1168,8 @@ result
                 
                 // Apply whitespace culling if enabled
                 let processedResult = result;
-                if (cullWhitespaceToggle.checked) {
-                    processedResult = cullWhitespace(result);
+                if (cullWhitespace) {
+                    processedResult = cullWhitespaceText(result);
                 }
                 
                 lastRenderedOutput = processedResult;
@@ -963,7 +1187,7 @@ result
                     outputDisplay.style.display = 'block';
                     markdownOutput.style.display = 'none';
                     
-                    if (showWhitespaceToggle.checked) {
+                    if (showWhitespace) {
                         outputDisplay.innerHTML = renderWhitespace(processedResult);
                     } else {
                         outputDisplay.textContent = processedResult;
@@ -998,44 +1222,110 @@ result
             debouncedUpdate();
         });
 
-        // Toggle handlers
-        markdownToggle.addEventListener('change', async function() {
-            if (this.checked) {
-                if (isMermaidMode) {
-                    mermaidToggle.checked = false;
+        // Event handlers based on mode
+        if (isSidebarMode) {
+            // Sidebar mode: Menu button and items
+            menuButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menuDropdown.classList.toggle('show');
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!menuButton.contains(e.target) && !menuDropdown.contains(e.target)) {
+                    menuDropdown.classList.remove('show');
+                }
+            });
+            
+            // Menu item handlers
+            menuMarkdown.addEventListener('click', async function() {
+                isMarkdownMode = !isMarkdownMode;
+                this.classList.toggle('checked', isMarkdownMode);
+                if (isMarkdownMode && isMermaidMode) {
                     isMermaidMode = false;
+                    menuMermaid.classList.remove('checked');
                 }
-                isMarkdownMode = true;
-                showWhitespaceToggle.disabled = true;
-            } else {
-                isMarkdownMode = false;
-                showWhitespaceToggle.disabled = false;
-            }
-            await update();
-        });
-
-        mermaidToggle.addEventListener('change', async function() {
-            if (this.checked) {
                 if (isMarkdownMode) {
-                    markdownToggle.checked = false;
-                    isMarkdownMode = false;
+                    menuShowWhitespace.style.opacity = '0.5';
+                    menuShowWhitespace.style.pointerEvents = 'none';
+                } else {
+                    menuShowWhitespace.style.opacity = '1';
+                    menuShowWhitespace.style.pointerEvents = 'auto';
                 }
-                isMermaidMode = true;
-                showWhitespaceToggle.disabled = true;
-            } else {
-                isMermaidMode = false;
-                showWhitespaceToggle.disabled = false;
-            }
-            await update();
-        });
+                await update();
+            });
+            
+            menuMermaid.addEventListener('click', async function() {
+                isMermaidMode = !isMermaidMode;
+                this.classList.toggle('checked', isMermaidMode);
+                if (isMermaidMode && isMarkdownMode) {
+                    isMarkdownMode = false;
+                    menuMarkdown.classList.remove('checked');
+                }
+                if (isMermaidMode) {
+                    menuShowWhitespace.style.opacity = '0.5';
+                    menuShowWhitespace.style.pointerEvents = 'none';
+                } else {
+                    menuShowWhitespace.style.opacity = '1';
+                    menuShowWhitespace.style.pointerEvents = 'auto';
+                }
+                await update();
+            });
+            
+            menuShowWhitespace.addEventListener('click', async function() {
+                showWhitespace = !showWhitespace;
+                this.classList.toggle('checked', showWhitespace);
+                await update();
+            });
+            
+            menuCullWhitespace.addEventListener('click', async function() {
+                cullWhitespace = !cullWhitespace;
+                this.classList.toggle('checked', cullWhitespace);
+                await update();
+            });
+            
+        } else {
+            // Panel mode: Toggle switches
+            markdownToggle.addEventListener('change', async function() {
+                if (this.checked) {
+                    if (isMermaidMode) {
+                        mermaidToggle.checked = false;
+                        isMermaidMode = false;
+                    }
+                    isMarkdownMode = true;
+                    showWhitespaceToggle.disabled = true;
+                } else {
+                    isMarkdownMode = false;
+                    showWhitespaceToggle.disabled = false;
+                }
+                await update();
+            });
 
-        showWhitespaceToggle.addEventListener('change', async function() {
-            await update();
-        });
+            mermaidToggle.addEventListener('change', async function() {
+                if (this.checked) {
+                    if (isMarkdownMode) {
+                        markdownToggle.checked = false;
+                        isMarkdownMode = false;
+                    }
+                    isMermaidMode = true;
+                    showWhitespaceToggle.disabled = true;
+                } else {
+                    isMermaidMode = false;
+                    showWhitespaceToggle.disabled = false;
+                }
+                await update();
+            });
 
-        cullWhitespaceToggle.addEventListener('change', async function() {
-            await update();
-        });
+            showWhitespaceToggle.addEventListener('change', async function() {
+                showWhitespace = this.checked;
+                await update();
+            });
+
+            cullWhitespaceToggle.addEventListener('change', async function() {
+                cullWhitespace = this.checked;
+                await update();
+            });
+        }
 
         // Listen for messages from the extension
         window.addEventListener('message', async event => {
@@ -1142,55 +1432,66 @@ result
             }
         });
 
-        // Button functionality
-        const copyOutputBtn = document.getElementById('copy-output-btn');
-        const rerenderBtn = document.getElementById('rerender-btn');
-        const reextractVariablesBtn = document.getElementById('reextract-variables-btn');
-        
-        // Copy Output button
-        copyOutputBtn.addEventListener('click', async function() {
+        // Action handlers (buttons or menu items)
+        const handleCopyOutput = async function() {
             const textToCopy = isMarkdownMode || isMermaidMode 
                 ? lastRenderedOutput 
-                : (showWhitespaceToggle.checked ? outputDisplay.textContent : outputDisplay.textContent);
+                : (showWhitespace ? outputDisplay.textContent : outputDisplay.textContent);
             
             try {
                 await navigator.clipboard.writeText(textToCopy);
                 
-                // Visual feedback
-                const originalText = copyOutputBtn.textContent;
-                copyOutputBtn.textContent = '✓ Copied!';
-                copyOutputBtn.classList.add('success');
-                
-                setTimeout(() => {
-                    copyOutputBtn.textContent = originalText;
-                    copyOutputBtn.classList.remove('success');
-                }, 1500);
+                if (isSidebarMode) {
+                    // Menu: Update label temporarily
+                    const originalText = menuCopy.querySelector('.menu-item-label').textContent;
+                    menuCopy.querySelector('.menu-item-label').textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        menuCopy.querySelector('.menu-item-label').textContent = originalText;
+                    }, 1500);
+                } else {
+                    // Button: Visual feedback
+                    const originalText = copyOutputBtn.textContent;
+                    copyOutputBtn.textContent = '✓ Copied!';
+                    copyOutputBtn.classList.add('success');
+                    setTimeout(() => {
+                        copyOutputBtn.textContent = originalText;
+                        copyOutputBtn.classList.remove('success');
+                    }, 1500);
+                }
             } catch (err) {
                 console.error('Failed to copy:', err);
-                copyOutputBtn.textContent = '❌ Failed';
-                setTimeout(() => {
-                    copyOutputBtn.textContent = '📋 Copy Output';
-                }, 1500);
+                if (!isSidebarMode) {
+                    copyOutputBtn.textContent = '❌ Failed';
+                    setTimeout(() => {
+                        copyOutputBtn.textContent = '📋 Copy Output';
+                    }, 1500);
+                }
             }
-        });
+        };
         
-        // Rerender button
-        rerenderBtn.addEventListener('click', async function() {
-            const originalText = rerenderBtn.textContent;
-            rerenderBtn.textContent = '⏳ Rendering...';
-            rerenderBtn.disabled = true;
-            
-            await update();
-            
-            rerenderBtn.textContent = '✓ Done!';
-            setTimeout(() => {
-                rerenderBtn.textContent = originalText;
-                rerenderBtn.disabled = false;
-            }, 1000);
-        });
+        const handleRerender = async function() {
+            if (isSidebarMode) {
+                const originalText = menuRerender.querySelector('.menu-item-label').textContent;
+                menuRerender.querySelector('.menu-item-label').textContent = '⏳ Rendering...';
+                await update();
+                menuRerender.querySelector('.menu-item-label').textContent = '✓ Done!';
+                setTimeout(() => {
+                    menuRerender.querySelector('.menu-item-label').textContent = originalText;
+                }, 1000);
+            } else {
+                const originalText = rerenderBtn.textContent;
+                rerenderBtn.textContent = '⏳ Rendering...';
+                rerenderBtn.disabled = true;
+                await update();
+                rerenderBtn.textContent = '✓ Done!';
+                setTimeout(() => {
+                    rerenderBtn.textContent = originalText;
+                    rerenderBtn.disabled = false;
+                }, 1000);
+            }
+        };
         
-        // Re-extract Variables button with confirmation
-        reextractVariablesBtn.addEventListener('click', function() {
+        const handleReextract = function() {
             const confirmMessage = 'Re-extract variables from template?\\n\\n⚠️ Warning: This will replace your current variables with newly extracted ones. Any custom values you\\'ve entered may be lost.\\n\\nDo you want to continue?';
             
             if (confirm(confirmMessage)) {
@@ -1199,17 +1500,34 @@ result
                     type: 'reextractVariables'
                 });
                 
-                // Visual feedback
-                const originalText = reextractVariablesBtn.textContent;
-                reextractVariablesBtn.textContent = '✓ Re-extracted!';
-                reextractVariablesBtn.classList.add('success');
-                
-                setTimeout(() => {
-                    reextractVariablesBtn.textContent = originalText;
-                    reextractVariablesBtn.classList.remove('success');
-                }, 1500);
+                if (isSidebarMode) {
+                    const originalText = menuReextract.querySelector('.menu-item-label').textContent;
+                    menuReextract.querySelector('.menu-item-label').textContent = '✓ Re-extracted!';
+                    setTimeout(() => {
+                        menuReextract.querySelector('.menu-item-label').textContent = originalText;
+                    }, 1500);
+                } else {
+                    const originalText = reextractVariablesBtn.textContent;
+                    reextractVariablesBtn.textContent = '✓ Re-extracted!';
+                    reextractVariablesBtn.classList.add('success');
+                    setTimeout(() => {
+                        reextractVariablesBtn.textContent = originalText;
+                        reextractVariablesBtn.classList.remove('success');
+                    }, 1500);
+                }
             }
-        });
+        };
+        
+        // Attach event listeners based on mode
+        if (isSidebarMode) {
+            menuCopy.addEventListener('click', handleCopyOutput);
+            menuRerender.addEventListener('click', handleRerender);
+            menuReextract.addEventListener('click', handleReextract);
+        } else {
+            copyOutputBtn.addEventListener('click', handleCopyOutput);
+            rerenderBtn.addEventListener('click', handleRerender);
+            reextractVariablesBtn.addEventListener('click', handleReextract);
+        }
 
         // Start Pyodide and initial render
         setupPyodide();

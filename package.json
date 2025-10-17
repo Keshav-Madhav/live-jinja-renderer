@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Live Jinja2 template rendering with markdown, mermaid diagrams, and whitespace management",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "publisher": "local",
   "engines": {
     "vscode": "^1.85.0"
@@ -15,33 +15,71 @@
   ],
   "main": "./extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "jinja-renderer",
+          "title": "Jinja Renderer",
+          "icon": "$(preview)"
+        }
+      ]
+    },
+    "views": {
+      "jinja-renderer": [
+        {
+          "type": "webview",
+          "id": "jinjaRendererView",
+          "name": "Live Preview",
+          "icon": "$(preview)"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "live-jinja-tester.render",
-        "title": "Live Jinja Renderer",
-        "icon": "$(play)",
+        "title": "Open Jinja Renderer in Panel",
+        "icon": "$(window)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.showSidebar",
+        "title": "Show Jinja Renderer Sidebar",
+        "icon": "$(preview)",
         "category": "Jinja"
       }
     ],
     "menus": {
       "editor/title": [
         {
-          "command": "live-jinja-tester.render",
+          "command": "live-jinja-tester.showSidebar",
           "group": "navigation@1",
+          "when": "resourceExtname == '.txt' || resourceExtname == '.jinja' || resourceExtname == '.j2' || editorLangId == 'plaintext' || editorLangId == 'jinja'"
+        },
+        {
+          "command": "live-jinja-tester.render",
+          "group": "navigation@2",
           "when": "resourceExtname == '.txt' || resourceExtname == '.jinja' || resourceExtname == '.j2' || editorLangId == 'plaintext' || editorLangId == 'jinja'"
         }
       ],
       "commandPalette": [
         {
           "command": "live-jinja-tester.render"
+        },
+        {
+          "command": "live-jinja-tester.showSidebar"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "live-jinja-tester.render",
+        "command": "live-jinja-tester.showSidebar",
         "key": "ctrl+alt+j",
         "mac": "cmd+shift+j"
+      },
+      {
+        "command": "live-jinja-tester.render",
+        "key": "ctrl+alt+shift+j",
+        "mac": "cmd+shift+alt+j"
       }
     ]
   },
