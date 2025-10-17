@@ -15,6 +15,15 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - **Responsive Design**: UI automatically adapts based on whether it's in sidebar or panel mode
 - **Better UX**: Cleaner interface with more space for variables and output
 
+### Added
+- **Custom Icons**: 
+  - Extension icon (favicon.png) now visible in Extensions list
+  - Custom {{ }} brackets icon for Activity Bar (theme-aware SVG)
+  - Better command icons: `$(symbol-method)` for sidebar, `$(split-horizontal)` for panel
+- **Clearer Command Titles**:
+  - "Open in Sidebar" (was "Show Jinja Renderer Sidebar")
+  - "Open in Editor Pane" (was "Open Jinja Renderer in Panel")
+
 ## [0.0.2] - 2025-10-17
 
 ### Added

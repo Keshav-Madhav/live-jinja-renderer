@@ -4,6 +4,7 @@
   "description": "Live Jinja2 template rendering with markdown, mermaid diagrams, and whitespace management",
   "version": "0.0.3",
   "publisher": "local",
+  "icon": "favicon.png",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -19,8 +20,8 @@
       "activitybar": [
         {
           "id": "jinja-renderer",
-          "title": "Jinja Renderer",
-          "icon": "$(preview)"
+          "title": "Live Jinja Renderer",
+          "icon": "resources/favicon.svg"
         }
       ]
     },
@@ -29,22 +30,21 @@
         {
           "type": "webview",
           "id": "jinjaRendererView",
-          "name": "Live Preview",
-          "icon": "$(preview)"
+          "name": "Live Preview"
         }
       ]
     },
     "commands": [
       {
         "command": "live-jinja-tester.render",
-        "title": "Open Jinja Renderer in Panel",
-        "icon": "$(window)",
+        "title": "Open in Editor Pane",
+        "icon": "$(play)",
         "category": "Jinja"
       },
       {
         "command": "live-jinja-tester.showSidebar",
-        "title": "Show Jinja Renderer Sidebar",
-        "icon": "$(preview)",
+        "title": "Open in Sidebar",
+        "icon": "$(layout-sidebar-left)",
         "category": "Jinja"
       }
     ],
