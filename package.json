@@ -1,0 +1,61 @@
+{
+  "name": "live-jinja-renderer",
+  "displayName": "Live Jinja Renderer",
+  "description": "Live Jinja2 template rendering with markdown, mermaid diagrams, and whitespace management",
+  "version": "0.0.1",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "live-jinja-tester.render",
+        "title": "Live Jinja Renderer",
+        "icon": "$(play)",
+        "category": "Jinja"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "live-jinja-tester.render",
+          "group": "navigation@1",
+          "when": "resourceExtname == '.txt' || resourceExtname == '.jinja' || resourceExtname == '.j2' || editorLangId == 'plaintext' || editorLangId == 'jinja'"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "live-jinja-tester.render"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "live-jinja-tester.render",
+        "key": "ctrl+alt+j",
+        "mac": "cmd+shift+j"
+      }
+    ]
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "~1.85.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.36.0"
+  }
+}
