@@ -241,6 +241,17 @@ function activate(context) {
               extractedVariables: extractedVars
             });
             return;
+          
+          case 'reextractVariables':
+            // Re-extract variables from the current template
+            const reextractedVars = extractVariablesFromTemplate(lastTemplate);
+            
+            // Send fresh extraction (this will replace existing variables)
+            panel.webview.postMessage({
+              type: 'replaceVariables',
+              extractedVariables: reextractedVars
+            });
+            return;
         }
       },
       undefined,
@@ -457,6 +468,47 @@ function getWebviewContent() {
             font-size: var(--vscode-editor-font-size);
             line-height: 1.6;
         }
+        .output-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background-color: var(--vscode-editor-background);
+            border-top: 1px solid var(--vscode-panel-border);
+        }
+        .footer-spacer {
+            flex: 1;
+        }
+        .footer-btn {
+            padding: 6px 12px;
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .footer-btn:hover {
+            background-color: var(--vscode-button-hoverBackground);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .footer-btn:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .footer-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .footer-btn.success {
+            background-color: #10b981;
+            color: white;
+        }
         #markdown-output {
             flex: 1;
             padding: 20px;
@@ -649,6 +701,12 @@ function getWebviewContent() {
             <div class="output-container">
         <pre id="output"></pre>
                 <div id="markdown-output" style="display: none;"></div>
+            </div>
+            <div class="output-footer">
+                <button class="footer-btn" id="reextract-variables-btn" title="Re-extract variables from template">🔄 Re-extract Variables</button>
+                <div class="footer-spacer"></div>
+                <button class="footer-btn" id="rerender-btn" title="Manually trigger re-render">▶️ Rerender</button>
+                <button class="footer-btn" id="copy-output-btn" title="Copy output to clipboard">📋 Copy Output</button>
             </div>
         </div>
     </div>
@@ -997,6 +1055,14 @@ result
                     
                     await update();
                     break;
+                
+                case 'replaceVariables':
+                    // Force replace all variables (from re-extract button)
+                    if (message.extractedVariables) {
+                        variablesEditor.value = JSON.stringify(message.extractedVariables, null, 4);
+                        await update();
+                    }
+                    break;
             }
         });
 
@@ -1042,6 +1108,75 @@ result
                 isResizing = false;
                 document.body.style.cursor = '';
                 document.body.style.userSelect = '';
+            }
+        });
+
+        // Button functionality
+        const copyOutputBtn = document.getElementById('copy-output-btn');
+        const rerenderBtn = document.getElementById('rerender-btn');
+        const reextractVariablesBtn = document.getElementById('reextract-variables-btn');
+        
+        // Copy Output button
+        copyOutputBtn.addEventListener('click', async function() {
+            const textToCopy = isMarkdownMode || isMermaidMode 
+                ? lastRenderedOutput 
+                : (showWhitespaceToggle.checked ? outputDisplay.textContent : outputDisplay.textContent);
+            
+            try {
+                await navigator.clipboard.writeText(textToCopy);
+                
+                // Visual feedback
+                const originalText = copyOutputBtn.textContent;
+                copyOutputBtn.textContent = '✓ Copied!';
+                copyOutputBtn.classList.add('success');
+                
+                setTimeout(() => {
+                    copyOutputBtn.textContent = originalText;
+                    copyOutputBtn.classList.remove('success');
+                }, 1500);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                copyOutputBtn.textContent = '❌ Failed';
+                setTimeout(() => {
+                    copyOutputBtn.textContent = '📋 Copy Output';
+                }, 1500);
+            }
+        });
+        
+        // Rerender button
+        rerenderBtn.addEventListener('click', async function() {
+            const originalText = rerenderBtn.textContent;
+            rerenderBtn.textContent = '⏳ Rendering...';
+            rerenderBtn.disabled = true;
+            
+            await update();
+            
+            rerenderBtn.textContent = '✓ Done!';
+            setTimeout(() => {
+                rerenderBtn.textContent = originalText;
+                rerenderBtn.disabled = false;
+            }, 1000);
+        });
+        
+        // Re-extract Variables button with confirmation
+        reextractVariablesBtn.addEventListener('click', function() {
+            const confirmMessage = 'Re-extract variables from template?\\n\\n⚠️ Warning: This will replace your current variables with newly extracted ones. Any custom values you\\'ve entered may be lost.\\n\\nDo you want to continue?';
+            
+            if (confirm(confirmMessage)) {
+                // Request re-extraction from the extension
+                vscode.postMessage({ 
+                    type: 'reextractVariables'
+                });
+                
+                // Visual feedback
+                const originalText = reextractVariablesBtn.textContent;
+                reextractVariablesBtn.textContent = '✓ Re-extracted!';
+                reextractVariablesBtn.classList.add('success');
+                
+                setTimeout(() => {
+                    reextractVariablesBtn.textContent = originalText;
+                    reextractVariablesBtn.classList.remove('success');
+                }, 1500);
             }
         });
 
