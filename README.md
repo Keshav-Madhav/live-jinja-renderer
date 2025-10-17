@@ -1,26 +1,48 @@
 # Live Jinja Renderer
 
-A VS Code / Cursor extension for rendering Jinja2 templates in real-time using **authentic Python Jinja2** (via Pyodide). Features live variable updates, markdown support, mermaid diagrams, and advanced whitespace management.
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-## Features
+A powerful VS Code extension for **real-time Jinja2 template preview** with authentic Python Jinja2 (via Pyodide). Edit templates and variables side-by-side with instant rendering, markdown support, mermaid diagrams, and intelligent whitespace management.
 
-- **Authentic Python Jinja2**: Uses actual Python Jinja2 via Pyodide - 100% compatible with Python Jinja2, not a JavaScript port
-- **Flexible UI Options**: 
-  - **Sidebar View** (default): Persistent panel in the Activity Bar, similar to Source Control or Debug
-  - **Panel View**: Optional separate editor pane that opens beside your file
-  - Switch between views based on your workflow preference
-- **Real-time rendering**: See your Jinja2 templates rendered as you type
-- **Live variable updates**: Edit variables in JSON format and see instant results
-- **Auto-sync**: Changes to the template file automatically trigger re-rendering
-- **Multi-file support**: Sidebar automatically updates when switching between files
-- **Markdown rendering**: Enable markdown mode to render output as formatted markdown
-- **Mermaid diagrams**: Render beautiful flowcharts, sequence diagrams, and more using Mermaid syntax
-- **Whitespace management**:
-  - **Cull Whitespace**: Automatically removes excessive blank lines and spaces (enabled by default)
-  - **Show Whitespace**: Visualize spaces, tabs, and newlines in plain text mode
-- **Beautiful UI**: Professional toggle switches, enhanced styling, and VS Code theme integration
-- **Resizable panes**: Drag the handle between variables and output sections to adjust sizes
-- **Responsive design**: Controls wrap on narrow screens to prevent overflow
+> 🎯 **Perfect for**: Python developers, DevOps engineers, Ansible users, configuration management, and anyone working with Jinja2 templates.
+
+<!-- TODO: Add screenshots here -->
+<!-- ![Demo](images/demo.gif) -->
+
+## ✨ Key Features
+
+### 🐍 **Authentic Python Jinja2**
+- Uses **real Python Jinja2** engine via Pyodide (not a JavaScript port)
+- 100% compatible with Python Jinja2 behavior
+- No surprises when moving templates to production
+
+### 🎨 **Flexible UI Options**
+- **Sidebar View**: Persistent panel in Activity Bar (like Source Control or Debug)
+- **Panel View**: Separate editor pane that opens beside your file
+- Switch between views based on your workflow
+
+### ⚡ **Real-time Everything**
+- Instant rendering as you type
+- Live variable updates with JSON editing
+- Auto-sync when switching between files
+- Multi-file support with automatic context switching
+
+### 📝 **Rich Content Support**
+- **Markdown rendering**: Beautiful formatted output
+- **Mermaid diagrams**: Flowcharts, sequence diagrams, gantt charts, and more
+- **Whitespace management**: Smart whitespace culling and visualization
+- **Syntax highlighting**: Clear, readable variable JSON editing
+
+### 🎯 **Developer Experience**
+
+- Convenient menu for all controls (in sidebar mode)
+- Resizable panes with drag handles
+- Beautiful UI with VS Code theme integration
+- Keyboard shortcuts for quick access
+
+---
 
 ## Usage
 

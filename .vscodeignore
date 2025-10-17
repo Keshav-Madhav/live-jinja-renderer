@@ -2,9 +2,28 @@
 .vscode-test/**
 test/**
 .gitignore
+.git/**
 .yarnrc
 vsc-extension-quickstart.md
 **/jsconfig.json
 **/*.map
 **/eslint.config.mjs
 **/.vscode-test.*
+*.vsix
+node_modules/**/.bin/**
+.eslintrc.json
+
+# Documentation files (optional - keep if helpful for users)
+SNAKE-LOGO-OPTIONS.md
+ICONS-COMPLETE.md
+ICON-STRATEGY.md
+ICON-UPDATE-SUMMARY.md
+MARKETPLACE-READY.md
+
+# SVG source files (keep only the ones in use)
+resources/icon.svg
+resources/snake-jp-icon.svg
+resources/snake-lj-icon.svg
+resources/snake-jp-sidebar.svg
+resources/snake-lj-sidebar.svg
+resources/sidebar-icon.svg

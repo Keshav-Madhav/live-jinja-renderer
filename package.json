@@ -1,16 +1,44 @@
 {
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
-  "description": "Live Jinja2 template rendering with markdown, mermaid diagrams, and whitespace management",
-  "version": "0.0.3",
-  "publisher": "local",
+  "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
+  "version": "1.0.0",
+  "publisher": "KilloWatts",
+  "author": {
+    "name": "Keshav Madhav"
+  },
+  "license": "MIT",
   "icon": "favicon.png",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
+    "Programming Languages",
+    "Formatters",
+    "Visualization",
     "Other"
   ],
+  "keywords": [
+    "jinja",
+    "jinja2",
+    "template",
+    "templating",
+    "preview",
+    "renderer",
+    "markdown",
+    "mermaid",
+    "python",
+    "live-preview"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Keshav-Madhav/live_jinja"
+  },
+  "homepage": "https://keshav-madhav.github.io/live_jinja/",
+  "galleryBanner": {
+    "color": "#2D5F3F",
+    "theme": "dark"
+  },
   "activationEvents": [
     "onStartupFinished"
   ],
