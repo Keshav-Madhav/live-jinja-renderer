@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.0.1-blue)
+![Version](https://img.shields.io/badge/version-1.0.2-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -92,6 +92,29 @@ If you prefer to open the renderer in a separate editor pane:
 
 **Command Palette**:
 - Type "Open Jinja Renderer in Panel"
+
+### Variable Extraction
+
+The extension intelligently extracts variables from your Jinja2 templates:
+
+**Automatic Extraction**:
+- When you **first open a file**, variables are automatically detected and extracted
+- When you **switch to a different file**, variables are extracted for that file
+
+**Manual Extraction** (preserves your custom values during editing):
+- **Keyboard shortcut**: 
+  - **Mac**: `Cmd+Shift+E`
+  - **Windows/Linux**: `Ctrl+Alt+E`
+- **Three-dot menu**: Select "Extract Variables from Template"
+- **Footer button** (panel mode): Click "🔄 Extract Variables"
+- **Command Palette**: Type "Jinja: Extract Variables from Template"
+
+**How it works**:
+- Detects `{{ variable }}` patterns in your template
+- Identifies `{% for item in items %}` loops (creates arrays)
+- Recognizes object properties like `{{ user.name }}`
+- Creates appropriate JSON structures (objects, arrays, nested properties)
+- Preserves your custom values when you manually re-extract
 
 ## Examples
 
@@ -203,6 +226,18 @@ This extension contributes the following VS Code settings:
 None at this time.
 
 ## Release Notes
+
+### 1.0.2
+
+**Smart Variable Extraction**:
+- Variables now automatically extracted only on first file load and when switching files
+- Template edits preserve your custom variable values (no auto-extraction)
+- Added keyboard shortcut `Ctrl+Alt+E` (Windows/Linux) or `Cmd+Shift+E` (Mac) for manual extraction
+- Extract Variables command available in three-dot menu, footer, and command palette
+
+**Bug Fixes**:
+- Fixed newline rendering bug where output showed double newlines when "Cull Whitespace" was disabled
+- Corrected Python template string escaping for accurate whitespace preservation
 
 ### 1.0.1
 

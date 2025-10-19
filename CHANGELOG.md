@@ -4,6 +4,32 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.2] - 2025-10-20
+
+### Changed
+- **Variable Extraction Behavior**: Variables are no longer automatically extracted on every template change
+  - Initial load: Variables are automatically extracted when first opening a file
+  - Switching files: Variables are automatically extracted for each new file
+  - Template edits: Variables are preserved (no auto-extraction) to maintain custom values
+
+### Added
+- **Manual Variable Extraction**: Added keyboard shortcut and enhanced controls for extracting variables
+  - Keyboard shortcut: `Ctrl+Alt+E` (Windows/Linux) or `Cmd+Shift+E` (Mac)
+  - Available via three-dot menu: "Extract Variables from Template"
+  - Available via footer button in panel mode: "🔄 Extract Variables"
+  - Command palette: "Jinja: Extract Variables from Template"
+
+### Fixed
+- **Newline Rendering Bug**: Fixed issue where newlines were being doubled in output
+  - When "Cull Whitespace" was disabled, single newlines appeared as double newlines
+  - Caused by incorrect escaping in Python template string processing
+  - Now correctly preserves exact newline count from rendered output
+
+### Improved
+- Better preservation of user-customized variable values during template editing
+- More intuitive variable extraction workflow
+- Cleaner initial setup experience with automatic first-time extraction
+
 ## [1.0.1] - 2025-10-19
 
 ### Changed

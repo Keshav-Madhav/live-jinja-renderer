@@ -184,6 +184,7 @@ function extractVariablesFromTemplate(template) {
 function setupWebviewForEditor(webview, editor, context) {
   const templateContent = editor.document.getText();
   let lastTemplate = templateContent;
+  let isInitialLoad = true; // Track if this is the first load
   
   // Get current settings from VS Code configuration
   const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
@@ -207,14 +208,10 @@ function setupWebviewForEditor(webview, editor, context) {
     if (e.document.uri.toString() === editor.document.uri.toString()) {
       lastTemplate = e.document.getText();
       
-      // Extract variables from the updated template
-      const extractedVars = extractVariablesFromTemplate(lastTemplate);
-      
-      // Send updated template and extracted variables to the webview
+      // Send updated template to the webview (without auto-extraction)
       webview.postMessage({ 
         type: 'updateTemplate',
-        template: lastTemplate,
-        extractedVariables: extractedVars
+        template: lastTemplate
       });
     }
   });
@@ -224,19 +221,26 @@ function setupWebviewForEditor(webview, editor, context) {
     async message => {
       switch (message.type) {
         case 'ready':
-          // Extract variables from the template
-          const extractedVars = extractVariablesFromTemplate(lastTemplate);
-          
-          // Send initial template and extracted variables when webview is ready
-          webview.postMessage({
-            type: 'updateTemplate',
-            template: lastTemplate,
-            extractedVariables: extractedVars
-          });
+          // On initial load, auto-extract variables
+          if (isInitialLoad) {
+            const extractedVars = extractVariablesFromTemplate(lastTemplate);
+            webview.postMessage({
+              type: 'updateTemplate',
+              template: lastTemplate,
+              extractedVariables: extractedVars
+            });
+            isInitialLoad = false; // Mark as no longer initial load
+          } else {
+            // Subsequent loads: just send template without extraction
+            webview.postMessage({
+              type: 'updateTemplate',
+              template: lastTemplate
+            });
+          }
           return;
         
         case 'reextractVariables':
-          // Re-extract variables from the current template
+          // Extract variables from the current template
           const reextractedVars = extractVariablesFromTemplate(lastTemplate);
           
           // Send fresh extraction (this will replace existing variables)
@@ -395,7 +399,7 @@ function activate(context) {
     const reextractVariablesCommand = vscode.commands.registerCommand('live-jinja-tester.reextractVariables', () => {
       if (sidebarProvider && sidebarProvider._view) {
         sidebarProvider._view.webview.postMessage({ type: 'reextractVariables' });
-        vscode.window.showInformationMessage('Variables re-extracted from template');
+        vscode.window.showInformationMessage('Variables extracted from template');
       } else {
         vscode.window.showWarningMessage('Jinja Renderer view is not active');
       }
@@ -975,7 +979,7 @@ function getWebviewContent(isSidebar = false) {
             </div>
             ${!isSidebar ? `
             <div class="output-footer">
-                <button class="footer-btn" id="reextract-variables-btn" title="Re-extract variables from template">🔄 Re-extract Variables</button>
+                <button class="footer-btn" id="reextract-variables-btn" title="Extract variables from template">🔄 Extract Variables</button>
                 <div class="footer-spacer"></div>
                 <button class="footer-btn" id="rerender-btn" title="Manually trigger re-render">▶️ Rerender</button>
                 <button class="footer-btn" id="copy-output-btn" title="Copy output to clipboard">📋 Copy Output</button>
@@ -1174,7 +1178,8 @@ function getWebviewContent(isSidebar = false) {
                 const contextJson = JSON.stringify(context);
                 
                 // Escape template and context strings for Python
-                const escapedTemplate = template.replace(/\\\\/g, '\\\\\\\\').replace(/"/g, '\\\\"').replace(/\\n/g, '\\\\n');
+                // Note: We use triple-quoted strings in Python, so newlines are preserved as-is
+                const escapedTemplate = template.replace(/\\\\/g, '\\\\\\\\').replace(/"/g, '\\\\"');
                 const escapedContext = contextJson.replace(/\\\\/g, '\\\\\\\\').replace(/"/g, '\\\\"');
                 
                 const result = pyodide.runPython(\`
@@ -1306,7 +1311,7 @@ result
                     // Template content updated from the extension
                     currentTemplate = message.template;
                     
-                    // If extracted variables are provided, populate the variables editor
+                    // Only extract/merge variables if explicitly provided (manual extraction)
                     if (message.extractedVariables) {
                         // Try to preserve user-modified values for variables that still exist
                         let currentVars = {};
@@ -1349,7 +1354,7 @@ result
                     break;
                 
                 case 'replaceVariables':
-                    // Force replace all variables (from re-extract button)
+                    // Force replace all variables (from extract button)
                     if (message.extractedVariables) {
                         variablesEditor.value = JSON.stringify(message.extractedVariables, null, 4);
                         await update();
@@ -1380,7 +1385,7 @@ result
                     break;
                 
                 case 'reextractVariables':
-                    // Re-extract variables triggered from command
+                    // Extract variables triggered from command
                     vscode.postMessage({ type: 'reextractVariables' });
                     break;
                 
@@ -1471,17 +1476,17 @@ result
         };
         
         const handleReextract = function() {
-            const confirmMessage = 'Re-extract variables from template?\\n\\n⚠️ Warning: This will replace your current variables with newly extracted ones. Any custom values you\\'ve entered may be lost.\\n\\nDo you want to continue?';
+            const confirmMessage = 'Extract variables from template?\\n\\n⚠️ Warning: This will replace your current variables with newly extracted ones. Any custom values you\\'ve entered may be lost.\\n\\nDo you want to continue?';
             
             if (confirm(confirmMessage)) {
-                // Request re-extraction from the extension
+                // Request extraction from the extension
                 vscode.postMessage({ 
                     type: 'reextractVariables'
                 });
                 
                 // Panel mode only
                 const originalText = reextractVariablesBtn.textContent;
-                reextractVariablesBtn.textContent = '✓ Re-extracted!';
+                reextractVariablesBtn.textContent = '✓ Extracted!';
                 reextractVariablesBtn.classList.add('success');
                 setTimeout(() => {
                     reextractVariablesBtn.textContent = originalText;
