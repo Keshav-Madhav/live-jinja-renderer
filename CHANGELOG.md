@@ -4,6 +4,46 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.1] - 2025-10-19
+
+### Changed
+- **UI/UX Overhaul**: Moved controls from custom in-pane dropdowns to VS Code native UI
+  - Toggle buttons (Markdown, Mermaid) now appear in both navigation bar and three-dot menu
+  - All settings now accessible via three-dot menu in sidebar title bar
+  - Panel mode retains toggle switches for larger viewing area
+  - Cleaner, more native VS Code experience
+
+### Added
+- **Update for Current File Button**: Manual refresh button to update preview when switching files
+  - Available in navigation bar (sync icon)
+  - Also accessible from three-dot menu
+- **Improved Menu Organization**: 
+  - Navigation bar: Markdown, Mermaid, and Update icons (always visible)
+  - Three-dot menu organized into logical groups:
+    - Rendering: Toggle Markdown, Toggle Mermaid
+    - Whitespace: Toggle Show Whitespace, Toggle Cull Whitespace
+    - Actions: Re-extract Variables, Copy Output
+    - View: Open in Editor Pane
+
+### Fixed
+- **Copy Output Functionality**: Fixed clipboard access issues in sidebar mode
+  - Now uses VS Code's native clipboard API (`vscode.env.clipboard`)
+  - More reliable copy operation across all contexts
+  - Proper error handling and user notifications
+
+### Improved
+- Better integration with VS Code's UI patterns
+- More discoverable features through standardized menus
+- Consistent behavior between sidebar and panel modes
+
+## [1.0.0] - 2025-10-19
+
+### Released
+- **Initial Marketplace Publication**
+- Extension now available on Visual Studio Code Marketplace
+- Stable release with full feature set
+- Production-ready for public use
+
 ## [0.0.3] - 2025-10-17
 
 ### Improved

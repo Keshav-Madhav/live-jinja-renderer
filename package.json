@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -32,7 +32,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Keshav-Madhav/live_jinja"
+    "url": "https://github.com/Keshav-Madhav/live-jinja-renderer"
   },
   "homepage": "https://keshav-madhav.github.io/live_jinja/",
   "galleryBanner": {
@@ -74,6 +74,54 @@
         "title": "Open in Sidebar",
         "icon": "$(layout-sidebar-left)",
         "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.toggleMarkdown",
+        "title": "Toggle Markdown",
+        "icon": "$(markdown)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.toggleMermaid",
+        "title": "Toggle Mermaid",
+        "icon": "$(symbol-namespace)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.toggleShowWhitespace",
+        "title": "Toggle Show Whitespace",
+        "icon": "$(whitespace)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.toggleCullWhitespace",
+        "title": "Toggle Cull Whitespace",
+        "icon": "$(tools)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.reextractVariables",
+        "title": "Re-extract Variables from Template",
+        "icon": "$(refresh)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.copyOutput",
+        "title": "Copy Output to Clipboard",
+        "icon": "$(copy)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.openInPanel",
+        "title": "Open in Editor Pane",
+        "icon": "$(open-preview)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.updateForCurrentFile",
+        "title": "Update for Current File",
+        "icon": "$(sync)",
+        "category": "Jinja"
       }
     ],
     "menus": {
@@ -89,12 +137,88 @@
           "when": "resourceExtname == '.txt' || resourceExtname == '.jinja' || resourceExtname == '.j2' || editorLangId == 'plaintext' || editorLangId == 'jinja'"
         }
       ],
+      "view/title": [
+        {
+          "command": "live-jinja-tester.toggleMarkdown",
+          "when": "view == jinjaRendererView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "live-jinja-tester.toggleMermaid",
+          "when": "view == jinjaRendererView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "live-jinja-tester.updateForCurrentFile",
+          "when": "view == jinjaRendererView",
+          "group": "navigation@3"
+        },
+        {
+          "command": "live-jinja-tester.toggleMarkdown",
+          "when": "view == jinjaRendererView",
+          "group": "1_rendering@1"
+        },
+        {
+          "command": "live-jinja-tester.toggleMermaid",
+          "when": "view == jinjaRendererView",
+          "group": "1_rendering@2"
+        },
+        {
+          "command": "live-jinja-tester.toggleShowWhitespace",
+          "when": "view == jinjaRendererView",
+          "group": "2_whitespace@1"
+        },
+        {
+          "command": "live-jinja-tester.toggleCullWhitespace",
+          "when": "view == jinjaRendererView",
+          "group": "2_whitespace@2"
+        },
+        {
+          "command": "live-jinja-tester.reextractVariables",
+          "when": "view == jinjaRendererView",
+          "group": "3_actions@1"
+        },
+        {
+          "command": "live-jinja-tester.copyOutput",
+          "when": "view == jinjaRendererView",
+          "group": "3_actions@2"
+        },
+        {
+          "command": "live-jinja-tester.openInPanel",
+          "when": "view == jinjaRendererView",
+          "group": "4_view@1"
+        }
+      ],
       "commandPalette": [
         {
           "command": "live-jinja-tester.render"
         },
         {
           "command": "live-jinja-tester.showSidebar"
+        },
+        {
+          "command": "live-jinja-tester.toggleMarkdown"
+        },
+        {
+          "command": "live-jinja-tester.toggleMermaid"
+        },
+        {
+          "command": "live-jinja-tester.toggleShowWhitespace"
+        },
+        {
+          "command": "live-jinja-tester.toggleCullWhitespace"
+        },
+        {
+          "command": "live-jinja-tester.reextractVariables"
+        },
+        {
+          "command": "live-jinja-tester.updateForCurrentFile"
+        },
+        {
+          "command": "live-jinja-tester.copyOutput"
+        },
+        {
+          "command": "live-jinja-tester.openInPanel"
         }
       ]
     },
@@ -109,7 +233,32 @@
         "key": "ctrl+alt+shift+j",
         "mac": "cmd+shift+alt+j"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Live Jinja Renderer",
+      "properties": {
+        "liveJinjaRenderer.enableMarkdown": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable markdown rendering for the output"
+        },
+        "liveJinjaRenderer.enableMermaid": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable mermaid diagram rendering"
+        },
+        "liveJinjaRenderer.showWhitespace": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show whitespace characters (spaces, tabs, newlines) in the output"
+        },
+        "liveJinjaRenderer.cullWhitespace": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically remove excessive blank lines and whitespace from output"
+        }
+      }
+    }
   },
   "scripts": {
     "lint": "eslint .",

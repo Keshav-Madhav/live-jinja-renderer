@@ -1,5 +1,8 @@
 const vscode = require('vscode');
 
+// Global reference to the current panel (if any)
+let currentPanel = null;
+
 /**
  * Extracts variable names and structures from a Jinja template
  * This is adapted from script.js to work in the extension context
@@ -182,6 +185,23 @@ function setupWebviewForEditor(webview, editor, context) {
   const templateContent = editor.document.getText();
   let lastTemplate = templateContent;
   
+  // Get current settings from VS Code configuration
+  const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+  const settings = {
+    enableMarkdown: config.get('enableMarkdown', false),
+    enableMermaid: config.get('enableMermaid', false),
+    showWhitespace: config.get('showWhitespace', false),
+    cullWhitespace: config.get('cullWhitespace', true)
+  };
+  
+  // Send initial settings to webview
+  setTimeout(() => {
+    webview.postMessage({
+      type: 'updateSettings',
+      settings: settings
+    });
+  }, 100);
+  
   // Update template if the original file changes
   const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
     if (e.document.uri.toString() === editor.document.uri.toString()) {
@@ -201,7 +221,7 @@ function setupWebviewForEditor(webview, editor, context) {
   
   // Handle messages from the webview
   const messageSubscription = webview.onDidReceiveMessage(
-    message => {
+    async message => {
       switch (message.type) {
         case 'ready':
           // Extract variables from the template
@@ -224,6 +244,22 @@ function setupWebviewForEditor(webview, editor, context) {
             type: 'replaceVariables',
             extractedVariables: reextractedVars
           });
+          return;
+        
+        case 'copyToClipboard':
+          // Copy text to clipboard (sent from webview)
+          try {
+            await vscode.env.clipboard.writeText(message.text);
+            vscode.window.showInformationMessage('Output copied to clipboard');
+          } catch (err) {
+            vscode.window.showErrorMessage('Failed to copy output to clipboard');
+            console.error('Copy failed:', err);
+          }
+          return;
+        
+        case 'outputCopied':
+          // Legacy message - show confirmation when output is copied
+          vscode.window.showInformationMessage('Output copied to clipboard');
           return;
       }
     },
@@ -273,6 +309,9 @@ class JinjaRendererViewProvider {
       }
     };
     
+    // Store the update function for external access
+    this._updateForActiveEditor = updateForActiveEditor;
+    
     // Update immediately
     updateForActiveEditor();
     
@@ -288,6 +327,17 @@ class JinjaRendererViewProvider {
       this._disposables.forEach(d => d.dispose());
       this._disposables = [];
     });
+  }
+  
+  /**
+   * Manually trigger an update for the current active file
+   */
+  updateForCurrentFile() {
+    if (this._updateForActiveEditor) {
+      this._updateForActiveEditor();
+      return true;
+    }
+    return false;
   }
 }
 
@@ -311,6 +361,106 @@ function activate(context) {
       vscode.commands.executeCommand('jinjaRendererView.focus');
     });
     context.subscriptions.push(showSidebarCommand);
+    
+    // Register toggle commands for settings
+    const toggleMarkdownCommand = vscode.commands.registerCommand('live-jinja-tester.toggleMarkdown', () => {
+      const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+      const currentValue = config.get('enableMarkdown', false);
+      config.update('enableMarkdown', !currentValue, vscode.ConfigurationTarget.Global);
+    });
+    context.subscriptions.push(toggleMarkdownCommand);
+    
+    const toggleMermaidCommand = vscode.commands.registerCommand('live-jinja-tester.toggleMermaid', () => {
+      const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+      const currentValue = config.get('enableMermaid', false);
+      config.update('enableMermaid', !currentValue, vscode.ConfigurationTarget.Global);
+    });
+    context.subscriptions.push(toggleMermaidCommand);
+    
+    const toggleShowWhitespaceCommand = vscode.commands.registerCommand('live-jinja-tester.toggleShowWhitespace', () => {
+      const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+      const currentValue = config.get('showWhitespace', false);
+      config.update('showWhitespace', !currentValue, vscode.ConfigurationTarget.Global);
+    });
+    context.subscriptions.push(toggleShowWhitespaceCommand);
+    
+    const toggleCullWhitespaceCommand = vscode.commands.registerCommand('live-jinja-tester.toggleCullWhitespace', () => {
+      const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+      const currentValue = config.get('cullWhitespace', true);
+      config.update('cullWhitespace', !currentValue, vscode.ConfigurationTarget.Global);
+    });
+    context.subscriptions.push(toggleCullWhitespaceCommand);
+    
+    // Register action commands for the three-dot menu
+    const reextractVariablesCommand = vscode.commands.registerCommand('live-jinja-tester.reextractVariables', () => {
+      if (sidebarProvider && sidebarProvider._view) {
+        sidebarProvider._view.webview.postMessage({ type: 'reextractVariables' });
+        vscode.window.showInformationMessage('Variables re-extracted from template');
+      } else {
+        vscode.window.showWarningMessage('Jinja Renderer view is not active');
+      }
+    });
+    context.subscriptions.push(reextractVariablesCommand);
+    
+    const copyOutputCommand = vscode.commands.registerCommand('live-jinja-tester.copyOutput', () => {
+      if (sidebarProvider && sidebarProvider._view) {
+        sidebarProvider._view.webview.postMessage({ type: 'copyOutput' });
+      } else if (currentPanel) {
+        currentPanel.webview.postMessage({ type: 'copyOutput' });
+      } else {
+        vscode.window.showWarningMessage('Jinja Renderer view is not active');
+      }
+    });
+    context.subscriptions.push(copyOutputCommand);
+    
+    const openInPanelCommand = vscode.commands.registerCommand('live-jinja-tester.openInPanel', () => {
+      // Trigger the render command to open in a panel
+      vscode.commands.executeCommand('live-jinja-tester.render');
+    });
+    context.subscriptions.push(openInPanelCommand);
+    
+    const updateForCurrentFileCommand = vscode.commands.registerCommand('live-jinja-tester.updateForCurrentFile', () => {
+      if (sidebarProvider && sidebarProvider.updateForCurrentFile()) {
+        const editor = vscode.window.activeTextEditor;
+        const fileName = editor ? editor.document.fileName.split(/[/\\]/).pop() : 'current file';
+        vscode.window.showInformationMessage(`Updated for: ${fileName}`);
+      } else {
+        vscode.window.showWarningMessage('Jinja Renderer view is not active');
+      }
+    });
+    context.subscriptions.push(updateForCurrentFileCommand);
+    
+    // Listen for configuration changes and update all webviews
+    context.subscriptions.push(
+      vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration('liveJinjaRenderer')) {
+          // Get updated settings
+          const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+          const settings = {
+            enableMarkdown: config.get('enableMarkdown', false),
+            enableMermaid: config.get('enableMermaid', false),
+            showWhitespace: config.get('showWhitespace', false),
+            cullWhitespace: config.get('cullWhitespace', true)
+          };
+          
+          // Update sidebar webview if active
+          if (sidebarProvider && sidebarProvider._view) {
+            sidebarProvider._view.webview.postMessage({
+              type: 'updateSettings',
+              settings: settings
+            });
+          }
+          
+          // Update panel webview if active (stored globally)
+          if (typeof currentPanel !== 'undefined' && currentPanel) {
+            currentPanel.webview.postMessage({
+              type: 'updateSettings',
+              settings: settings
+            });
+          }
+        }
+      })
+    );
 
     // Register command to open in panel (separate editor pane)
     const renderPanelCommand = vscode.commands.registerCommand('live-jinja-tester.render', function () {
@@ -333,6 +483,9 @@ function activate(context) {
           enableScripts: true // Allow JavaScript to run in the webview
         }
       );
+      
+      // Store panel reference globally for settings updates
+      currentPanel = panel;
 
       // Set the webview's HTML content (panel mode)
       panel.webview.html = getWebviewContent(false); // false = panel mode
@@ -343,6 +496,7 @@ function activate(context) {
       // Clean up the subscription when the panel is closed
       panel.onDidDispose(() => {
         subscription.dispose();
+        currentPanel = null; // Clear reference
       }, null, context.subscriptions);
     });
 
@@ -428,81 +582,6 @@ function getWebviewContent(isSidebar = false) {
             color: var(--vscode-descriptionForeground);
             font-weight: 400;
             user-select: none;
-        }
-        /* Menu button for sidebar mode */
-        .menu-button {
-            padding: 4px 8px;
-            background: transparent;
-            border: none;
-            color: var(--vscode-foreground);
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 2px;
-            transition: background-color 0.1s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .menu-button:hover {
-            background-color: var(--vscode-toolbar-hoverBackground);
-        }
-        .menu-button:active {
-            background-color: var(--vscode-toolbar-activeBackground);
-        }
-        /* Dropdown menu */
-        .menu-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: var(--vscode-menu-background);
-            border: 1px solid var(--vscode-menu-border);
-            border-radius: 2px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-            min-width: 200px;
-            display: none;
-        }
-        .menu-dropdown.show {
-            display: block;
-        }
-        .menu-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 6px 12px;
-            cursor: pointer;
-            color: var(--vscode-menu-foreground);
-            font-size: 12px;
-            user-select: none;
-        }
-        .menu-item:hover {
-            background-color: var(--vscode-menu-selectionBackground);
-            color: var(--vscode-menu-selectionForeground);
-        }
-        .menu-item-label {
-            flex: 1;
-        }
-        .menu-item-check {
-            margin-left: 12px;
-            font-size: 10px;
-            opacity: 0;
-        }
-        .menu-item.checked .menu-item-check {
-            opacity: 1;
-        }
-        .menu-container {
-            position: relative;
-        }
-        .menu-separator {
-            height: 1px;
-            background: var(--vscode-menu-separatorBackground);
-            margin: 4px 0;
-        }
-        .menu-action {
-            font-weight: normal;
-        }
-        .menu-action .menu-item-label {
-            color: var(--vscode-menu-foreground);
         }
         /* Toggle Switch Styling - VS Code native style */
         .switch {
@@ -856,40 +935,7 @@ function getWebviewContent(isSidebar = false) {
         <div class="output-section" id="output-section">
             <div class="header-group">
         <h2>Output</h2>
-                ${isSidebar ? `
-                <!-- Sidebar mode: Menu button -->
-                <div class="menu-container">
-                    <button class="menu-button" id="menu-button" title="Options & Actions">⋯</button>
-                    <div class="menu-dropdown" id="menu-dropdown">
-                        <div class="menu-item" id="menu-markdown">
-                            <span class="menu-item-label">Markdown</span>
-                            <span class="menu-item-check">✓</span>
-                        </div>
-                        <div class="menu-item" id="menu-mermaid">
-                            <span class="menu-item-label">Mermaid</span>
-                            <span class="menu-item-check">✓</span>
-                        </div>
-                        <div class="menu-item" id="menu-show-whitespace">
-                            <span class="menu-item-label">Show Whitespace</span>
-                            <span class="menu-item-check">✓</span>
-                        </div>
-                        <div class="menu-item checked" id="menu-cull-whitespace">
-                            <span class="menu-item-label">Cull Whitespace</span>
-                            <span class="menu-item-check">✓</span>
-                        </div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-item menu-action" id="menu-reextract">
-                            <span class="menu-item-label">🔄 Re-extract Variables</span>
-                        </div>
-                        <div class="menu-item menu-action" id="menu-rerender">
-                            <span class="menu-item-label">▶️ Rerender</span>
-                        </div>
-                        <div class="menu-item menu-action" id="menu-copy">
-                            <span class="menu-item-label">📋 Copy Output</span>
-                        </div>
-                    </div>
-                </div>
-                ` : `
+                ${isSidebar ? '' : `
                 <!-- Panel mode: Toggle switches -->
                 <div class="controls">
                     <div class="control-group">
@@ -948,30 +994,16 @@ function getWebviewContent(isSidebar = false) {
         
         // Get controls based on mode
         let markdownToggle, mermaidToggle, showWhitespaceToggle, cullWhitespaceToggle;
-        let menuButton, menuDropdown;
-        let menuMarkdown, menuMermaid, menuShowWhitespace, menuCullWhitespace;
-        let menuReextract, menuRerender, menuCopy;
-        let copyOutputBtn, rerenderBtn, reextractVariablesBtn;
+        let copyOutputBtn, rerenderBtnPanel, reextractVariablesBtn;
         
-        if (isSidebarMode) {
-            // Sidebar mode: Menu items
-            menuButton = document.getElementById('menu-button');
-            menuDropdown = document.getElementById('menu-dropdown');
-            menuMarkdown = document.getElementById('menu-markdown');
-            menuMermaid = document.getElementById('menu-mermaid');
-            menuShowWhitespace = document.getElementById('menu-show-whitespace');
-            menuCullWhitespace = document.getElementById('menu-cull-whitespace');
-            menuReextract = document.getElementById('menu-reextract');
-            menuRerender = document.getElementById('menu-rerender');
-            menuCopy = document.getElementById('menu-copy');
-        } else {
-            // Panel mode: Toggle switches and buttons
+        if (!isSidebarMode) {
+            // Panel mode: Toggle switches and action buttons
             markdownToggle = document.getElementById('markdown-toggle');
             mermaidToggle = document.getElementById('mermaid-toggle');
             showWhitespaceToggle = document.getElementById('show-whitespace-toggle');
             cullWhitespaceToggle = document.getElementById('cull-whitespace-toggle');
             copyOutputBtn = document.getElementById('copy-output-btn');
-            rerenderBtn = document.getElementById('rerender-btn');
+            rerenderBtnPanel = document.getElementById('rerender-btn');
             reextractVariablesBtn = document.getElementById('reextract-variables-btn');
         }
         
@@ -1223,68 +1255,7 @@ result
         });
 
         // Event handlers based on mode
-        if (isSidebarMode) {
-            // Sidebar mode: Menu button and items
-            menuButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                menuDropdown.classList.toggle('show');
-            });
-            
-            // Close menu when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!menuButton.contains(e.target) && !menuDropdown.contains(e.target)) {
-                    menuDropdown.classList.remove('show');
-                }
-            });
-            
-            // Menu item handlers
-            menuMarkdown.addEventListener('click', async function() {
-                isMarkdownMode = !isMarkdownMode;
-                this.classList.toggle('checked', isMarkdownMode);
-                if (isMarkdownMode && isMermaidMode) {
-                    isMermaidMode = false;
-                    menuMermaid.classList.remove('checked');
-                }
-                if (isMarkdownMode) {
-                    menuShowWhitespace.style.opacity = '0.5';
-                    menuShowWhitespace.style.pointerEvents = 'none';
-                } else {
-                    menuShowWhitespace.style.opacity = '1';
-                    menuShowWhitespace.style.pointerEvents = 'auto';
-                }
-                await update();
-            });
-            
-            menuMermaid.addEventListener('click', async function() {
-                isMermaidMode = !isMermaidMode;
-                this.classList.toggle('checked', isMermaidMode);
-                if (isMermaidMode && isMarkdownMode) {
-                    isMarkdownMode = false;
-                    menuMarkdown.classList.remove('checked');
-                }
-                if (isMermaidMode) {
-                    menuShowWhitespace.style.opacity = '0.5';
-                    menuShowWhitespace.style.pointerEvents = 'none';
-                } else {
-                    menuShowWhitespace.style.opacity = '1';
-                    menuShowWhitespace.style.pointerEvents = 'auto';
-                }
-                await update();
-            });
-            
-            menuShowWhitespace.addEventListener('click', async function() {
-                showWhitespace = !showWhitespace;
-                this.classList.toggle('checked', showWhitespace);
-                await update();
-            });
-            
-            menuCullWhitespace.addEventListener('click', async function() {
-                cullWhitespace = !cullWhitespace;
-                this.classList.toggle('checked', cullWhitespace);
-                await update();
-            });
-            
-        } else {
+        if (!isSidebarMode) {
             // Panel mode: Toggle switches
             markdownToggle.addEventListener('change', async function() {
                 if (this.checked) {
@@ -1384,6 +1355,47 @@ result
                         await update();
                     }
                     break;
+                
+                case 'updateSettings':
+                    // Settings changed in VS Code configuration
+                    if (message.settings) {
+                        isMarkdownMode = message.settings.enableMarkdown;
+                        isMermaidMode = message.settings.enableMermaid;
+                        showWhitespace = message.settings.showWhitespace;
+                        cullWhitespace = message.settings.cullWhitespace;
+                        
+                        if (!isSidebarMode) {
+                            // Update panel toggles (panel mode)
+                            if (markdownToggle) markdownToggle.checked = isMarkdownMode;
+                            if (mermaidToggle) mermaidToggle.checked = isMermaidMode;
+                            if (showWhitespaceToggle) {
+                                showWhitespaceToggle.checked = showWhitespace;
+                                showWhitespaceToggle.disabled = isMarkdownMode || isMermaidMode;
+                            }
+                            if (cullWhitespaceToggle) cullWhitespaceToggle.checked = cullWhitespace;
+                        }
+                        
+                        await update();
+                    }
+                    break;
+                
+                case 'reextractVariables':
+                    // Re-extract variables triggered from command
+                    vscode.postMessage({ type: 'reextractVariables' });
+                    break;
+                
+                case 'copyOutput':
+                    // Copy output triggered from command
+                    const textToCopy = isMarkdownMode || isMermaidMode 
+                        ? lastRenderedOutput 
+                        : outputDisplay.textContent;
+                    
+                    // Send text to extension for clipboard copy
+                    vscode.postMessage({ 
+                        type: 'copyToClipboard',
+                        text: textToCopy
+                    });
+                    break;
             }
         });
 
@@ -1432,63 +1444,30 @@ result
             }
         });
 
-        // Action handlers (buttons or menu items)
+        // Action handlers (panel mode only)
         const handleCopyOutput = async function() {
             const textToCopy = isMarkdownMode || isMermaidMode 
                 ? lastRenderedOutput 
                 : (showWhitespace ? outputDisplay.textContent : outputDisplay.textContent);
             
-            try {
-                await navigator.clipboard.writeText(textToCopy);
-                
-                if (isSidebarMode) {
-                    // Menu: Update label temporarily
-                    const originalText = menuCopy.querySelector('.menu-item-label').textContent;
-                    menuCopy.querySelector('.menu-item-label').textContent = '✓ Copied!';
-                    setTimeout(() => {
-                        menuCopy.querySelector('.menu-item-label').textContent = originalText;
-                    }, 1500);
-                } else {
-                    // Button: Visual feedback
-                    const originalText = copyOutputBtn.textContent;
-                    copyOutputBtn.textContent = '✓ Copied!';
-                    copyOutputBtn.classList.add('success');
-                    setTimeout(() => {
-                        copyOutputBtn.textContent = originalText;
-                        copyOutputBtn.classList.remove('success');
-                    }, 1500);
-                }
-            } catch (err) {
-                console.error('Failed to copy:', err);
-                if (!isSidebarMode) {
-                    copyOutputBtn.textContent = '❌ Failed';
-                    setTimeout(() => {
-                        copyOutputBtn.textContent = '📋 Copy Output';
-                    }, 1500);
-                }
-            }
+            // Send text to extension for clipboard copy
+            vscode.postMessage({ 
+                type: 'copyToClipboard',
+                text: textToCopy
+            });
         };
         
         const handleRerender = async function() {
-            if (isSidebarMode) {
-                const originalText = menuRerender.querySelector('.menu-item-label').textContent;
-                menuRerender.querySelector('.menu-item-label').textContent = '⏳ Rendering...';
-                await update();
-                menuRerender.querySelector('.menu-item-label').textContent = '✓ Done!';
-                setTimeout(() => {
-                    menuRerender.querySelector('.menu-item-label').textContent = originalText;
-                }, 1000);
-            } else {
-                const originalText = rerenderBtn.textContent;
-                rerenderBtn.textContent = '⏳ Rendering...';
-                rerenderBtn.disabled = true;
-                await update();
-                rerenderBtn.textContent = '✓ Done!';
-                setTimeout(() => {
-                    rerenderBtn.textContent = originalText;
-                    rerenderBtn.disabled = false;
-                }, 1000);
-            }
+            // Panel mode only
+            const originalText = rerenderBtnPanel.textContent;
+            rerenderBtnPanel.textContent = '⏳ Rendering...';
+            rerenderBtnPanel.disabled = true;
+            await update();
+            rerenderBtnPanel.textContent = '✓ Done!';
+            setTimeout(() => {
+                rerenderBtnPanel.textContent = originalText;
+                rerenderBtnPanel.disabled = false;
+            }, 1000);
         };
         
         const handleReextract = function() {
@@ -1500,32 +1479,21 @@ result
                     type: 'reextractVariables'
                 });
                 
-                if (isSidebarMode) {
-                    const originalText = menuReextract.querySelector('.menu-item-label').textContent;
-                    menuReextract.querySelector('.menu-item-label').textContent = '✓ Re-extracted!';
-                    setTimeout(() => {
-                        menuReextract.querySelector('.menu-item-label').textContent = originalText;
-                    }, 1500);
-                } else {
-                    const originalText = reextractVariablesBtn.textContent;
-                    reextractVariablesBtn.textContent = '✓ Re-extracted!';
-                    reextractVariablesBtn.classList.add('success');
-                    setTimeout(() => {
-                        reextractVariablesBtn.textContent = originalText;
-                        reextractVariablesBtn.classList.remove('success');
-                    }, 1500);
-                }
+                // Panel mode only
+                const originalText = reextractVariablesBtn.textContent;
+                reextractVariablesBtn.textContent = '✓ Re-extracted!';
+                reextractVariablesBtn.classList.add('success');
+                setTimeout(() => {
+                    reextractVariablesBtn.textContent = originalText;
+                    reextractVariablesBtn.classList.remove('success');
+                }, 1500);
             }
         };
         
-        // Attach event listeners based on mode
-        if (isSidebarMode) {
-            menuCopy.addEventListener('click', handleCopyOutput);
-            menuRerender.addEventListener('click', handleRerender);
-            menuReextract.addEventListener('click', handleReextract);
-        } else {
+        // Panel mode: Attach action button listeners
+        if (!isSidebarMode) {
             copyOutputBtn.addEventListener('click', handleCopyOutput);
-            rerenderBtn.addEventListener('click', handleRerender);
+            rerenderBtnPanel.addEventListener('click', handleRerender);
             reextractVariablesBtn.addEventListener('click', handleReextract);
         }
 

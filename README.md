@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.0.1-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -37,7 +37,9 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ### 🎯 **Developer Experience**
 
-- Convenient menu for all controls (in sidebar mode)
+- **Native VS Code UI**: Controls integrated into title bar and menus
+- **Quick Access Buttons**: Markdown, Mermaid, and Update icons in navigation bar
+- **Organized Menu**: All settings and actions in the three-dot menu
 - Resizable panes with drag handles
 - Beautiful UI with VS Code theme integration
 - Keyboard shortcuts for quick access
@@ -49,12 +51,20 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 ### Sidebar View (Recommended)
 
 1. Open a `.txt`, `.jinja`, `.j2`, or plaintext file containing Jinja2 template syntax
-2. Click the **Jinja Renderer icon** (preview icon) in the Activity Bar (left sidebar)
+2. Click the **Jinja Renderer icon** in the Activity Bar (left sidebar)
 3. The Live Preview panel will open showing:
    - **Variables section**: Enter your template variables in JSON format
    - **Output section**: See the rendered result in real-time
-   - **Control toggles**: Enable/disable markdown, mermaid, whitespace visibility, and whitespace culling
-4. The sidebar stays open as you switch between files and updates automatically
+4. Use the **navigation bar buttons** for quick access:
+   - **Markdown** (📝): Toggle markdown rendering
+   - **Mermaid** (diagram icon): Toggle mermaid diagram rendering
+   - **Update** (🔄): Manually refresh to update for current file
+5. Access more options via the **three-dot menu** (⋯):
+   - **Rendering**: Toggle Markdown, Toggle Mermaid
+   - **Whitespace**: Toggle Show Whitespace, Toggle Cull Whitespace
+   - **Actions**: Re-extract Variables, Copy Output
+   - **View**: Open in Editor Pane
+6. The sidebar stays open as you switch between files and updates automatically
 
 **Keyboard shortcut**:
 - **Mac**: `Cmd+Shift+J`
@@ -70,8 +80,11 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 If you prefer to open the renderer in a separate editor pane:
 
 1. Open a `.txt`, `.jinja`, `.j2`, or plaintext file
-2. Click the **window icon** in the editor toolbar
-3. A panel opens beside your editor with the same features
+2. Click the **play icon** in the editor toolbar (or use the three-dot menu → "Open in Editor Pane")
+3. A panel opens beside your editor with:
+   - **Toggle switches**: Markdown, Mermaid, Show Whitespace, Cull Whitespace (visible in header)
+   - **Action buttons**: Re-extract Variables, Rerender, Copy Output (visible in footer)
+   - Same live preview functionality as sidebar view
 
 **Keyboard shortcut**:
 - **Mac**: `Cmd+Shift+Alt+J`
@@ -176,7 +189,14 @@ No additional requirements. The extension uses:
 
 ## Extension Settings
 
-This extension doesn't add any VS Code settings currently. All features are controlled via toggle buttons in the preview panel.
+This extension contributes the following VS Code settings:
+
+- `liveJinjaRenderer.enableMarkdown`: Enable markdown rendering for the output (default: `false`)
+- `liveJinjaRenderer.enableMermaid`: Enable mermaid diagram rendering (default: `false`)
+- `liveJinjaRenderer.showWhitespace`: Show whitespace characters (spaces, tabs, newlines) in the output (default: `false`)
+- `liveJinjaRenderer.cullWhitespace`: Automatically remove excessive blank lines and whitespace from output (default: `true`)
+
+**Note**: These settings can be toggled via the navigation bar buttons or three-dot menu. Changes are reflected in real-time across all views.
 
 ## Known Issues
 
@@ -184,9 +204,24 @@ None at this time.
 
 ## Release Notes
 
+### 1.0.1
+
+**UI/UX Improvements**:
+- Moved controls from custom in-pane UI to native VS Code menus and navigation bar
+- Added quick-access buttons (Markdown, Mermaid, Update) in navigation bar
+- Organized three-dot menu with logical grouping
+- Fixed clipboard functionality for reliable copy operations
+- Added "Update for Current File" button for manual refresh
+
+### 1.0.0
+
+**Initial Marketplace Release**:
+- Extension published to VS Code Marketplace
+- Production-ready with full feature set
+
 ### 0.0.1
 
-Initial release of Live Jinja Renderer with:
+**Initial Development Release**:
 - **Authentic Python Jinja2 rendering via Pyodide** - 100% compatible with Python Jinja2
 - JSON variable editor
 - Live preview functionality
@@ -196,3 +231,18 @@ Initial release of Live Jinja Renderer with:
 - Whitespace visualization for debugging
 - Improved UI with toggle controls
 - Loading indicator for Python environment initialization
+
+---
+
+## Links
+
+- **📦 GitHub Repository**: [live-jinja-renderer](https://github.com/Keshav-Madhav/live-jinja-renderer)
+- **🌐 Companion Website**: [Live Jinja Renderer](https://keshav-madhav.github.io/live_jinja/)
+
+## Contributing
+
+Issues and pull requests are welcome! Visit the [GitHub repository](https://github.com/Keshav-Madhav/live-jinja-renderer) to contribute.
+
+## License
+
+This extension is licensed under the [MIT License](LICENSE).
