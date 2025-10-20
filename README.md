@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.0.2-blue)
+![Version](https://img.shields.io/badge/version-1.1.0-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -40,6 +40,7 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 - **Native VS Code UI**: Controls integrated into title bar and menus
 - **Quick Access Buttons**: Markdown, Mermaid, and Update icons in navigation bar
 - **Organized Menu**: All settings and actions in the three-dot menu
+- **Save/Load Variable Presets**: Save complex JSON configurations and load them instantly
 - Resizable panes with drag handles
 - Beautiful UI with VS Code theme integration
 - Keyboard shortcuts for quick access
@@ -63,6 +64,7 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
    - **Rendering**: Toggle Markdown, Toggle Mermaid
    - **Whitespace**: Toggle Show Whitespace, Toggle Cull Whitespace
    - **Actions**: Re-extract Variables, Copy Output
+   - **Variables**: Save Variables Preset, Load Variables Preset, Delete Variables Preset
    - **View**: Open in Editor Pane
 6. The sidebar stays open as you switch between files and updates automatically
 
@@ -115,6 +117,34 @@ The extension intelligently extracts variables from your Jinja2 templates:
 - Recognizes object properties like `{{ user.name }}`
 - Creates appropriate JSON structures (objects, arrays, nested properties)
 - Preserves your custom values when you manually re-extract
+
+### Save & Load Variable Presets
+
+**NEW in v1.1.0**: Save and reuse complex variable configurations!
+
+**Saving a Preset**:
+1. Configure your variables in the JSON editor
+2. Click the **three-dot menu** (⋯) → **Save Variables Preset**
+3. Enter a name (default: `{filename} Variables`, e.g., "template Variables")
+4. Press Enter to save
+
+**Loading a Preset**:
+1. Click the **three-dot menu** (⋯) → **Load Variables Preset**
+2. Select from your saved presets in the Quick Pick menu
+3. Variables are loaded instantly into the editor
+
+**Deleting a Preset**:
+1. Click the **three-dot menu** (⋯) → **Delete Variables Preset**
+2. Select the preset to delete
+3. Confirm the deletion
+
+**Use Cases**:
+- **Complex API Responses**: Save sample API response structures for testing
+- **Multiple Scenarios**: Store different test data configurations
+- **Common Templates**: Reuse variable sets across projects
+- **Quick Switching**: Easily switch between different data sets
+
+**Storage**: Presets are saved globally in VS Code and persist across all workspaces and sessions.
 
 ## Examples
 
@@ -226,6 +256,21 @@ This extension contributes the following VS Code settings:
 None at this time.
 
 ## Release Notes
+
+### 1.1.0
+
+**New Feature - Variable Presets** 🎉:
+- **Save Variables Preset**: Save your current variable configuration with a custom name
+- **Load Variables Preset**: Instantly load previously saved presets from a Quick Pick menu
+- **Delete Variables Preset**: Remove unwanted presets
+- **Smart Default Names**: Auto-generates preset names based on current filename (e.g., "template Variables")
+- **Global Storage**: Presets persist across all workspaces and VS Code sessions
+- **Perfect for**: Complex JSON configurations, API responses, testing scenarios, reusable data sets
+
+**New Commands**:
+- `Jinja: Save Variables Preset` - Available in three-dot menu and Command Palette
+- `Jinja: Load Variables Preset` - Available in three-dot menu and Command Palette
+- `Jinja: Delete Variables Preset` - Available in three-dot menu and Command Palette
 
 ### 1.0.2
 

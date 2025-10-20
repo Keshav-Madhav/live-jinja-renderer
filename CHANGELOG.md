@@ -4,6 +4,44 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.1.0] - 2025-10-20
+
+### Added
+- **Save Variables Preset Feature** 🎉
+  - Save current variable configurations with custom names
+  - Smart default naming: Auto-generates names based on filename (e.g., "template Variables")
+  - Preset names are pre-selected for easy editing or quick acceptance
+  - Variables stored in VS Code global state (persists across workspaces and sessions)
+  
+- **Load Variables Preset Feature**
+  - Quick Pick menu displays all saved presets
+  - Instantly load previously saved variable configurations
+  - Variables are applied immediately with automatic re-rendering
+  
+- **Delete Variables Preset Feature**
+  - Select presets to delete from Quick Pick menu
+  - Confirmation dialog prevents accidental deletion
+  - Clean up unwanted or outdated presets
+  
+- **New Commands**
+  - `live-jinja-tester.saveVariables` - Save current variables as a preset
+  - `live-jinja-tester.loadVariables` - Load a saved preset
+  - `live-jinja-tester.deleteVariables` - Delete a saved preset
+  - All available via three-dot menu and Command Palette
+
+### Improved
+- **User Experience**
+  - Native VS Code input box with validation for preset names
+  - Organized three-dot menu with new "Variables" section
+  - Better error handling with proper user notifications
+  - Seamless integration with existing variable workflow
+
+### Use Cases
+- Save complex API response samples for testing
+- Store multiple test data scenarios
+- Reuse common variable sets across templates
+- Quickly switch between different data configurations
+
 ## [1.0.2] - 2025-10-20
 
 ### Changed

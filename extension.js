@@ -265,6 +265,31 @@ function setupWebviewForEditor(webview, editor, context) {
           // Legacy message - show confirmation when output is copied
           vscode.window.showInformationMessage('Output copied to clipboard');
           return;
+        
+        case 'saveVariables':
+          // Save variables preset
+          try {
+            const presetName = message.presetName;
+            const variables = message.variables;
+            
+            // Get existing presets
+            const savedPresets = context.globalState.get('jinjaVariablePresets', {});
+            
+            // Save new preset
+            savedPresets[presetName] = variables;
+            await context.globalState.update('jinjaVariablePresets', savedPresets);
+            
+            vscode.window.showInformationMessage(`Saved preset: ${presetName}`);
+          } catch (err) {
+            vscode.window.showErrorMessage('Failed to save variables preset');
+            console.error('Save failed:', err);
+          }
+          return;
+        
+        case 'showError':
+          // Show error message from webview
+          vscode.window.showErrorMessage(message.message || 'An error occurred');
+          return;
       }
     },
     undefined,
@@ -433,6 +458,117 @@ function activate(context) {
       }
     });
     context.subscriptions.push(updateForCurrentFileCommand);
+    
+    // Save Variables command
+    const saveVariablesCommand = vscode.commands.registerCommand('live-jinja-tester.saveVariables', async () => {
+      // Request current variables from webview
+      const targetView = sidebarProvider && sidebarProvider._view ? sidebarProvider._view : currentPanel;
+      
+      if (!targetView) {
+        vscode.window.showWarningMessage('Jinja Renderer view is not active');
+        return;
+      }
+      
+      // Get current file name for default value
+      const editor = vscode.window.activeTextEditor;
+      let defaultName = 'Variables';
+      if (editor) {
+        const fileName = editor.document.fileName.split(/[/\\]/).pop();
+        // Remove extension and use as prefix
+        const baseName = fileName.replace(/\.(jinja|jinja2|j2|txt)$/i, '');
+        defaultName = `${baseName} Variables`;
+      }
+      
+      // First, get the preset name from the user
+      const presetName = await vscode.window.showInputBox({
+        prompt: 'Enter a name for this variable preset',
+        placeHolder: 'e.g., File Variables, Test Data, JSON Sample 1, etc.',
+        value: defaultName,
+        valueSelection: [0, defaultName.length],
+        validateInput: (value) => {
+          if (!value || !value.trim()) {
+            return 'Preset name cannot be empty';
+          }
+          return null;
+        }
+      });
+      
+      if (presetName && presetName.trim()) {
+        // Ask webview to send current variables with the preset name
+        targetView.webview.postMessage({ 
+          type: 'requestVariables',
+          presetName: presetName.trim()
+        });
+      }
+    });
+    context.subscriptions.push(saveVariablesCommand);
+    
+    // Load Variables command
+    const loadVariablesCommand = vscode.commands.registerCommand('live-jinja-tester.loadVariables', async () => {
+      const targetView = sidebarProvider && sidebarProvider._view ? sidebarProvider._view : currentPanel;
+      
+      if (!targetView) {
+        vscode.window.showWarningMessage('Jinja Renderer view is not active');
+        return;
+      }
+      
+      // Get saved presets
+      const savedPresets = context.globalState.get('jinjaVariablePresets', {});
+      const presetNames = Object.keys(savedPresets);
+      
+      if (presetNames.length === 0) {
+        vscode.window.showInformationMessage('No saved variable presets found');
+        return;
+      }
+      
+      // Show quick pick
+      const selected = await vscode.window.showQuickPick(presetNames, {
+        placeHolder: 'Select a variable preset to load'
+      });
+      
+      if (selected) {
+        const variables = savedPresets[selected];
+        targetView.webview.postMessage({ 
+          type: 'loadVariables',
+          variables: variables
+        });
+        vscode.window.showInformationMessage(`Loaded preset: ${selected}`);
+      }
+    });
+    context.subscriptions.push(loadVariablesCommand);
+    
+    // Delete Variables command
+    const deleteVariablesCommand = vscode.commands.registerCommand('live-jinja-tester.deleteVariables', async () => {
+      // Get saved presets
+      const savedPresets = context.globalState.get('jinjaVariablePresets', {});
+      const presetNames = Object.keys(savedPresets);
+      
+      if (presetNames.length === 0) {
+        vscode.window.showInformationMessage('No saved variable presets found');
+        return;
+      }
+      
+      // Show quick pick
+      const selected = await vscode.window.showQuickPick(presetNames, {
+        placeHolder: 'Select a variable preset to delete'
+      });
+      
+      if (selected) {
+        // Confirm deletion
+        const confirm = await vscode.window.showWarningMessage(
+          `Delete preset "${selected}"?`,
+          { modal: true },
+          'Delete'
+        );
+        
+        if (confirm === 'Delete') {
+          delete savedPresets[selected];
+          await context.globalState.update('jinjaVariablePresets', savedPresets);
+          vscode.window.showInformationMessage(`Deleted preset: ${selected}`);
+        }
+      }
+    });
+    context.subscriptions.push(deleteVariablesCommand);
     
     // Listen for configuration changes and update all webviews
     context.subscriptions.push(
@@ -1400,6 +1536,34 @@ result
                         type: 'copyToClipboard',
                         text: textToCopy
                     });
+                    break;
+                
+                case 'requestVariables':
+                    // Extension wants to save current variables
+                    // Preset name is provided by the extension
+                    if (message.presetName) {
+                        try {
+                            const currentVars = JSON.parse(variablesEditor.value || '{}');
+                            vscode.postMessage({
+                                type: 'saveVariables',
+                                presetName: message.presetName,
+                                variables: currentVars
+                            });
+                        } catch (e) {
+                            vscode.postMessage({
+                                type: 'showError',
+                                message: 'Invalid JSON in variables'
+                            });
+                        }
+                    }
+                    break;
+                
+                case 'loadVariables':
+                    // Load variables from preset
+                    if (message.variables) {
+                        variablesEditor.value = JSON.stringify(message.variables, null, 4);
+                        await update();
+                    }
                     break;
             }
         });

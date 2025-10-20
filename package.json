@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -122,6 +122,24 @@
         "title": "Update for Current File",
         "icon": "$(sync)",
         "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.saveVariables",
+        "title": "Save Variables Preset",
+        "icon": "$(save)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.loadVariables",
+        "title": "Load Variables Preset",
+        "icon": "$(folder-opened)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.deleteVariables",
+        "title": "Delete Variables Preset",
+        "icon": "$(trash)",
+        "category": "Jinja"
       }
     ],
     "menus": {
@@ -184,9 +202,24 @@
           "group": "3_actions@2"
         },
         {
+          "command": "live-jinja-tester.saveVariables",
+          "when": "view == jinjaRendererView",
+          "group": "4_variables@1"
+        },
+        {
+          "command": "live-jinja-tester.loadVariables",
+          "when": "view == jinjaRendererView",
+          "group": "4_variables@2"
+        },
+        {
+          "command": "live-jinja-tester.deleteVariables",
+          "when": "view == jinjaRendererView",
+          "group": "4_variables@3"
+        },
+        {
           "command": "live-jinja-tester.openInPanel",
           "when": "view == jinjaRendererView",
-          "group": "4_view@1"
+          "group": "5_view@1"
         }
       ],
       "commandPalette": [
@@ -219,6 +252,15 @@
         },
         {
           "command": "live-jinja-tester.openInPanel"
+        },
+        {
+          "command": "live-jinja-tester.saveVariables"
+        },
+        {
+          "command": "live-jinja-tester.loadVariables"
+        },
+        {
+          "command": "live-jinja-tester.deleteVariables"
         }
       ]
     },
