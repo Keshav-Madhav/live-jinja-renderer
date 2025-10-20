@@ -4,6 +4,12 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.1.1] - 2025-10-20
+
+### Fixed
+- Minor fixes and code improvements
+- Improved code readability and project structure
+
 ## [1.1.0] - 2025-10-20
 
 ### Added
