@@ -540,6 +540,9 @@ function getWebviewContent(isSidebar = false) {
                 
                 // Initial render
                 update();
+                
+                // Auto-resize variables section on initial load
+                autoResizeVariablesSection();
             } catch (error) {
                 loadingIndicator.textContent = \`Failed to load Python environment: \${error.message}\`;
                 loadingIndicator.style.color = 'var(--vscode-errorForeground)';
@@ -740,9 +743,34 @@ result
 
         const debouncedUpdate = debounce(update, 300);
 
+        // Auto-resize variables section based on content
+        function autoResizeVariablesSection() {
+            const text = variablesEditor.value;
+            const lines = text.split('\\n');
+            const lineCount = lines.length;
+            
+            // Calculate height: line height * number of lines + padding
+            // Using a minimum of 100px and maximum of 60vh
+            const lineHeight = 20; // Approximate line height in pixels
+            const padding = 50; // Top and bottom padding
+            const calculatedHeight = Math.min(
+                Math.max(lineCount * lineHeight + padding, 100),
+                window.innerHeight * 0.6
+            );
+            
+            // Apply the calculated height
+            variablesSection.style.height = calculatedHeight + 'px';
+            variablesSection.style.flex = 'none';
+            
+            // Let output section take remaining space
+            outputSection.style.flex = '1';
+            outputSection.style.height = 'auto';
+        }
+
         // Listen for variable changes and auto-rerender
         variablesEditor.addEventListener('input', () => {
             debouncedUpdate();
+            autoResizeVariablesSection();
         });
 
         // Event handlers based on mode
@@ -834,6 +862,9 @@ result
                         
                         // Update the variables editor (only with variables from the current template)
                         variablesEditor.value = JSON.stringify(mergedVars, null, 4);
+                        
+                        // Auto-resize variables section after content update
+                        autoResizeVariablesSection();
                     }
                     
                     await update();
@@ -843,6 +874,10 @@ result
                     // Force replace all variables (from extract button)
                     if (message.extractedVariables) {
                         variablesEditor.value = JSON.stringify(message.extractedVariables, null, 4);
+                        
+                        // Auto-resize variables section after content update
+                        autoResizeVariablesSection();
+                        
                         await update();
                     }
                     break;
@@ -907,6 +942,10 @@ result
                     // Load variables from preset
                     if (message.variables) {
                         variablesEditor.value = JSON.stringify(message.variables, null, 4);
+                        
+                        // Auto-resize variables section after content update
+                        autoResizeVariablesSection();
+                        
                         await update();
                     }
                     break;
@@ -1004,10 +1043,6 @@ result
 </body>
 </html>`;
 }
-
-// This method is called when your extension is deactivated
-function deactivate() {}
-
 
 module.exports = {
   getWebviewContent

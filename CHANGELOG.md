@@ -4,6 +4,24 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.1.4] - 2025-10-26
+
+### Added
+- **Auto-Resizing Variables Section** 🎨
+  - Variables window now automatically expands or shrinks to fit content
+  - Dynamically adjusts height when variables are extracted or re-extracted
+  - Automatically resizes when loading variable presets
+  - Updates as you type or edit variables manually
+  - Smart sizing with min/max limits (100px to 60% of viewport)
+  - Line-based calculation: approximately 20px per line with padding
+  - Output section automatically takes remaining space
+  - Manual resize handle still available for custom preferences
+
+### Improved
+- **Better Workflow**: No need to manually adjust variable section height when working with different templates
+- **Responsive UI**: Variables section adapts to content size, maximizing space efficiency
+- **User Experience**: Smooth automatic transitions when content changes
+
 ## [1.1.3] - 2025-10-25
 
 ### Fixed

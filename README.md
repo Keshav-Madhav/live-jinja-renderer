@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.1.3-blue)
+![Version](https://img.shields.io/badge/version-1.1.4-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -41,7 +41,8 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 - **Quick Access Buttons**: Markdown, Mermaid, and Update icons in navigation bar
 - **Organized Menu**: All settings and actions in the three-dot menu
 - **Save/Load Variable Presets**: Save complex JSON configurations and load them instantly
-- Resizable panes with drag handles
+- **Auto-Resizing Variable Section**: Variables window automatically expands/shrinks to fit content
+- Resizable panes with drag handles for manual adjustment
 - Beautiful UI with VS Code theme integration
 - Keyboard shortcuts for quick access
 
@@ -256,6 +257,20 @@ This extension contributes the following VS Code settings:
 None at this time.
 
 ## Release Notes
+
+### 1.1.4
+
+**New Feature - Auto-Resizing Variables Section** 🎨:
+- **Dynamic Height Adjustment**: Variables window automatically expands or shrinks to fit the amount of content
+  - Automatically resizes when variables are extracted or re-extracted
+  - Adjusts height when loading variable presets
+  - Resizes as you type or edit variables manually
+- **Smart Sizing**: Uses line-based calculation with intelligent min/max limits
+  - Minimum height: 100px (always visible)
+  - Maximum height: 60% of viewport (prevents overflow)
+  - Approximately 20px per line with padding
+- **Improved Workflow**: No need to manually resize the variables section when extracting different templates
+- **Manual Override**: Resize handle still available for custom height preferences
 
 ### 1.1.3
 
