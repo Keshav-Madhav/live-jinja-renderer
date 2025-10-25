@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.1.2-blue)
+![Version](https://img.shields.io/badge/version-1.1.3-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -256,6 +256,16 @@ This extension contributes the following VS Code settings:
 None at this time.
 
 ## Release Notes
+
+### 1.1.3
+
+**Critical Fix**:
+- **Update for Current File**: Fixed the "Update for Current File" button functionality
+  - Now properly extracts variables from the template when clicked
+  - Correctly updates the output with the new rendering
+  - Enables live updates as intended (works like opening the panel for the first time)
+  - Previously required manual variable extraction and file editing to see changes
+- **Improved Reliability**: Enhanced synchronization between template setup and variable extraction for consistent behavior
 
 ### 1.1.2
 

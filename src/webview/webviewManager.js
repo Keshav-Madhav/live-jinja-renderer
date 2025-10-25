@@ -48,15 +48,19 @@ function setupWebviewForEditor(webview, editor, context) {
     async message => {
       switch (message.type) {
         case 'ready':
-          // On initial load, auto-extract variables
-          if (isInitialLoad) {
+          // On initial load or forced refresh, auto-extract variables
+          if (isInitialLoad || message.force) {
             const extractedVars = extractVariablesFromTemplate(lastTemplate);
             webview.postMessage({
               type: 'updateTemplate',
               template: lastTemplate,
               extractedVariables: extractedVars
             });
-            isInitialLoad = false; // Mark as no longer initial load
+            // Only mark as no longer initial load if not forced
+            // This allows repeated force refreshes to work
+            if (!message.force) {
+              isInitialLoad = false;
+            }
           } else {
             // Subsequent loads: just send template without extraction
             webview.postMessage({

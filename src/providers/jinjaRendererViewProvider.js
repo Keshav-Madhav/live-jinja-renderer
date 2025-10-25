@@ -1,6 +1,7 @@
 const vscode = require('vscode');
 const { setupWebviewForEditor } = require('../webview/webviewManager');
 const { getWebviewContent } = require('../webview/webviewContent');
+const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
 
 /**
  * Webview View Provider for sidebar
@@ -60,9 +61,59 @@ class JinjaRendererViewProvider {
    * Manually trigger an update for the current active file
    */
   updateForCurrentFile() {
-    if (this._updateForActiveEditor) {
-      this._updateForActiveEditor();
-      return true;
+    if (this._view && this._view.webview) {
+      const editor = vscode.window.activeTextEditor;
+      if (editor) {
+        // Clean up previous subscriptions
+        this._disposables.forEach(d => d.dispose());
+        this._disposables = [];
+        
+        // Set up new subscription for the current editor
+        this._currentEditor = editor;
+        const subscription = setupWebviewForEditor(this._view.webview, editor, this._context);
+        this._disposables.push(subscription);
+        
+        // Get the current template content
+        const templateContent = editor.document.getText();
+        
+        // Wait 100ms for setup to complete, then extract variables and trigger update
+        setTimeout(() => {
+          if (this._view && this._view.webview && editor && editor.document) {
+            // Extract variables directly
+            const extractedVars = extractVariablesFromTemplate(templateContent);
+            
+            // Send extraction to webview
+            this._view.webview.postMessage({
+              type: 'replaceVariables',
+              extractedVariables: extractedVars
+            });
+            
+            // Wait another 50ms then trigger re-render by simulating a document change
+            setTimeout(async () => {
+              if (editor && editor.document) {
+                const document = editor.document;
+                const position = document.positionAt(document.getText().length);
+                
+                // Add a space and remove it to trigger auto-render
+                await editor.edit(editBuilder => {
+                  editBuilder.insert(position, ' ');
+                });
+                
+                await editor.edit(editBuilder => {
+                  const endPosition = document.positionAt(document.getText().length);
+                  const rangeToDelete = new vscode.Range(
+                    new vscode.Position(endPosition.line, endPosition.character - 1),
+                    endPosition
+                  );
+                  editBuilder.delete(rangeToDelete);
+                });
+              }
+            }, 50);
+          }
+        }, 100);
+        
+        return true;
+      }
     }
     return false;
   }

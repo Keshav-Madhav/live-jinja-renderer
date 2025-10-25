@@ -4,6 +4,12 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.1.3] - 2025-10-25
+
+### Fixed
+- **Update for Current File**: Fixed a critical bug where the "Update for Current File" button was not properly extracting variables and updating output. Now works as intended when switching files or manually refreshing.
+- Other minor stability improvements and bug fixes.
+
 ## [1.1.2] - 2025-10-25
 
 ### Fixed
