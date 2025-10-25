@@ -1,4 +1,5 @@
 const vscode = require('vscode');
+const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
 
 /**
  * Register action commands (reextract, copy, update, etc.)
@@ -12,10 +13,35 @@ function registerActionCommands(context, sidebarProvider, getCurrentPanel) {
   
   // Reextract Variables
   const reextractVariablesCommand = vscode.commands.registerCommand('live-jinja-tester.reextractVariables', () => {
-    if (sidebarProvider && sidebarProvider._view) {
-      sidebarProvider._view.webview.postMessage({ type: 'reextractVariables' });
+    const currentPanel = getCurrentPanel();
+    const editor = vscode.window.activeTextEditor;
+    
+    if (!editor) {
+      vscode.window.showWarningMessage('No active editor found');
+      return;
+    }
+    
+    // Extract variables from the current template
+    const templateContent = editor.document.getText();
+    const extractedVars = extractVariablesFromTemplate(templateContent);
+    
+    // Send to sidebar if visible
+    if (sidebarProvider && sidebarProvider._view && sidebarProvider._view.visible) {
+      sidebarProvider._view.webview.postMessage({ 
+        type: 'replaceVariables',
+        extractedVariables: extractedVars
+      });
       vscode.window.showInformationMessage('Variables extracted from template');
-    } else {
+    } 
+    // Send to panel if active
+    else if (currentPanel) {
+      currentPanel.webview.postMessage({ 
+        type: 'replaceVariables',
+        extractedVariables: extractedVars
+      });
+      vscode.window.showInformationMessage('Variables extracted from template');
+    } 
+    else {
       vscode.window.showWarningMessage('Jinja Renderer view is not active');
     }
   });

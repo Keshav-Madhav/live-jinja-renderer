@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.1.1-blue)
+![Version](https://img.shields.io/badge/version-1.1.2-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -256,6 +256,13 @@ This extension contributes the following VS Code settings:
 None at this time.
 
 ## Release Notes
+
+### 1.1.2
+
+**Fixes & Improvements**:
+- **Extract Variables Button**: Fixed a bug where the "Extract Variables" button in the panel view was not working.
+- **Icon Visibility**: Ensured that all command icons display correctly in the menus.
+- Other minor stability improvements.
 
 ### 1.1.0
 

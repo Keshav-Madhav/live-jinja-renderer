@@ -59,6 +59,8 @@ function getWebviewContent(isSidebar = false) {
             gap: 12px;
             align-items: center;
             flex-wrap: wrap;
+            margin-bottom: 12px;
+            padding: 8px 0;
         }
         .control-group {
             display: flex;
@@ -423,50 +425,50 @@ function getWebviewContent(isSidebar = false) {
         <div class="output-section" id="output-section">
             <div class="header-group">
         <h2>Output</h2>
-                ${isSidebar ? '' : `
-                <!-- Panel mode: Toggle switches -->
-                <div class="controls">
-                    <div class="control-group">
-                        <span class="control-label">Markdown</span>
-                        <label class="switch">
-                            <input type="checkbox" id="markdown-toggle">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="control-group">
-                        <span class="control-label">Mermaid</span>
-                        <label class="switch">
-                            <input type="checkbox" id="mermaid-toggle">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="control-group">
-                        <span class="control-label">Show Whitespace</span>
-                        <label class="switch">
-                            <input type="checkbox" id="show-whitespace-toggle">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="control-group">
-                        <span class="control-label">Cull Whitespace</span>
-                        <label class="switch">
-                            <input type="checkbox" id="cull-whitespace-toggle" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-                `}
             </div>
+            ${isSidebar ? '' : `
+            <!-- Panel mode: Toggle switches -->
+            <div class="controls">
+                <div class="control-group">
+                    <span class="control-label">Markdown</span>
+                    <label class="switch">
+                        <input type="checkbox" id="markdown-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Mermaid</span>
+                    <label class="switch">
+                        <input type="checkbox" id="mermaid-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Show Whitespace</span>
+                    <label class="switch">
+                        <input type="checkbox" id="show-whitespace-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Cull Whitespace</span>
+                    <label class="switch">
+                        <input type="checkbox" id="cull-whitespace-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            `}
             <div class="output-container">
         <pre id="output"></pre>
                 <div id="markdown-output" style="display: none;"></div>
             </div>
             ${!isSidebar ? `
             <div class="output-footer">
-                <button class="footer-btn" id="reextract-variables-btn" title="Extract variables from template">ðŸ”„ Extract Variables</button>
+                <button class="footer-btn" id="reextract-variables-btn" title="Extract variables from template">↻ Extract Variables</button>
                 <div class="footer-spacer"></div>
-                <button class="footer-btn" id="rerender-btn" title="Manually trigger re-render">â–¶ï¸ Rerender</button>
-                <button class="footer-btn" id="copy-output-btn" title="Copy output to clipboard">ðŸ“‹ Copy Output</button>
+                <button class="footer-btn" id="rerender-btn" title="Manually trigger re-render">▶ Rerender</button>
+                <button class="footer-btn" id="copy-output-btn" title="Copy output to clipboard">⎘ Copy Output</button>
             </div>
             ` : ''}
         </div>
@@ -868,11 +870,6 @@ result
                     }
                     break;
                 
-                case 'reextractVariables':
-                    // Extract variables triggered from command
-                    vscode.postMessage({ type: 'reextractVariables' });
-                    break;
-                
                 case 'copyOutput':
                     // Copy output triggered from command
                     const textToCopy = isMarkdownMode || isMermaidMode 
@@ -988,23 +985,10 @@ result
         };
         
         const handleReextract = function() {
-            const confirmMessage = 'Extract variables from template?\\n\\nâš ï¸ Warning: This will replace your current variables with newly extracted ones. Any custom values you\\'ve entered may be lost.\\n\\nDo you want to continue?';
-            
-            if (confirm(confirmMessage)) {
-                // Request extraction from the extension
-                vscode.postMessage({ 
-                    type: 'reextractVariables'
-                });
-                
-                // Panel mode only
-                const originalText = reextractVariablesBtn.textContent;
-                reextractVariablesBtn.textContent = 'âœ“ Extracted!';
-                reextractVariablesBtn.classList.add('success');
-                setTimeout(() => {
-                    reextractVariablesBtn.textContent = originalText;
-                    reextractVariablesBtn.classList.remove('success');
-                }, 1500);
-            }
+            // Request extraction from the extension
+            vscode.postMessage({ 
+                type: 'reextractVariables'
+            });
         };
         
         // Panel mode: Attach action button listeners

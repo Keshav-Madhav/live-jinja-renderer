@@ -4,6 +4,13 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.1.2] - 2025-10-25
+
+### Fixed
+- **Extract Variables Button**: The "Extract Variables" button in the panel view now works correctly.
+- **Icon Visibility**: Corrected issues where command icons were not appearing in certain menus.
+- Minor stability improvements and bug fixes.
+
 ## [1.1.1] - 2025-10-20
 
 ### Fixed
