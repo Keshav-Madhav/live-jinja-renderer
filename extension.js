@@ -12,7 +12,29 @@ function activate(context) {
   try {
     console.log('🚀 live-jinja-renderer extension is now ACTIVE!');
     console.log('Extension path:', context.extensionPath);
-    
+
+    const currentVersion = context.extension.packageJSON.version;
+    const previousVersion = context.globalState.get('extensionVersion');
+
+    if (previousVersion !== currentVersion) {
+      context.globalState.update('extensionVersion', currentVersion);
+
+      if (previousVersion) {
+        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ What's New:\n• Loading indicators for better UX\n• Enhanced variable extraction\n• Cleaner JSON output`;
+        vscode.window.showInformationMessage(
+          message,
+          'View Release Notes',
+          'Dismiss'
+        ).then(result => {
+          if (result === 'View Release Notes') {
+            vscode.env.openExternal(vscode.Uri.parse(
+              'https://github.com/Keshav-Madhav/live-jinja-renderer/blob/main/CHANGELOG.md'
+            ));
+          }
+        });
+      }
+    }
+
     // Show a notification to confirm activation
     vscode.window.showInformationMessage('✅ Live Jinja Renderer is now active!');
     
