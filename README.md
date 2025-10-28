@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.1.4-blue)
+![Version](https://img.shields.io/badge/version-1.2.0-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -257,6 +257,29 @@ This extension contributes the following VS Code settings:
 None at this time.
 
 ## Release Notes
+
+### 1.2.0
+
+**Loading Indicators** ⏳:
+- **Visual Feedback**: Shows clear loading messages during all async operations
+  - "Extracting variables..." when clicking the Extract Variables button
+  - "Rendering template..." during initial template load
+  - Loading status appears during variable extraction and template rendering
+- **Better UX**: Users always know what's happening, no more wondering if something is processing
+
+**Enhanced Variable Extraction Algorithm** 🎯:
+- **Smart Literal Detection**: Pure literal assignments like `{% set a = 5 %}` are no longer extracted as input variables
+- **Self-Referencing Detection**: Variables that reference themselves like `{% set a = a + 2 %}` are correctly identified as required inputs
+- **Loop Variable Exclusion**: Iteration variables (e.g., `item` in `{% for item in items %}`) are no longer incorrectly extracted
+- **Filter Argument Extraction**: Properly extracts variables from filter arguments like `{{ value | default(fallback) }}`
+- **Robust Edge Case Handling**: Handles nested structures, array access, and complex expressions more accurately
+- **Tested**: 30+ comprehensive test cases validate extraction accuracy
+
+**Cleaner JSON Output** 📋:
+- Changed JSON indentation from 4 spaces to 2 spaces for more compact, industry-standard formatting
+- Arrays now show single example items: `[item]` instead of `[item, item]`
+- Objects show single key-value pair for clarity: `{ "key": "value" }`
+- More readable and less cluttered variable display
 
 ### 1.1.4
 

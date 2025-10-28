@@ -504,6 +504,18 @@ function getWebviewContent(isSidebar = false) {
         let cullWhitespace = true; // Default on
         let currentTemplate = '';
         
+        // Helper to show loading indicator
+        function showLoading(message) {
+            loadingIndicator.textContent = message;
+            loadingIndicator.style.display = 'block';
+            loadingIndicator.style.color = 'var(--vscode-notifications-foreground)';
+        }
+        
+        // Helper to hide loading indicator
+        function hideLoading() {
+            loadingIndicator.style.display = 'none';
+        }
+        
         // Pyodide setup
         let pyodide = null;
         let isInitialized = false;
@@ -524,22 +536,22 @@ function getWebviewContent(isSidebar = false) {
         // Setup Pyodide with Python Jinja2
         async function setupPyodide() {
             try {
-                loadingIndicator.style.display = 'block';
-                loadingIndicator.textContent = 'Loading Python environment...';
+                showLoading('Loading Python environment...');
                 
                 pyodide = await loadPyodide();
                 
-                loadingIndicator.textContent = 'Loading Jinja2...';
+                showLoading('Loading Jinja2...');
                 await pyodide.loadPackage("jinja2");
                 
                 isInitialized = true;
-                loadingIndicator.style.display = 'none';
                 
                 // Notify extension that we're ready
                 vscode.postMessage({ type: 'ready' });
                 
-                // Initial render
-                update();
+                // Initial render with loading indicator
+                showLoading('Rendering template...');
+                await update();
+                hideLoading();
                 
                 // Auto-resize variables section on initial load
                 autoResizeVariablesSection();
@@ -827,6 +839,8 @@ result
                     
                     // Only extract/merge variables if explicitly provided (manual extraction)
                     if (message.extractedVariables) {
+                        showLoading('Extracting variables...');
+                        
                         // Try to preserve user-modified values for variables that still exist
                         let currentVars = {};
                         try {
@@ -861,10 +875,12 @@ result
                         }
                         
                         // Update the variables editor (only with variables from the current template)
-                        variablesEditor.value = JSON.stringify(mergedVars, null, 4);
+                        variablesEditor.value = JSON.stringify(mergedVars, null, 2);
                         
                         // Auto-resize variables section after content update
                         autoResizeVariablesSection();
+                        
+                        hideLoading();
                     }
                     
                     await update();
@@ -873,11 +889,14 @@ result
                 case 'replaceVariables':
                     // Force replace all variables (from extract button)
                     if (message.extractedVariables) {
-                        variablesEditor.value = JSON.stringify(message.extractedVariables, null, 4);
+                        showLoading('Extracting variables...');
+                        
+                        variablesEditor.value = JSON.stringify(message.extractedVariables, null, 2);
                         
                         // Auto-resize variables section after content update
                         autoResizeVariablesSection();
                         
+                        hideLoading();
                         await update();
                     }
                     break;
@@ -941,7 +960,7 @@ result
                 case 'loadVariables':
                     // Load variables from preset
                     if (message.variables) {
-                        variablesEditor.value = JSON.stringify(message.variables, null, 4);
+                        variablesEditor.value = JSON.stringify(message.variables, null, 2);
                         
                         // Auto-resize variables section after content update
                         autoResizeVariablesSection();
@@ -1024,6 +1043,9 @@ result
         };
         
         const handleReextract = function() {
+            // Show loading immediately
+            showLoading('Extracting variables...');
+            
             // Request extraction from the extension
             vscode.postMessage({ 
                 type: 'reextractVariables'

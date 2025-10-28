@@ -4,6 +4,36 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.2.0] - 2025-10-28
+
+### Added
+- **Loading Indicators** ⏳
+  - Shows "Extracting variables..." when clicking the Extract Variables button
+  - Shows "Rendering template..." during initial template load
+  - Shows loading status during variable extraction operations
+  - Clear visual feedback for all async operations
+  - Consistent loading indicator across all operations
+
+### Improved
+- **Enhanced Variable Extraction Algorithm** 🎯
+  - More robust variable detection with better edge case handling
+  - Smart literal detection: Pure literals (e.g., `{% set a = 5 %}`) are no longer extracted as input variables
+  - Self-referencing detection: Variables like `{% set a = a + 2 %}` are correctly identified as required inputs
+  - Loop variable exclusion: Iteration variables (e.g., `item` in `{% for item in items %}`) are no longer extracted
+  - Filter argument extraction: Properly extracts variables from filter arguments (e.g., `{{ value | default(fallback) }}`)
+  - Handles nested structures, array access, and complex expressions more accurately
+  - 30+ test cases validate extraction accuracy for edge cases
+
+- **Cleaner JSON Output** 📋
+  - Changed JSON indentation from 4 spaces to 2 spaces for more compact display
+  - Arrays now show single example items instead of duplicates (e.g., `[item]` instead of `[item, item]`)
+  - Objects show single key-value pair for clarity (e.g., `{ "key": "value" }`)
+  - More readable and industry-standard formatting
+
+### Technical
+- Improved code documentation and maintainability
+- Better helper functions for variable extraction and processing
+
 ## [1.1.4] - 2025-10-26
 
 ### Added
