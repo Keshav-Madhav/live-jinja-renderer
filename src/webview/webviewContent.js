@@ -138,11 +138,16 @@ function getWebviewContent(isSidebar = false) {
             color: var(--vscode-input-foreground);
             resize: none;
             line-height: 1.4;
+            tab-size: 2;
         }
         textarea:focus {
             outline: 1px solid var(--vscode-focusBorder);
             outline-offset: -1px;
             border-color: var(--vscode-focusBorder);
+        }
+        /* JSON editor specific styling */
+        #variables {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
         }
         /* Resize handle */
         .resize-handle {
@@ -416,7 +421,7 @@ function getWebviewContent(isSidebar = false) {
         <h2>Variables (JSON)</h2>
             </div>
         <textarea id="variables">{
-    "name": "World"
+  "name": "World"
 }</textarea>
         </div>
         
@@ -779,6 +784,126 @@ result
             outputSection.style.height = 'auto';
         }
 
+        // JSON Editor Enhancement: Auto-closing brackets, quotes, and smart indentation
+        function setupJsonEditor(textarea) {
+            const pairs = {
+                '{': '}',
+                '[': ']',
+                '"': '"',
+                "'": "'"
+            };
+            
+            const closingChars = new Set(['}', ']', '"', "'"]);
+            
+            // Handle key down for smart editing features
+            textarea.addEventListener('keydown', (e) => {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const value = textarea.value;
+                const charBefore = value[start - 1];
+                const charAfter = value[start];
+                
+                // Auto-closing brackets and quotes
+                if (pairs[e.key] && start === end) {
+                    e.preventDefault();
+                    const closingChar = pairs[e.key];
+                    
+                    // Special handling for quotes - only auto-close if not after a backslash
+                    if ((e.key === '"' || e.key === "'") && charBefore === '\\\\') {
+                        textarea.setRangeText(e.key, start, end, 'end');
+                        return;
+                    }
+                    
+                    // For quotes, if next char is the same quote, just move cursor
+                    if ((e.key === '"' || e.key === "'") && charAfter === e.key) {
+                        textarea.selectionStart = textarea.selectionEnd = start + 1;
+                        return;
+                    }
+                    
+                    textarea.setRangeText(e.key + closingChar, start, end, 'end');
+                    textarea.selectionStart = textarea.selectionEnd = start + 1;
+                    return;
+                }
+                
+                // Skip over closing brackets/quotes if they're already there
+                if (closingChars.has(e.key) && charAfter === e.key && start === end) {
+                    e.preventDefault();
+                    textarea.selectionStart = textarea.selectionEnd = start + 1;
+                    return;
+                }
+                
+                // Handle Tab key for indentation
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const indent = '  '; // 2 spaces
+                    
+                    if (e.shiftKey) {
+                        // Shift+Tab: Unindent
+                        const lineStart = value.lastIndexOf('\\n', start - 1) + 1;
+                        const lineBeforeCursor = value.substring(lineStart, start);
+                        
+                        if (lineBeforeCursor.startsWith(indent)) {
+                            textarea.setRangeText('', lineStart, lineStart + indent.length, 'end');
+                            textarea.selectionStart = textarea.selectionEnd = start - indent.length;
+                        }
+                    } else {
+                        // Tab: Indent
+                        textarea.setRangeText(indent, start, end, 'end');
+                    }
+                    return;
+                }
+                
+                // Handle Enter key for auto-indentation
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    
+                    // Find the current line's indentation
+                    const lineStart = value.lastIndexOf('\\n', start - 1) + 1;
+                    const lineBeforeCursor = value.substring(lineStart, start);
+                    const indentMatch = lineBeforeCursor.match(/^(\\s*)/);
+                    const currentIndent = indentMatch ? indentMatch[1] : '';
+                    
+                    // Check if we're between opening and closing brackets
+                    const needsExtraIndent = charBefore === '{' || charBefore === '[';
+                    const needsClosingLine = needsExtraIndent && (charAfter === '}' || charAfter === ']');
+                    
+                    if (needsClosingLine) {
+                        // Insert newline with extra indent, then newline with current indent
+                        const indent = '  ';
+                        const newText = '\\n' + currentIndent + indent + '\\n' + currentIndent;
+                        textarea.setRangeText(newText, start, end, 'end');
+                        textarea.selectionStart = textarea.selectionEnd = start + currentIndent.length + indent.length + 1;
+                    } else if (needsExtraIndent) {
+                        // Just add extra indent on new line
+                        const indent = '  ';
+                        const newText = '\\n' + currentIndent + indent;
+                        textarea.setRangeText(newText, start, end, 'end');
+                    } else {
+                        // Just preserve current indentation
+                        const newText = '\\n' + currentIndent;
+                        textarea.setRangeText(newText, start, end, 'end');
+                    }
+                    return;
+                }
+                
+                // Handle Backspace for smart deletion
+                if (e.key === 'Backspace' && start === end && start > 0) {
+                    const charBefore = value[start - 1];
+                    const charAfter = value[start];
+                    
+                    // Delete matching pair if cursor is between them
+                    if (pairs[charBefore] === charAfter) {
+                        e.preventDefault();
+                        textarea.setRangeText('', start - 1, start + 1, 'end');
+                        return;
+                    }
+                }
+            });
+        }
+        
+        // Initialize JSON editor features
+        setupJsonEditor(variablesEditor);
+        
         // Listen for variable changes and auto-rerender
         variablesEditor.addEventListener('input', () => {
             debouncedUpdate();

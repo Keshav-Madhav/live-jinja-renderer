@@ -4,6 +4,18 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.2.1] - 2025-11-03
+
+### Added
+- **Enhanced JSON Editor** ✍️
+  - Smart auto-closing for brackets `{}`, `[]`, and quotes `""` `''`
+  - Auto-indentation on Enter key based on context
+  - Tab support: Tab for 2-space indent, Shift+Tab to unindent
+  - Smart navigation: Skip over closing characters when typing
+  - Smart backspace: Delete matching pairs when backspacing between brackets/quotes
+  - Monospace font (Consolas, Monaco, Courier New) for better readability
+  - Lightweight implementation with zero external dependencies
+
 ## [1.2.0] - 2025-10-28
 
 ### Added

@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue)
+![Version](https://img.shields.io/badge/version-1.2.1-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -257,6 +257,16 @@ This extension contributes the following VS Code settings:
 None at this time.
 
 ## Release Notes
+
+### 1.2.1
+
+**Enhanced JSON Editor** ✍️:
+- **Smart Auto-Closing**: Automatically closes brackets `{}`, `[]`, and quotes `""` `''`
+- **Auto-Indentation**: Press Enter for smart indentation based on context
+- **Tab Support**: Press Tab for 2-space indent, Shift+Tab to unindent
+- **Smart Navigation**: Skip over closing characters when typing
+- **Smart Backspace**: Delete matching pairs when backspacing between brackets/quotes
+- Monospace font for better JSON editing experience
 
 ### 1.2.0
 
