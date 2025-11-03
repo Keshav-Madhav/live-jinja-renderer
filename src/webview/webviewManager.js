@@ -11,7 +11,10 @@ const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
 function setupWebviewForEditor(webview, editor, context) {
   const templateContent = editor.document.getText();
   let lastTemplate = templateContent;
+  let lastFileUri = editor.document.uri.toString(); // Track the file URI
   let isInitialLoad = true; // Track if this is the first load
+  let currentDecoration = null; // Track active highlight decoration
+  let decorationDisposables = []; // Track event listeners for decoration removal
   
   // Get current settings from VS Code configuration
   const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
@@ -35,13 +38,28 @@ function setupWebviewForEditor(webview, editor, context) {
     if (e.document.uri.toString() === editor.document.uri.toString()) {
       lastTemplate = e.document.getText();
       
+      // Clear highlight on document change
+      clearHighlight();
+      
       // Send updated template to the webview (without auto-extraction)
       webview.postMessage({ 
         type: 'updateTemplate',
-        template: lastTemplate
+        template: lastTemplate,
+        fileUri: lastFileUri
       });
     }
   });
+  
+  // Helper function to clear the current highlight
+  function clearHighlight() {
+    if (currentDecoration) {
+      currentDecoration.dispose();
+      currentDecoration = null;
+    }
+    // Dispose all decoration-related event listeners
+    decorationDisposables.forEach(d => d.dispose());
+    decorationDisposables = [];
+  }
   
   // Handle messages from the webview
   const messageSubscription = webview.onDidReceiveMessage(
@@ -54,7 +72,8 @@ function setupWebviewForEditor(webview, editor, context) {
             webview.postMessage({
               type: 'updateTemplate',
               template: lastTemplate,
-              extractedVariables: extractedVars
+              extractedVariables: extractedVars,
+              fileUri: lastFileUri
             });
             // Only mark as no longer initial load if not forced
             // This allows repeated force refreshes to work
@@ -65,7 +84,8 @@ function setupWebviewForEditor(webview, editor, context) {
             // Subsequent loads: just send template without extraction
             webview.postMessage({
               type: 'updateTemplate',
-              template: lastTemplate
+              template: lastTemplate,
+              fileUri: lastFileUri
             });
           }
           return;
@@ -121,6 +141,75 @@ function setupWebviewForEditor(webview, editor, context) {
           // Show error message from webview
           vscode.window.showErrorMessage(message.message || 'An error occurred');
           return;
+        
+        case 'goToLine':
+          // Navigate to specific line in the editor
+          try {
+            const lineNumber = message.line;
+            const fileUri = message.fileUri;
+            
+            if (typeof lineNumber === 'number' && lineNumber > 0 && fileUri) {
+              // Clear any existing highlight
+              clearHighlight();
+              
+              // Parse the URI and open the document
+              const documentUri = vscode.Uri.parse(fileUri);
+              const document = await vscode.workspace.openTextDocument(documentUri);
+              
+              // Show the document and get the active editor
+              const activeEditor = await vscode.window.showTextDocument(document, {
+                viewColumn: vscode.ViewColumn.One,
+                preserveFocus: false,
+                preview: false
+              });
+              
+              // Wait a bit for the editor to be ready
+              await new Promise(resolve => setTimeout(resolve, 50));
+              
+              // Create a position for the line (0-indexed)
+              const lineIndex = Math.max(0, lineNumber - 1);
+              const position = new vscode.Position(lineIndex, 0);
+              
+              // Create a range for the entire line
+              const line = activeEditor.document.lineAt(lineIndex);
+              const range = line.range;
+              
+              // Move cursor to the beginning of the line
+              activeEditor.selection = new vscode.Selection(position, position);
+              
+              // Scroll to show the line in the center
+              activeEditor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+              
+              // Wait a bit for cursor movement to complete before adding highlight
+              await new Promise(resolve => setTimeout(resolve, 100));
+              
+              // Highlight the line with a more visible color
+              currentDecoration = vscode.window.createTextEditorDecorationType({
+                backgroundColor: 'rgba(255, 100, 100, 0.3)',
+                isWholeLine: true,
+                border: '2px solid rgba(255, 0, 0, 0.5)'
+              });
+              
+              activeEditor.setDecorations(currentDecoration, [range]);
+              
+              // Remove highlight when cursor moves AWAY from the highlighted line
+              const cursorChangeDisposable = vscode.window.onDidChangeTextEditorSelection(e => {
+                if (e.textEditor === activeEditor) {
+                  const cursorLine = e.selections[0].active.line;
+                  // If cursor moves away from the highlighted line, clear the highlight
+                  if (cursorLine !== lineIndex) {
+                    clearHighlight();
+                  }
+                }
+              });
+              
+              decorationDisposables.push(cursorChangeDisposable);
+            }
+          } catch (err) {
+            console.error('Failed to navigate to line:', err);
+            vscode.window.showErrorMessage('Failed to navigate to error line');
+          }
+          return;
       }
     },
     undefined,
@@ -129,6 +218,7 @@ function setupWebviewForEditor(webview, editor, context) {
   
   return {
     dispose: () => {
+      clearHighlight(); // Clear highlight when disposing
       changeDocumentSubscription.dispose();
       messageSubscription.dispose();
     }

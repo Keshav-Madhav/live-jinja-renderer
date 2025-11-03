@@ -1,10 +1,10 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.2.1-blue)
+![Version](https://img.shields.io/badge/version-1.3.0-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A powerful VS Code extension for **real-time Jinja2 template preview** with authentic Python Jinja2 (via Pyodide). Edit templates and variables side-by-side with instant rendering, markdown support, mermaid diagrams, and intelligent whitespace management.
+A powerful VS Code extension for **real-time Jinja2 template preview** with authentic Python Jinja2 (via Pyodide). Edit templates and variables side-by-side with instant rendering, markdown support, mermaid diagrams, intelligent whitespace management, and **smart error navigation**.
 
 > 🎯 **Perfect for**: Python developers, DevOps engineers, Ansible users, configuration management, and anyone working with Jinja2 templates.
 
@@ -42,6 +42,8 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 - **Organized Menu**: All settings and actions in the three-dot menu
 - **Save/Load Variable Presets**: Save complex JSON configurations and load them instantly
 - **Auto-Resizing Variable Section**: Variables window automatically expands/shrinks to fit content
+- **Smart Error Navigation**: Click on error messages to jump directly to the error line in your template
+- **Visual Error Highlighting**: Errors are highlighted with red background and border
 - Resizable panes with drag handles for manual adjustment
 - Beautiful UI with VS Code theme integration
 - Keyboard shortcuts for quick access
@@ -257,6 +259,17 @@ This extension contributes the following VS Code settings:
 None at this time.
 
 ## Release Notes
+
+### 1.3.0
+
+**Enhanced Error Detection & Navigation** 🎯:
+- **Clickable Error Messages**: Click on any error message showing a line number to jump directly to that line in your template
+- **Visual Line Highlighting**: Error lines are highlighted with a red background and border for easy identification
+- **Smart Navigation**: Automatically focuses the template file and positions cursor at the error location
+- **Auto-Clear Highlighting**: Highlight automatically clears when you move the cursor away from the error line
+- **Better Error Parsing**: Improved detection of error line numbers from Python Jinja2 tracebacks
+- **Multiple Error Types**: Supports UndefinedError, TemplateSyntaxError, and other Jinja2 errors
+- **Enhanced Debugging**: Makes it much faster to locate and fix template errors
 
 ### 1.2.1
 

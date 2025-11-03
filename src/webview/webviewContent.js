@@ -265,11 +265,48 @@ function getWebviewContent(isSidebar = false) {
         }
         .error {
             color: var(--vscode-errorForeground);
-            border-left: 2px solid var(--vscode-inputValidation-errorBorder);
-            padding: 12px;
+            border-left: 4px solid var(--vscode-inputValidation-errorBorder);
+            padding: 16px;
             border-radius: 2px;
             background-color: var(--vscode-inputValidation-errorBackground);
+            font-size: 13px;
+            font-family: var(--vscode-editor-font-family);
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+        .error-line-info {
+            font-weight: 700;
+            color: var(--vscode-errorForeground);
+            background-color: rgba(255, 0, 0, 0.15);
+            padding: 3px 8px;
+            border-radius: 3px;
+            display: inline-block;
+            margin: 4px 0;
+            border: 1px solid var(--vscode-inputValidation-errorBorder);
+        }
+        .error-line-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            margin: 8px 0;
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: 1px solid var(--vscode-button-border);
+            border-radius: 2px;
+            cursor: pointer;
             font-size: 12px;
+            font-weight: 500;
+            transition: all 0.1s ease;
+            text-decoration: none;
+        }
+        .error-line-link:hover {
+            background-color: var(--vscode-button-secondaryHoverBackground);
+            border-color: var(--vscode-focusBorder);
+        }
+        .error-line-link:active {
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
         }
         /* Markdown styling */
         #markdown-output h1, #markdown-output h2, #markdown-output h3,
@@ -508,6 +545,7 @@ function getWebviewContent(isSidebar = false) {
         let showWhitespace = false;
         let cullWhitespace = true; // Default on
         let currentTemplate = '';
+        let currentFileUri = ''; // Track the file URI for error navigation
         
         // Helper to show loading indicator
         function showLoading(message) {
@@ -657,6 +695,54 @@ function getWebviewContent(isSidebar = false) {
             }
         }
 
+        // Add clickable error line buttons
+        function addErrorLineButtons(container) {
+            const text = container.textContent || container.innerText;
+            
+            // Extract line numbers from error messages
+            const lineMatches = [
+                ...text.matchAll(/📍 Line (\\d+)/g),
+                ...text.matchAll(/line (\\d+)/gi)
+            ];
+            
+            if (lineMatches.length === 0) return;
+            
+            // Get unique line numbers
+            const lineNumbers = [...new Set(lineMatches.map(match => parseInt(match[1])))];
+            
+            // Create a button for the first line number found
+            if (lineNumbers.length > 0) {
+                const lineNumber = lineNumbers[0];
+                
+                // Create wrapper div for button
+                const buttonWrapper = document.createElement('div');
+                buttonWrapper.style.marginBottom = '12px';
+                
+                const button = document.createElement('button');
+                button.className = 'error-line-link';
+                button.textContent = 'View Error';
+                button.onclick = () => {
+                    vscode.postMessage({
+                        type: 'goToLine',
+                        line: lineNumber,
+                        fileUri: currentFileUri
+                    });
+                };
+                
+                buttonWrapper.appendChild(button);
+                
+                // Create wrapper for error text
+                const textWrapper = document.createElement('div');
+                textWrapper.textContent = text;
+                textWrapper.style.whiteSpace = 'pre-wrap';
+                
+                // Clear container and add button first, then error text
+                container.innerHTML = '';
+                container.appendChild(buttonWrapper);
+                container.appendChild(textWrapper);
+            }
+        }
+
         // Main rendering function using Python Jinja2
         async function update() {
             if (!pyodide || !isInitialized) {
@@ -691,6 +777,8 @@ function getWebviewContent(isSidebar = false) {
                 const result = pyodide.runPython(\`
 import jinja2
 import json
+import traceback
+import re
 
 try:
     template_str = """\${escapedTemplate}"""
@@ -699,12 +787,66 @@ try:
     template = jinja2.Template(template_str)
     context = json.loads(context_str)
     result = template.render(context)
+except jinja2.exceptions.TemplateSyntaxError as e:
+    # Template syntax error with line number
+    error_msg = "❌ Jinja2 Syntax Error\\\\n\\\\n"
+    error_msg += "📍 Line " + str(e.lineno) + ":\\\\n"
+    error_msg += "  " + str(e.message) + "\\\\n"
+    if hasattr(e, 'source') and e.source:
+        # Show the problematic line if available
+        lines = e.source.split('\\\\n')
+        if 0 < e.lineno <= len(lines):
+            error_msg += "\\\\n📄 Problematic line:\\\\n  >>> " + lines[e.lineno - 1].strip()
+            # Show surrounding context if available
+            if e.lineno > 1 and len(lines) >= e.lineno - 1:
+                error_msg += "\\\\n\\\\n📋 Context:\\\\n"
+                start_line = max(1, e.lineno - 2)
+                end_line = min(len(lines), e.lineno + 2)
+                for i in range(start_line - 1, end_line):
+                    prefix = "  >>> " if i + 1 == e.lineno else "      "
+                    error_msg += prefix + "Line " + str(i + 1) + ": " + lines[i].strip() + "\\\\n"
+    result = error_msg
+except jinja2.exceptions.UndefinedError as e:
+    # Undefined variable error - try to extract line number
+    error_msg = "❌ Jinja2 Undefined Variable Error\\\\n\\\\n"
+    line_match = re.search(r'line (\\\\d+)', str(e))
+    if line_match:
+        error_msg += "📍 Line " + line_match.group(1) + ":\\\\n"
+    error_msg += "  " + str(e) + "\\\\n\\\\n"
+    error_msg += "💡 Tip: Make sure all variables used in the template are defined in the Variables section."
+    result = error_msg
+except jinja2.exceptions.TemplateRuntimeError as e:
+    # Runtime error with line information if available
+    error_msg = "❌ Jinja2 Runtime Error\\\\n\\\\n"
+    if hasattr(e, 'lineno') and e.lineno:
+        error_msg += "📍 Line " + str(e.lineno) + ":\\\\n"
+    error_msg += "  " + str(e)
+    result = error_msg
+except jinja2.exceptions.TemplateAssertionError as e:
+    # Assertion error with line information
+    error_msg = "❌ Jinja2 Assertion Error\\\\n\\\\n"
+    line_match = re.search(r'line (\\\\d+)', str(e))
+    if line_match:
+        error_msg += "📍 Line " + line_match.group(1) + ":\\\\n"
+    error_msg += "  " + str(e)
+    result = error_msg
 except jinja2.exceptions.TemplateError as e:
-    result = f"Jinja2 Template Error: {e}"
+    # Generic template error
+    error_msg = "❌ Jinja2 Template Error\\\\n\\\\n"
+    # Try to extract line number from error message
+    line_match = re.search(r'line (\\\\d+)', str(e))
+    if line_match:
+        error_msg += "📍 Line " + line_match.group(1) + ":\\\\n"
+    error_msg += "  " + str(e)
+    result = error_msg
 except json.JSONDecodeError as e:
-    result = f"JSON Error: {e}"
+    result = "❌ JSON Error\\\\n\\\\n📍 Line " + str(e.lineno) + ", Column " + str(e.colno) + ":\\\\n  " + e.msg + "\\\\n\\\\n💡 Tip: Check your JSON syntax in the Variables section."
 except Exception as e:
-    result = f"Error: {e}"
+    # Catch all other exceptions with full traceback
+    error_msg = "❌ Unexpected Error:\\\\n\\\\n"
+    error_msg += str(e) + "\\\\n\\\\n"
+    error_msg += "📋 Full Traceback:\\\\n" + traceback.format_exc()
+    result = error_msg
 
 result
                 \`);
@@ -730,12 +872,29 @@ result
                     outputDisplay.style.display = 'block';
                     markdownOutput.style.display = 'none';
                     
+                    // Check if it's an error message
+                    const isError = processedResult.includes('❌') || 
+                                   processedResult.includes('Error:') || 
+                                   processedResult.includes('Error on') ||
+                                   processedResult.includes('Error\\n');
+                    
                     if (showWhitespace) {
                         outputDisplay.innerHTML = renderWhitespace(processedResult);
+                        if (isError) {
+                            outputDisplay.classList.add('error');
+                            addErrorLineButtons(outputDisplay);
+                        } else {
+                            outputDisplay.classList.remove('error');
+                        }
                     } else {
                         outputDisplay.textContent = processedResult;
+                        if (isError) {
+                            outputDisplay.classList.add('error');
+                            addErrorLineButtons(outputDisplay);
+                        } else {
+                            outputDisplay.classList.remove('error');
+                        }
                     }
-                    outputDisplay.className = processedResult.includes('Error:') ? 'error' : '';
                 }
             } catch (e) {
                 outputDisplay.textContent = \`Python execution error: \${e.message}\`;
@@ -961,6 +1120,7 @@ result
                 case 'updateTemplate':
                     // Template content updated from the extension
                     currentTemplate = message.template;
+                    currentFileUri = message.fileUri || ''; // Store the file URI
                     
                     // Only extract/merge variables if explicitly provided (manual extraction)
                     if (message.extractedVariables) {

@@ -4,6 +4,32 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.3.0] - 2025-11-04
+
+### Added
+- **Enhanced Error Detection & Navigation** 🎯
+  - Clickable error messages with line numbers
+  - Navigate directly to error location in template file
+  - Visual line highlighting with red background and border
+  - Automatic cursor positioning at error line
+  - Smart highlight removal on cursor movement away from error line
+  - Supports both Jinja2 syntax errors and rendering errors
+
+### Improved
+- **Better Error Reporting** 🐛
+  - More precise error line detection from Python Jinja2 tracebacks
+  - Clearer error message formatting in output
+  - Enhanced error parsing for multiple error types (UndefinedError, TemplateSyntaxError, etc.)
+  - Visual feedback when clicking on error lines
+  - Automatic document focus when navigating to errors
+
+### Technical
+- Added `goToLine` message handler in webview manager
+- Implemented text editor decoration API for line highlighting
+- Enhanced error extraction regex patterns for better accuracy
+- Improved event handling for decoration lifecycle management
+- Better cleanup of highlight decorations and event listeners
+
 ## [1.2.1] - 2025-11-03
 
 ### Added
