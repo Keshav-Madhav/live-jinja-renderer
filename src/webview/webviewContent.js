@@ -14,6 +14,9 @@ function getWebviewContent(isSidebar = false) {
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.0/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
     
+    <!-- VS Code Codicons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.35/dist/codicon.css">
+    
     <style>
         * {
             box-sizing: border-box;
@@ -44,6 +47,42 @@ function getWebviewContent(isSidebar = false) {
             padding-bottom: 8px;
             margin-bottom: 8px;
             border-bottom: 1px solid var(--vscode-editorGroup-border);
+        }
+        .header-actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .icon-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            background: transparent;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            color: var(--vscode-icon-foreground);
+            opacity: 0.8;
+            transition: all 0.1s ease;
+            font-size: 16px;
+            line-height: 1;
+        }
+        .icon-button:hover {
+            background-color: var(--vscode-toolbar-hoverBackground);
+            opacity: 1;
+        }
+        .icon-button:active {
+            background-color: var(--vscode-toolbar-activeBackground);
+        }
+        .icon-button:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+        .icon-button .codicon {
+            font-size: 16px;
         }
         h2 {
             margin: 0;
@@ -455,7 +494,15 @@ function getWebviewContent(isSidebar = false) {
     <div class="container">
         <div class="variables-section" id="variables-section">
             <div class="header-group">
-        <h2>Variables (JSON)</h2>
+                <h2>Variables (JSON)</h2>
+                <div class="header-actions">
+                    <button class="icon-button" id="save-variables-btn" title="Save Variables Preset">
+                        <i class="codicon codicon-save"></i>
+                    </button>
+                    <button class="icon-button" id="load-variables-btn" title="Load Variables Preset">
+                        <i class="codicon codicon-folder-opened"></i>
+                    </button>
+                </div>
             </div>
         <textarea id="variables">{
   "name": "World"
@@ -1253,6 +1300,16 @@ result
                         await update();
                     }
                     break;
+                
+                case 'execCommand':
+                    // Execute document command (cut/copy/paste) for context menu
+                    if (message.command) {
+                        // Focus the variables textarea first
+                        variablesEditor.focus();
+                        // Execute the command
+                        document.execCommand(message.command);
+                    }
+                    break;
             }
         });
 
@@ -1336,6 +1393,18 @@ result
                 type: 'reextractVariables'
             });
         };
+        
+        // Save and Load Variables handlers
+        const saveVariablesBtn = document.getElementById('save-variables-btn');
+        const loadVariablesBtn = document.getElementById('load-variables-btn');
+        
+        saveVariablesBtn.addEventListener('click', () => {
+            vscode.postMessage({ type: 'executeCommand', command: 'live-jinja-tester.saveVariables' });
+        });
+        
+        loadVariablesBtn.addEventListener('click', () => {
+            vscode.postMessage({ type: 'executeCommand', command: 'live-jinja-tester.loadVariables' });
+        });
         
         // Panel mode: Attach action button listeners
         if (!isSidebarMode) {

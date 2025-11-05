@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -155,6 +155,23 @@
           "when": "resourceExtname == '.txt' || resourceExtname == '.jinja' || resourceExtname == '.j2' || editorLangId == 'plaintext' || editorLangId == 'jinja'"
         }
       ],
+      "editor/context": [
+        {
+          "command": "live-jinja-tester.showSidebar",
+          "group": "jinja@1",
+          "when": "resourceExtname == '.txt' || resourceExtname == '.jinja' || resourceExtname == '.j2' || editorLangId == 'plaintext' || editorLangId == 'jinja'"
+        },
+        {
+          "command": "live-jinja-tester.render",
+          "group": "jinja@2",
+          "when": "resourceExtname == '.txt' || resourceExtname == '.jinja' || resourceExtname == '.j2' || editorLangId == 'plaintext' || editorLangId == 'jinja'"
+        },
+        {
+          "command": "live-jinja-tester.reextractVariables",
+          "group": "jinja@3",
+          "when": "resourceExtname == '.txt' || resourceExtname == '.jinja' || resourceExtname == '.j2' || editorLangId == 'plaintext' || editorLangId == 'jinja'"
+        }
+      ],
       "view/title": [
         {
           "command": "live-jinja-tester.toggleMarkdown",
@@ -220,6 +237,83 @@
           "command": "live-jinja-tester.openInPanel",
           "when": "view == jinjaRendererView",
           "group": "5_view@1"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "live-jinja-tester.toggleMarkdown",
+          "when": "webviewId == 'jinjaRendererView'",
+          "group": "1_rendering@1"
+        },
+        {
+          "command": "live-jinja-tester.toggleMermaid",
+          "when": "webviewId == 'jinjaRendererView'",
+          "group": "1_rendering@2"
+        },
+        {
+          "command": "live-jinja-tester.toggleShowWhitespace",
+          "when": "webviewId == 'jinjaRendererView'",
+          "group": "2_whitespace@1"
+        },
+        {
+          "command": "live-jinja-tester.toggleCullWhitespace",
+          "when": "webviewId == 'jinjaRendererView'",
+          "group": "2_whitespace@2"
+        },
+        {
+          "command": "live-jinja-tester.reextractVariables",
+          "when": "webviewId == 'jinjaRendererView'",
+          "group": "2_jinja@1"
+        },
+        {
+          "command": "live-jinja-tester.saveVariables",
+          "when": "webviewId == 'jinjaRendererView'",
+          "group": "3_variables@1"
+        },
+        {
+          "command": "live-jinja-tester.loadVariables",
+          "when": "webviewId == 'jinjaRendererView'",
+          "group": "3_variables@2"
+        },
+        {
+          "command": "live-jinja-tester.toggleMarkdown",
+          "when": "webviewId == 'jinjaRenderer'",
+          "group": "1_rendering@1"
+        },
+        {
+          "command": "live-jinja-tester.toggleMermaid",
+          "when": "webviewId == 'jinjaRenderer'",
+          "group": "1_rendering@2"
+        },
+        {
+          "command": "live-jinja-tester.toggleShowWhitespace",
+          "when": "webviewId == 'jinjaRenderer'",
+          "group": "2_whitespace@1"
+        },
+        {
+          "command": "live-jinja-tester.toggleCullWhitespace",
+          "when": "webviewId == 'jinjaRenderer'",
+          "group": "2_whitespace@2"
+        },
+        {
+          "command": "live-jinja-tester.reextractVariables",
+          "when": "webviewId == 'jinjaRenderer'",
+          "group": "2_jinja@1"
+        },
+        {
+          "command": "live-jinja-tester.copyOutput",
+          "when": "webviewId == 'jinjaRenderer'",
+          "group": "3_actions@1"
+        },
+        {
+          "command": "live-jinja-tester.saveVariables",
+          "when": "webviewId == 'jinjaRenderer'",
+          "group": "4_variables@1"
+        },
+        {
+          "command": "live-jinja-tester.loadVariables",
+          "when": "webviewId == 'jinjaRenderer'",
+          "group": "4_variables@2"
         }
       ],
       "commandPalette": [

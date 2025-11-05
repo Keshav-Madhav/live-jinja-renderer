@@ -4,6 +4,15 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.3.1] - 2025-11-05
+
+### Added
+- **Editor Context Menu** - Right-click in editor for quick access to Jinja commands
+- **Variables Quick Actions** - Save/Load icon buttons in Variables header
+
+### Improved
+- **Native Webview Context Menu** - Right-click in Sidebar/Panel for rendering options, whitespace settings, and variable management
+
 ## [1.3.0] - 2025-11-04
 
 ### Added

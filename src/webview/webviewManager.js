@@ -142,6 +142,17 @@ function setupWebviewForEditor(webview, editor, context) {
           vscode.window.showErrorMessage(message.message || 'An error occurred');
           return;
         
+        case 'executeCommand':
+          // Execute a VS Code command from webview
+          if (message.command) {
+            try {
+              await vscode.commands.executeCommand(message.command);
+            } catch (err) {
+              console.error('Failed to execute command:', message.command, err);
+            }
+          }
+          return;
+        
         case 'goToLine':
           // Navigate to specific line in the editor
           try {

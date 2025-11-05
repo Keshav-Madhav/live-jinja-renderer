@@ -80,6 +80,10 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 - Type "Show Jinja Renderer Sidebar"
 - Press Enter
 
+**Context Menu**:
+- Right-click in the editor
+- Select "Jinja: Open in Sidebar"
+
 ### Panel View (Alternative)
 
 If you prefer to open the renderer in a separate editor pane:
@@ -98,6 +102,10 @@ If you prefer to open the renderer in a separate editor pane:
 **Command Palette**:
 - Type "Open Jinja Renderer in Panel"
 
+**Context Menu**:
+- Right-click in the editor
+- Select "Jinja: Open in Editor Pane"
+
 ### Variable Extraction
 
 The extension intelligently extracts variables from your Jinja2 templates:
@@ -113,6 +121,7 @@ The extension intelligently extracts variables from your Jinja2 templates:
 - **Three-dot menu**: Select "Extract Variables from Template"
 - **Footer button** (panel mode): Click "🔄 Extract Variables"
 - **Command Palette**: Type "Jinja: Extract Variables from Template"
+- **Context Menu**: Right-click in editor → "Jinja: Extract Variables from Template"
 
 **How it works**:
 - Detects `{{ variable }}` patterns in your template
@@ -125,14 +134,23 @@ The extension intelligently extracts variables from your Jinja2 templates:
 
 **NEW in v1.1.0**: Save and reuse complex variable configurations!
 
+**Quick Access** (v1.3.1):
+- **Icon Buttons**: Click the Save or Load icons in the Variables header
+- **Native Context Menu**: Right-click anywhere in the Sidebar or Panel webview for quick access to:
+  - Rendering options (Toggle Markdown/Mermaid)
+  - Whitespace options (Show/Cull Whitespace)
+  - Jinja actions (Re-extract Variables)
+  - Output actions (Copy Output - Panel only)
+  - Variable presets (Save/Load)
+
 **Saving a Preset**:
 1. Configure your variables in the JSON editor
-2. Click the **three-dot menu** (⋯) → **Save Variables Preset**
+2. Click the **Save icon** in Variables header, or **three-dot menu** (⋯) → **Save Variables Preset**, or **right-click** in Variables → **Save Variables Preset**
 3. Enter a name (default: `{filename} Variables`, e.g., "template Variables")
 4. Press Enter to save
 
 **Loading a Preset**:
-1. Click the **three-dot menu** (⋯) → **Load Variables Preset**
+1. Click the **Load icon** in Variables header, or **three-dot menu** (⋯) → **Load Variables Preset**, or **right-click** in Variables → **Load Variables Preset**
 2. Select from your saved presets in the Quick Pick menu
 3. Variables are loaded instantly into the editor
 
@@ -260,135 +278,52 @@ None at this time.
 
 ## Release Notes
 
-### 1.3.0
+### 1.3.1
 
-**Enhanced Error Detection & Navigation** 🎯:
-- **Clickable Error Messages**: Click on any error message showing a line number to jump directly to that line in your template
-- **Visual Line Highlighting**: Error lines are highlighted with a red background and border for easy identification
-- **Smart Navigation**: Automatically focuses the template file and positions cursor at the error location
-- **Auto-Clear Highlighting**: Highlight automatically clears when you move the cursor away from the error line
-- **Better Error Parsing**: Improved detection of error line numbers from Python Jinja2 tracebacks
-- **Multiple Error Types**: Supports UndefinedError, TemplateSyntaxError, and other Jinja2 errors
-- **Enhanced Debugging**: Makes it much faster to locate and fix template errors
+**Context Menu Integration** 🖱️:
+- Right-click in editor to access Jinja Renderer commands (Open in Sidebar, Open in Editor Pane, Extract Variables)
+
+**Variables Quick Actions** ⚡:
+- Save and Load variable preset icon buttons in the Variables header (using VS Code codicons)
+- Icon buttons feature hover highlighting in VS Code style
+
+**Native Context Menu** 📋:
+- Right-click anywhere in Sidebar or Panel webviews for VS Code's native context menu
+- Quick access to: Rendering options (Markdown/Mermaid), Whitespace options, Re-extract Variables, Copy Output (Panel), Save/Load Variable Presets
+- No clipping issues, native look and feel with full keyboard navigation
+
+### 1.3.0
+Clickable error messages with line highlighting - jump directly to errors in your template. Enhanced error detection and navigation for faster debugging.
 
 ### 1.2.1
-
-**Enhanced JSON Editor** ✍️:
-- **Smart Auto-Closing**: Automatically closes brackets `{}`, `[]`, and quotes `""` `''`
-- **Auto-Indentation**: Press Enter for smart indentation based on context
-- **Tab Support**: Press Tab for 2-space indent, Shift+Tab to unindent
-- **Smart Navigation**: Skip over closing characters when typing
-- **Smart Backspace**: Delete matching pairs when backspacing between brackets/quotes
-- Monospace font for better JSON editing experience
+Enhanced JSON editor with smart auto-closing brackets, auto-indentation, tab support, and better editing experience.
 
 ### 1.2.0
-
-**Loading Indicators** ⏳:
-- **Visual Feedback**: Shows clear loading messages during all async operations
-  - "Extracting variables..." when clicking the Extract Variables button
-  - "Rendering template..." during initial template load
-  - Loading status appears during variable extraction and template rendering
-- **Better UX**: Users always know what's happening, no more wondering if something is processing
-
-**Enhanced Variable Extraction Algorithm** 🎯:
-- **Smart Literal Detection**: Pure literal assignments like `{% set a = 5 %}` are no longer extracted as input variables
-- **Self-Referencing Detection**: Variables that reference themselves like `{% set a = a + 2 %}` are correctly identified as required inputs
-- **Loop Variable Exclusion**: Iteration variables (e.g., `item` in `{% for item in items %}`) are no longer incorrectly extracted
-- **Filter Argument Extraction**: Properly extracts variables from filter arguments like `{{ value | default(fallback) }}`
-- **Robust Edge Case Handling**: Handles nested structures, array access, and complex expressions more accurately
-- **Tested**: 30+ comprehensive test cases validate extraction accuracy
-
-**Cleaner JSON Output** 📋:
-- Changed JSON indentation from 4 spaces to 2 spaces for more compact, industry-standard formatting
-- Arrays now show single example items: `[item]` instead of `[item, item]`
-- Objects show single key-value pair for clarity: `{ "key": "value" }`
-- More readable and less cluttered variable display
+Loading indicators for async operations, improved variable extraction algorithm (30+ test cases), and cleaner JSON output with 2-space indentation.
 
 ### 1.1.4
-
-**New Feature - Auto-Resizing Variables Section** 🎨:
-- **Dynamic Height Adjustment**: Variables window automatically expands or shrinks to fit the amount of content
-  - Automatically resizes when variables are extracted or re-extracted
-  - Adjusts height when loading variable presets
-  - Resizes as you type or edit variables manually
-- **Smart Sizing**: Uses line-based calculation with intelligent min/max limits
-  - Minimum height: 100px (always visible)
-  - Maximum height: 60% of viewport (prevents overflow)
-  - Approximately 20px per line with padding
-- **Improved Workflow**: No need to manually resize the variables section when extracting different templates
-- **Manual Override**: Resize handle still available for custom height preferences
+Auto-resizing variables section that dynamically adjusts height based on content (100px min, 60% viewport max).
 
 ### 1.1.3
-
-**Critical Fix**:
-- **Update for Current File**: Fixed the "Update for Current File" button functionality
-  - Now properly extracts variables from the template when clicked
-  - Correctly updates the output with the new rendering
-  - Enables live updates as intended (works like opening the panel for the first time)
-  - Previously required manual variable extraction and file editing to see changes
-- **Improved Reliability**: Enhanced synchronization between template setup and variable extraction for consistent behavior
+Fixed "Update for Current File" button functionality for proper variable extraction and live updates.
 
 ### 1.1.2
-
-**Fixes & Improvements**:
-- **Extract Variables Button**: Fixed a bug where the "Extract Variables" button in the panel view was not working.
-- **Icon Visibility**: Ensured that all command icons display correctly in the menus.
-- Other minor stability improvements.
+Fixed "Extract Variables" button in panel view and improved icon visibility in menus.
 
 ### 1.1.0
-
-**New Feature - Variable Presets** 🎉:
-- **Save Variables Preset**: Save your current variable configuration with a custom name
-- **Load Variables Preset**: Instantly load previously saved presets from a Quick Pick menu
-- **Delete Variables Preset**: Remove unwanted presets
-- **Smart Default Names**: Auto-generates preset names based on current filename (e.g., "template Variables")
-- **Global Storage**: Presets persist across all workspaces and VS Code sessions
-- **Perfect for**: Complex JSON configurations, API responses, testing scenarios, reusable data sets
-
-**New Commands**:
-- `Jinja: Save Variables Preset` - Available in three-dot menu and Command Palette
-- `Jinja: Load Variables Preset` - Available in three-dot menu and Command Palette
-- `Jinja: Delete Variables Preset` - Available in three-dot menu and Command Palette
+Variable Presets feature - save, load, and delete variable configurations for reuse across templates.
 
 ### 1.0.2
-
-**Smart Variable Extraction**:
-- Variables now automatically extracted only on first file load and when switching files
-- Template edits preserve your custom variable values (no auto-extraction)
-- Added keyboard shortcut `Ctrl+Alt+E` (Windows/Linux) or `Cmd+Shift+E` (Mac) for manual extraction
-- Extract Variables command available in three-dot menu, footer, and command palette
-
-**Bug Fixes**:
-- Fixed newline rendering bug where output showed double newlines when "Cull Whitespace" was disabled
-- Corrected Python template string escaping for accurate whitespace preservation
+Smart variable extraction (auto-extract on file load, manual via `Ctrl+Alt+E`). Fixed newline rendering and whitespace preservation bugs.
 
 ### 1.0.1
-
-**UI/UX Improvements**:
-- Moved controls from custom in-pane UI to native VS Code menus and navigation bar
-- Added quick-access buttons (Markdown, Mermaid, Update) in navigation bar
-- Organized three-dot menu with logical grouping
-- Fixed clipboard functionality for reliable copy operations
-- Added "Update for Current File" button for manual refresh
+UI/UX improvements - moved controls to native VS Code menus, added navigation bar buttons, fixed clipboard functionality.
 
 ### 1.0.0
-
-**Initial Marketplace Release**:
-- Extension published to VS Code Marketplace
-- Production-ready with full feature set
+Initial Marketplace Release - production-ready with full feature set.
 
 ### 0.0.1
-
-**Initial Development Release**:
-- **Authentic Python Jinja2 rendering via Pyodide** - 100% compatible with Python Jinja2
-- JSON variable editor
-- Live preview functionality
-- Markdown rendering support (using marked.js v11.1.0)
-- Mermaid diagram rendering (using mermaid.js v10.6.1)
-- Whitespace culling to remove excessive blank lines and spaces
-- Whitespace visualization for debugging
-- Improved UI with toggle controls
-- Loading indicator for Python environment initialization
+Initial Development Release - Authentic Python Jinja2 via Pyodide, JSON editor, live preview, Markdown/Mermaid rendering, whitespace control.
 
 ---
 
