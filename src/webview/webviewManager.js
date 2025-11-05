@@ -69,10 +69,16 @@ function setupWebviewForEditor(webview, editor, context) {
           // On initial load or forced refresh, auto-extract variables
           if (isInitialLoad || message.force) {
             const extractedVars = extractVariablesFromTemplate(lastTemplate);
+            
+            // Try to load ghost-saved variables for this file
+            const ghostVariables = context.workspaceState.get('jinjaGhostVariables', {});
+            const ghostVars = ghostVariables[lastFileUri] || null;
+            
             webview.postMessage({
               type: 'updateTemplate',
               template: lastTemplate,
               extractedVariables: extractedVars,
+              ghostVariables: ghostVars,
               fileUri: lastFileUri
             });
             // Only mark as no longer initial load if not forced
@@ -134,6 +140,27 @@ function setupWebviewForEditor(webview, editor, context) {
           } catch (err) {
             vscode.window.showErrorMessage('Failed to save variables preset');
             console.error('Save failed:', err);
+          }
+          return;
+        
+        case 'ghostSaveVariables':
+          // Ghost save variables for the current file (automatic background save)
+          try {
+            const fileUri = message.fileUri;
+            const variables = message.variables;
+            
+            if (fileUri) {
+              // Get existing ghost variables
+              const ghostVariables = context.workspaceState.get('jinjaGhostVariables', {});
+              
+              // Save variables for this file
+              ghostVariables[fileUri] = variables;
+              await context.workspaceState.update('jinjaGhostVariables', ghostVariables);
+              
+              // Silent save - no notification
+            }
+          } catch (err) {
+            console.error('Ghost save failed:', err);
           }
           return;
         

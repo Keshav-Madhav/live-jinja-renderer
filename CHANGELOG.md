@@ -4,6 +4,20 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.3.2] - 2025-11-06
+
+### Added
+- **Ghost Save Feature** 👻
+  - Variables automatically save per file in the background
+  - Auto-restore when reopening files
+  - Each file remembers its own variables across sessions
+
+### Improved
+- **Smarter Variable Extraction**
+  - Re-extraction now merges with existing variables
+  - User customizations are preserved
+  - New variables added without removing old ones
+
 ## [1.3.1] - 2025-11-05
 
 ### Added

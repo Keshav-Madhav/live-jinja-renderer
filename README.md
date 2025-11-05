@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.3.0-blue)
+![Version](https://img.shields.io/badge/version-1.3.2-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -129,6 +129,16 @@ The extension intelligently extracts variables from your Jinja2 templates:
 - Recognizes object properties like `{{ user.name }}`
 - Creates appropriate JSON structures (objects, arrays, nested properties)
 - Preserves your custom values when you manually re-extract
+
+### Ghost Save (Automatic Per-File Variables)
+
+**NEW in v1.3.2**: Variables automatically save and restore per file! 👻
+
+Your variables are now saved automatically in the background (1 second after editing) and restored when you reopen the file. Each file remembers its own variables across sessions. When you re-extract variables, your custom values are preserved and new variables are added.
+
+**Ghost Save vs. Named Presets**:
+- **Ghost Save**: Automatic, per-file, invisible
+- **Named Presets**: Manual, reusable across files, global
 
 ### Save & Load Variable Presets
 
@@ -277,6 +287,16 @@ This extension contributes the following VS Code settings:
 None at this time.
 
 ## Release Notes
+
+### 1.3.2
+
+**Ghost Save Feature** 👻:
+- Variables automatically save per file in the background (1 second after editing)
+- Auto-restore when reopening files - each file remembers its own variables across sessions
+
+**Smarter Variable Extraction** 🧠:
+- Re-extraction now merges with existing variables instead of replacing them
+- Your custom values are preserved, new variables are added seamlessly
 
 ### 1.3.1
 

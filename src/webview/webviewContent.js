@@ -966,6 +966,53 @@ result
 
         const debouncedUpdate = debounce(update, 300);
 
+        // Helper function to check if a value is the default extracted value
+        function isDefaultValue(userValue, extractedValue) {
+            // Simple comparison first
+            if (JSON.stringify(userValue) === JSON.stringify(extractedValue)) {
+                return true;
+            }
+            
+            // Check if the user value is essentially "empty" (default structure)
+            if (typeof userValue === 'string' && userValue === '') {
+                return true;
+            }
+            if (Array.isArray(userValue) && userValue.length === 1 && userValue[0] === '') {
+                return true;
+            }
+            if (typeof userValue === 'object' && !Array.isArray(userValue)) {
+                const hasOnlyEmptyValues = Object.values(userValue).every(v => {
+                    return v === '' || 
+                           (Array.isArray(v) && v.length === 1 && v[0] === '') ||
+                           (typeof v === 'object' && v !== null && Object.keys(v).length === 1 && Object.values(v)[0] === '');
+                });
+                if (hasOnlyEmptyValues) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        // Ghost save variables (automatic background save)
+        function ghostSaveVariables() {
+            if (!currentFileUri) return;
+            
+            try {
+                const variables = JSON.parse(variablesEditor.value || '{}');
+                vscode.postMessage({
+                    type: 'ghostSaveVariables',
+                    fileUri: currentFileUri,
+                    variables: variables
+                });
+            } catch (e) {
+                // Silently fail - don't interrupt user's work
+                console.log('Ghost save skipped: Invalid JSON');
+            }
+        }
+
+        const debouncedGhostSave = debounce(ghostSaveVariables, 1000);
+
         // Auto-resize variables section based on content
         function autoResizeVariablesSection() {
             const text = variablesEditor.value;
@@ -1114,6 +1161,7 @@ result
         variablesEditor.addEventListener('input', () => {
             debouncedUpdate();
             autoResizeVariablesSection();
+            debouncedGhostSave(); // Automatically save variables in the background
         });
 
         // Event handlers based on mode
@@ -1173,31 +1221,40 @@ result
                     if (message.extractedVariables) {
                         showLoading('Extracting variables...');
                         
-                        // Try to preserve user-modified values for variables that still exist
-                        let currentVars = {};
-                        try {
-                            currentVars = JSON.parse(variablesEditor.value || '{}');
-                        } catch (e) {
-                            // If parsing fails, start fresh
-                            currentVars = {};
+                        // Priority: ghostVariables > currentVars > extractedVariables
+                        let baseVars = {};
+                        
+                        // First, check if we have ghost-saved variables for this file
+                        if (message.ghostVariables && Object.keys(message.ghostVariables).length > 0) {
+                            baseVars = message.ghostVariables;
+                        } else {
+                            // Otherwise, try to use current editor values
+                            try {
+                                baseVars = JSON.parse(variablesEditor.value || '{}');
+                            } catch (e) {
+                                // If parsing fails, start fresh
+                                baseVars = {};
+                            }
                         }
                         
-                        // Only keep values for variables that still exist in the new template
+                        // Merge: Keep user values, add new extracted variables
                         const mergedVars = {};
                         const extractedVarNames = Object.keys(message.extractedVariables);
                         
                         for (const varName of extractedVarNames) {
-                            // If the variable existed before and has a non-default value, keep it
-                            if (varName in currentVars) {
+                            // If the variable has a user-set value, keep it
+                            if (varName in baseVars) {
                                 const extractedValue = message.extractedVariables[varName];
-                                const currentValue = currentVars[varName];
+                                const baseValue = baseVars[varName];
                                 
                                 // Check if user has customized the value (not the default empty structure)
-                                const hasCustomValue = JSON.stringify(currentValue) !== JSON.stringify(extractedValue);
+                                const hasCustomValue = !isDefaultValue(baseValue, extractedValue);
                                 
                                 if (hasCustomValue) {
-                                    mergedVars[varName] = currentValue;
+                                    // Keep the user's custom value
+                                    mergedVars[varName] = baseValue;
                                 } else {
+                                    // Use the newly extracted structure
                                     mergedVars[varName] = extractedValue;
                                 }
                             } else {
@@ -1219,11 +1276,43 @@ result
                     break;
                 
                 case 'replaceVariables':
-                    // Force replace all variables (from extract button)
+                    // Extract variables (from extract button)
+                    // This also merges with existing values to preserve user customizations
                     if (message.extractedVariables) {
                         showLoading('Extracting variables...');
                         
-                        variablesEditor.value = JSON.stringify(message.extractedVariables, null, 2);
+                        // Get current values to preserve user customizations
+                        let currentVars = {};
+                        try {
+                            currentVars = JSON.parse(variablesEditor.value || '{}');
+                        } catch (e) {
+                            currentVars = {};
+                        }
+                        
+                        // Merge: Keep user values for existing variables, add new ones
+                        const mergedVars = {};
+                        const extractedVarNames = Object.keys(message.extractedVariables);
+                        
+                        for (const varName of extractedVarNames) {
+                            if (varName in currentVars) {
+                                const extractedValue = message.extractedVariables[varName];
+                                const currentValue = currentVars[varName];
+                                
+                                // Keep user's custom value if it's not default
+                                const hasCustomValue = !isDefaultValue(currentValue, extractedValue);
+                                
+                                if (hasCustomValue) {
+                                    mergedVars[varName] = currentValue;
+                                } else {
+                                    mergedVars[varName] = extractedValue;
+                                }
+                            } else {
+                                // New variable
+                                mergedVars[varName] = message.extractedVariables[varName];
+                            }
+                        }
+                        
+                        variablesEditor.value = JSON.stringify(mergedVars, null, 2);
                         
                         // Auto-resize variables section after content update
                         autoResizeVariablesSection();
