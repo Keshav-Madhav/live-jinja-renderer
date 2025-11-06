@@ -6,12 +6,27 @@ const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
  * @param {vscode.Webview} webview - The webview to set up
  * @param {vscode.TextEditor} editor - The active text editor
  * @param {vscode.ExtensionContext} context - Extension context
+ * @param {Object} selectionRange - Optional selection range {startLine, endLine}
  * @returns {vscode.Disposable} - The change document subscription
  */
-function setupWebviewForEditor(webview, editor, context) {
-  const templateContent = editor.document.getText();
+function setupWebviewForEditor(webview, editor, context, selectionRange = null) {
+  // If selection range provided, extract only that portion
+  let templateContent;
+  
+  if (selectionRange && selectionRange.startLine !== undefined && selectionRange.endLine !== undefined) {
+    const doc = editor.document;
+    const startPos = new vscode.Position(selectionRange.startLine, 0);
+    const endLine = Math.min(selectionRange.endLine, doc.lineCount - 1);
+    const endPos = new vscode.Position(endLine, doc.lineAt(endLine).text.length);
+    const range = new vscode.Range(startPos, endPos);
+    templateContent = doc.getText(range);
+  } else {
+    templateContent = editor.document.getText();
+  }
+  
   let lastTemplate = templateContent;
   let lastFileUri = editor.document.uri.toString(); // Track the file URI
+  let lastSelectionRange = selectionRange; // Track the selection range
   let isInitialLoad = true; // Track if this is the first load
   let currentDecoration = null; // Track active highlight decoration
   let decorationDisposables = []; // Track event listeners for decoration removal
@@ -23,7 +38,8 @@ function setupWebviewForEditor(webview, editor, context) {
     enableMermaid: config.get('enableMermaid', false),
     showWhitespace: config.get('showWhitespace', false),
     cullWhitespace: config.get('cullWhitespace', true),
-    autoRerender: config.get('autoRerender', true)
+    autoRerender: config.get('autoRerender', true),
+    selectionRange: lastSelectionRange // Include selection range in settings
   };
   
   // Send initial settings to webview
@@ -38,7 +54,17 @@ function setupWebviewForEditor(webview, editor, context) {
   // The webview will decide whether to auto-render based on autoRerender setting
   const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
     if (e.document.uri.toString() === editor.document.uri.toString()) {
-      lastTemplate = e.document.getText();
+      // Extract only the selected range if applicable
+      if (lastSelectionRange && lastSelectionRange.startLine !== undefined && lastSelectionRange.endLine !== undefined) {
+        const doc = e.document;
+        const startPos = new vscode.Position(lastSelectionRange.startLine, 0);
+        const endLine = Math.min(lastSelectionRange.endLine, doc.lineCount - 1);
+        const endPos = new vscode.Position(endLine, doc.lineAt(endLine).text.length);
+        const range = new vscode.Range(startPos, endPos);
+        lastTemplate = doc.getText(range);
+      } else {
+        lastTemplate = e.document.getText();
+      }
       
       // Clear highlight on document change
       clearHighlight();
@@ -47,7 +73,8 @@ function setupWebviewForEditor(webview, editor, context) {
       webview.postMessage({ 
         type: 'updateTemplate',
         template: lastTemplate,
-        fileUri: lastFileUri
+        fileUri: lastFileUri,
+        selectionRange: lastSelectionRange
       });
     }
   });
@@ -72,16 +99,20 @@ function setupWebviewForEditor(webview, editor, context) {
           if (isInitialLoad || message.force) {
             const extractedVars = extractVariablesFromTemplate(lastTemplate);
             
-            // Try to load ghost-saved variables for this file
+            // Try to load ghost-saved variables for this file (with selection range)
             const ghostVariables = context.workspaceState.get('jinjaGhostVariables', {});
-            const ghostVars = ghostVariables[lastFileUri] || null;
+            const ghostKey = lastSelectionRange 
+              ? `${lastFileUri}:${lastSelectionRange.startLine}-${lastSelectionRange.endLine}`
+              : lastFileUri;
+            const ghostVars = ghostVariables[ghostKey] || null;
             
             webview.postMessage({
               type: 'updateTemplate',
               template: lastTemplate,
               extractedVariables: extractedVars,
               ghostVariables: ghostVars,
-              fileUri: lastFileUri
+              fileUri: lastFileUri,
+              selectionRange: lastSelectionRange
             });
             // Only mark as no longer initial load if not forced
             // This allows repeated force refreshes to work
@@ -93,7 +124,8 @@ function setupWebviewForEditor(webview, editor, context) {
             webview.postMessage({
               type: 'updateTemplate',
               template: lastTemplate,
-              fileUri: lastFileUri
+              fileUri: lastFileUri,
+              selectionRange: lastSelectionRange
             });
           }
           return;
@@ -150,13 +182,19 @@ function setupWebviewForEditor(webview, editor, context) {
           try {
             const fileUri = message.fileUri;
             const variables = message.variables;
+            const msgSelectionRange = message.selectionRange;
             
             if (fileUri) {
               // Get existing ghost variables
               const ghostVariables = context.workspaceState.get('jinjaGhostVariables', {});
               
-              // Save variables for this file
-              ghostVariables[fileUri] = variables;
+              // Create unique key: include selection range if present
+              const ghostKey = msgSelectionRange 
+                ? `${fileUri}:${msgSelectionRange.startLine}-${msgSelectionRange.endLine}`
+                : fileUri;
+              
+              // Save variables for this file (with optional selection range)
+              ghostVariables[ghostKey] = variables;
               await context.workspaceState.update('jinjaGhostVariables', ghostVariables);
               
               // Silent save - no notification
@@ -187,8 +225,14 @@ function setupWebviewForEditor(webview, editor, context) {
           try {
             const lineNumber = message.line;
             const fileUri = message.fileUri;
+            const msgSelectionRange = message.selectionRange;
             
             if (typeof lineNumber === 'number' && lineNumber > 0 && fileUri) {
+              // Adjust line number if we're rendering a selection
+              const actualLineNumber = msgSelectionRange 
+                ? lineNumber + msgSelectionRange.startLine - 1 
+                : lineNumber;
+              
               // Clear any existing highlight
               clearHighlight();
               
@@ -207,7 +251,7 @@ function setupWebviewForEditor(webview, editor, context) {
               await new Promise(resolve => setTimeout(resolve, 50));
               
               // Create a position for the line (0-indexed)
-              const lineIndex = Math.max(0, lineNumber - 1);
+              const lineIndex = Math.max(0, actualLineNumber - 1);
               const position = new vscode.Position(lineIndex, 0);
               
               // Create a range for the entire line

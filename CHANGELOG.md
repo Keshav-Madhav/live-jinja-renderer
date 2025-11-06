@@ -4,6 +4,28 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.4.0] - 2025-11-07
+
+### Added - MAJOR UPDATE
+- **Selection-Based Rendering** 🎯✨
+  - Select any portion of text in your Jinja/text file and render only that selection
+  - Open renderer via sidebar, panel, or right-click context menu with active selection
+  - File name display shows selection range: `filename.txt (Lines 5-12)`
+  - Auto-refresh, variable extraction, and ghost save all scoped to selected lines
+  - Selection range persists per file - each file remembers its rendering scope
+  - Perfect for large templates or focusing on specific sections
+
+### Improved
+- **Scoped Operations** 🔍
+  - Variable extraction only analyzes selected lines when a selection is active
+  - Document changes only track updates within the selected range
+  - Ghost save stores variables uniquely per file + selection range combination
+  
+- **Smart Error Navigation** 🎯
+  - Error line numbers automatically adjusted for selection offset
+  - Click error → navigates to correct line in full document
+  - Works seamlessly with both full document and selection rendering
+
 ## [1.3.3] - 2025-11-07
 
 ### Added

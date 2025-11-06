@@ -15,7 +15,7 @@ function getCurrentPanel() {
 /**
  * Register the render panel command
  */
-function registerRenderCommand(context, sidebarProvider) {
+function registerRenderCommand(context) {
   const renderPanelCommand = vscode.commands.registerCommand('live-jinja-tester.render', function () {
     console.log('✅ Render panel command triggered!');
     const editor = vscode.window.activeTextEditor;
@@ -26,11 +26,25 @@ function registerRenderCommand(context, sidebarProvider) {
 
     // Get the text from the active file
     const fileName = editor.document.fileName.split(/[/\\]/).pop();
+    
+    // Capture selection range if any
+    const selection = editor.selection;
+    let selectionRange = null;
+    let titleSuffix = '';
+    
+    if (!selection.isEmpty) {
+      selectionRange = {
+        startLine: selection.start.line,
+        endLine: selection.end.line
+      };
+      // Add line range to title (1-indexed for user display)
+      titleSuffix = ` (Lines ${selectionRange.startLine + 1}-${selectionRange.endLine + 1})`;
+    }
 
     // Create a new webview panel
     const panel = vscode.window.createWebviewPanel(
       'jinjaRenderer', // Internal ID
-      `Render: ${fileName}`, // Title
+      `Render: ${fileName}${titleSuffix}`, // Title with optional line range
       vscode.ViewColumn.Beside, // Open in a new tab to the side
       {
         enableScripts: true // Allow JavaScript to run in the webview
@@ -43,8 +57,8 @@ function registerRenderCommand(context, sidebarProvider) {
     // Set the webview's HTML content (panel mode)
     panel.webview.html = getWebviewContent(false); // false = panel mode
 
-    // Set up the webview for the current editor
-    const subscription = setupWebviewForEditor(panel.webview, editor, context);
+    // Set up the webview for the current editor (with selection range)
+    const subscription = setupWebviewForEditor(panel.webview, editor, context, selectionRange);
     
     // Clean up the subscription when the panel is closed
     panel.onDidDispose(() => {

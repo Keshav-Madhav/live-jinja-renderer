@@ -643,7 +643,7 @@ function getWebviewContent(isSidebar = false) {
         }
         
         // Function to update file name display
-        function updateFileNameDisplay(fileUri) {
+        function updateFileNameDisplay(fileUri, selectionRange = null) {
             if (!fileUri) {
                 fileNameDisplay.textContent = 'No file selected';
                 return;
@@ -661,6 +661,11 @@ function getWebviewContent(isSidebar = false) {
                 } catch (decodeError) {
                     // If decoding fails, use the original filename
                     console.warn('Failed to decode filename:', decodeError);
+                }
+                
+                // Add line range if selection is active (1-indexed for user display)
+                if (selectionRange && selectionRange.startLine !== undefined && selectionRange.endLine !== undefined) {
+                    fileName += \` (Lines \${selectionRange.startLine + 1}-\${selectionRange.endLine + 1})\`;
                 }
                 
                 // Use textContent instead of innerHTML to automatically escape HTML entities
@@ -693,6 +698,7 @@ function getWebviewContent(isSidebar = false) {
         let autoRerender = true; // Default on
         let currentTemplate = '';
         let currentFileUri = ''; // Track the file URI for error navigation
+        let currentSelectionRange = null; // Track the selection range if rendering partial document
         
         // Helper to show loading indicator
         function showLoading(message) {
@@ -872,7 +878,8 @@ function getWebviewContent(isSidebar = false) {
                     vscode.postMessage({
                         type: 'goToLine',
                         line: lineNumber,
-                        fileUri: currentFileUri
+                        fileUri: currentFileUri,
+                        selectionRange: currentSelectionRange // Pass selection range for line offset calculation
                     });
                 };
                 
@@ -1103,7 +1110,8 @@ result
                 vscode.postMessage({
                     type: 'ghostSaveVariables',
                     fileUri: currentFileUri,
-                    variables: variables
+                    variables: variables,
+                    selectionRange: currentSelectionRange // Include selection range for unique storage
                 });
             } catch (e) {
                 // Silently fail - don't interrupt user's work
@@ -1318,9 +1326,10 @@ result
                     // Template content updated from the extension
                     currentTemplate = message.template;
                     currentFileUri = message.fileUri || ''; // Store the file URI
+                    currentSelectionRange = message.selectionRange || null; // Store the selection range
                     
-                    // Update the file name display
-                    updateFileNameDisplay(currentFileUri);
+                    // Update the file name display (with line range if applicable)
+                    updateFileNameDisplay(currentFileUri, currentSelectionRange);
                     
                     // Only extract/merge variables if explicitly provided (manual extraction)
                     if (message.extractedVariables) {
@@ -1438,6 +1447,13 @@ result
                         showWhitespace = message.settings.showWhitespace;
                         cullWhitespace = message.settings.cullWhitespace;
                         autoRerender = message.settings.autoRerender !== undefined ? message.settings.autoRerender : true;
+                        
+                        // Update selection range if provided
+                        if (message.settings.selectionRange !== undefined) {
+                            currentSelectionRange = message.settings.selectionRange;
+                            // Update filename display with new selection range
+                            updateFileNameDisplay(currentFileUri, currentSelectionRange);
+                        }
                         
                         // Update the toggle button appearance (sidebar only)
                         updateAutoRerenderToggle();

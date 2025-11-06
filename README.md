@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.3.3-blue)
+![Version](https://img.shields.io/badge/version-1.4.0-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -17,6 +17,7 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 ### 🎨 **Flexible UI Options**
 - **Sidebar View**: Persistent panel in Activity Bar (like Source Control or Debug)
 - **Panel View**: Separate editor pane that opens beside your file
+- **Selection Rendering**: Select any portion of text to render just that section
 - Switch between views based on your workflow
 
 ### ⚡ **Real-time Everything**
@@ -61,8 +62,18 @@ Press `Ctrl+Alt+Shift+J` (Windows/Linux) or `Cmd+Shift+Alt+J` (Mac) for side-by-
 
 ## Features in Detail
 
+### Selection-Based Rendering
+**NEW in v1.4.0**: Render only the portion of your file that matters! 🎯
+
+- **Select text** in your Jinja/text file (any lines)
+- **Open renderer** via sidebar, panel, or context menu
+- **File name shows selection**: `filename.txt (Lines 5-12)`
+- **Scoped operations**: Variables, auto-refresh, ghost save all work on selected lines only
+- **Persistent**: Each file remembers its rendering scope
+- **Use cases**: Large templates, focusing on sections, testing specific blocks
+
 ### Auto-Rerender Control
-**NEW in v1.3.3**: Toggle automatic rendering for better performance with large templates.
+**v1.3.3**: Toggle automatic rendering for better performance with large templates.
 
 - **Enabled (default)**: Template re-renders on every file/variable change
 - **Disabled**: Manual render only - prevents automatic updates
@@ -70,10 +81,11 @@ Press `Ctrl+Alt+Shift+J` (Windows/Linux) or `Cmd+Shift+Alt+J` (Mac) for side-by-
 - **Setting**: `liveJinjaRenderer.autoRerender` in VS Code settings
 
 ### File Name Display
-**NEW in v1.3.3**: See which file you're rendering at a glance.
+**v1.3.3**: See which file you're rendering at a glance.
 
 - Displayed prominently above the Variables section
 - Automatically updates when switching files
+- Shows selection range if rendering partial document
 - Handles special characters correctly
 
 ### Variable Extraction
@@ -122,6 +134,12 @@ Enable "Mermaid" toggle for flowcharts and sequence diagrams.
 - `liveJinjaRenderer.autoRerender`: Automatic re-rendering (default: `true`)
 
 ## Recent Updates
+
+### 1.4.0 - MAJOR UPDATE
+- **Selection-based rendering**: Select any portion of text to render just that section
+- Scoped operations: Variables, auto-refresh, ghost save all work on selection
+- File name displays line range when rendering selection
+- Smart error navigation adjusts for selection offset
 
 ### 1.3.3
 - Dynamic file name display above variables

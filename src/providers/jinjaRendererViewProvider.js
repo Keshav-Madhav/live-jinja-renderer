@@ -32,7 +32,19 @@ class JinjaRendererViewProvider {
         this._disposables = [];
         
         this._currentEditor = editor;
-        const subscription = setupWebviewForEditor(this._view.webview, editor, this._context);
+        
+        // Capture selection range if any
+        const selection = editor.selection;
+        let selectionRange = null;
+        
+        if (!selection.isEmpty) {
+          selectionRange = {
+            startLine: selection.start.line,
+            endLine: selection.end.line
+          };
+        }
+        
+        const subscription = setupWebviewForEditor(this._view.webview, editor, this._context, selectionRange);
         this._disposables.push(subscription);
       }
     };
@@ -68,13 +80,34 @@ class JinjaRendererViewProvider {
         this._disposables.forEach(d => d.dispose());
         this._disposables = [];
         
+        // Capture selection range if any
+        const selection = editor.selection;
+        let selectionRange = null;
+        
+        if (!selection.isEmpty) {
+          selectionRange = {
+            startLine: selection.start.line,
+            endLine: selection.end.line
+          };
+        }
+        
         // Set up new subscription for the current editor
         this._currentEditor = editor;
-        const subscription = setupWebviewForEditor(this._view.webview, editor, this._context);
+        const subscription = setupWebviewForEditor(this._view.webview, editor, this._context, selectionRange);
         this._disposables.push(subscription);
         
-        // Get the current template content
-        const templateContent = editor.document.getText();
+        // Get the current template content (or selection)
+        let templateContent;
+        if (selectionRange) {
+          const doc = editor.document;
+          const startPos = new vscode.Position(selectionRange.startLine, 0);
+          const endLine = Math.min(selectionRange.endLine, doc.lineCount - 1);
+          const endPos = new vscode.Position(endLine, doc.lineAt(endLine).text.length);
+          const range = new vscode.Range(startPos, endPos);
+          templateContent = doc.getText(range);
+        } else {
+          templateContent = editor.document.getText();
+        }
         
         // Wait 100ms for setup to complete, then extract variables and trigger update
         setTimeout(() => {
