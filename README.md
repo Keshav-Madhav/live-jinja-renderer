@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.4.0-blue)
+![Version](https://img.shields.io/badge/version-1.4.2-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -67,6 +67,7 @@ Press `Ctrl+Alt+Shift+J` (Windows/Linux) or `Cmd+Shift+Alt+J` (Mac) for side-by-
 
 - **Select text** in your Jinja/text file (any lines)
 - **Open renderer** via sidebar, panel, or context menu
+- **Visual highlight**: Selected range gets a subtle blue tint in your editor
 - **File name shows selection**: `filename.txt (Lines 5-12)`
 - **Scoped operations**: Variables, auto-refresh, ghost save all work on selected lines only
 - **Persistent**: Each file remembers its rendering scope
@@ -137,6 +138,7 @@ Enable "Mermaid" toggle for flowcharts and sequence diagrams.
 
 ### 1.4.0 - MAJOR UPDATE
 - **Selection-based rendering**: Select any portion of text to render just that section
+- **Visual highlight**: Subtle blue tint on selected range in editor
 - Scoped operations: Variables, auto-refresh, ghost save all work on selection
 - File name displays line range when rendering selection
 - Smart error navigation adjusts for selection offset

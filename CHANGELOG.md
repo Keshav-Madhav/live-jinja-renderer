@@ -4,6 +4,21 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.4.2] - 2025-11-07
+
+### Added - Minor Enhancement
+- **Dynamic Selection Range Adjustment** 📏
+  - Selection range automatically expands when adding lines within the selected area
+  - Selection range automatically shrinks when removing lines within the selected area
+  - Changes outside the selection properly shift the range without modifying its size
+
+## [1.4.1] - 2025-11-07
+
+### Added - Minor Enhancement
+- **Visual Highlighting** 🎨
+  - Subtle blue background tint highlights the selected rendering range in the editor. Persists when switching between files and reapplies automatically
+  - Shows in overview ruler for easy visual navigation
+
 ## [1.4.0] - 2025-11-07
 
 ### Added - MAJOR UPDATE

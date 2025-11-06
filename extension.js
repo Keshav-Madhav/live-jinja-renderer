@@ -20,7 +20,7 @@ function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ What's New:\n• Loading indicators for better UX\n• Enhanced variable extraction\n• Cleaner JSON output`;
+        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ What's New:\n• Selection-based rendering - render only selected lines\n• Dynamic range adjustment as you edit\n• Visual highlighting of selected range`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

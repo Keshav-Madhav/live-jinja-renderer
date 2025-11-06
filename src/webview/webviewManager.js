@@ -30,6 +30,62 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
   let isInitialLoad = true; // Track if this is the first load
   let currentDecoration = null; // Track active highlight decoration
   let decorationDisposables = []; // Track event listeners for decoration removal
+  let selectionRangeDecoration = null; // Track selection range highlight
+  
+  // Create subtle decoration for selection range highlighting
+  const selectionRangeDecorationType = vscode.window.createTextEditorDecorationType({
+    backgroundColor: 'rgba(100, 149, 237, 0.08)', // Very subtle blue tint
+    isWholeLine: true,
+    overviewRulerColor: 'rgba(100, 149, 237, 0.3)',
+    overviewRulerLane: vscode.OverviewRulerLane.Right,
+    light: {
+      backgroundColor: 'rgba(100, 149, 237, 0.05)' // Even more subtle in light theme
+    },
+    dark: {
+      backgroundColor: 'rgba(100, 149, 237, 0.08)'
+    }
+  });
+  
+  // Apply selection range highlighting if applicable
+  function applySelectionHighlight() {
+    if (lastSelectionRange && lastSelectionRange.startLine !== undefined && lastSelectionRange.endLine !== undefined) {
+      const activeEditor = vscode.window.activeTextEditor;
+      if (activeEditor && activeEditor.document.uri.toString() === lastFileUri) {
+        const startPos = new vscode.Position(lastSelectionRange.startLine, 0);
+        const endLine = Math.min(lastSelectionRange.endLine, activeEditor.document.lineCount - 1);
+        const endPos = new vscode.Position(endLine, activeEditor.document.lineAt(endLine).text.length);
+        const range = new vscode.Range(startPos, endPos);
+        
+        activeEditor.setDecorations(selectionRangeDecorationType, [range]);
+        selectionRangeDecoration = selectionRangeDecorationType;
+      }
+    }
+  }
+  
+  // Clear selection range highlighting
+  function clearSelectionHighlight() {
+    if (selectionRangeDecoration) {
+      const activeEditor = vscode.window.activeTextEditor;
+      if (activeEditor) {
+        activeEditor.setDecorations(selectionRangeDecoration, []);
+      }
+    }
+  }
+  
+  // Apply initial highlight
+  setTimeout(() => {
+    applySelectionHighlight();
+  }, 150);
+  
+  // Reapply highlight when switching back to this editor
+  const activeEditorChangeSubscription = vscode.window.onDidChangeActiveTextEditor(activeEditor => {
+    if (activeEditor && activeEditor.document.uri.toString() === lastFileUri) {
+      // Small delay to ensure editor is fully active
+      setTimeout(() => {
+        applySelectionHighlight();
+      }, 50);
+    }
+  });
   
   // Get current settings from VS Code configuration
   const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
@@ -54,6 +110,48 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
   // The webview will decide whether to auto-render based on autoRerender setting
   const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
     if (e.document.uri.toString() === editor.document.uri.toString()) {
+      // Adjust selection range dynamically if changes occur within the selected range
+      if (lastSelectionRange && lastSelectionRange.startLine !== undefined && lastSelectionRange.endLine !== undefined) {
+        // Process each content change to adjust the selection range
+        for (const change of e.contentChanges) {
+          const changeStartLine = change.range.start.line;
+          const changeStartCol = change.range.start.character;
+          const changeEndLine = change.range.end.line;
+          const newText = change.text;
+          
+          // Count lines in the change
+          const oldLineCount = changeEndLine - changeStartLine;
+          const newLineCount = (newText.match(/\n/g) || []).length;
+          const lineDelta = newLineCount - oldLineCount;
+          
+          // Special case: change at the very start of the first line (column 0)
+          // This should shift the selection, not expand it
+          if (changeStartLine === lastSelectionRange.startLine && changeStartCol === 0 && lineDelta !== 0) {
+            // Shift both start and end
+            lastSelectionRange.startLine += lineDelta;
+            lastSelectionRange.endLine += lineDelta;
+          }
+          // Change is within the selected range (but not at the very start) - expand/shrink
+          else if (changeStartLine >= lastSelectionRange.startLine && changeStartLine <= lastSelectionRange.endLine) {
+            // Change is within the selected range - adjust endLine
+            lastSelectionRange.endLine = Math.max(
+              lastSelectionRange.startLine,
+              lastSelectionRange.endLine + lineDelta
+            );
+          } 
+          // Change is before the selected range - shift both start and end
+          else if (changeStartLine < lastSelectionRange.startLine) {
+            lastSelectionRange.startLine += lineDelta;
+            lastSelectionRange.endLine += lineDelta;
+          }
+        }
+        
+        // Ensure range is valid
+        lastSelectionRange.endLine = Math.min(lastSelectionRange.endLine, e.document.lineCount - 1);
+        lastSelectionRange.startLine = Math.max(0, lastSelectionRange.startLine);
+        lastSelectionRange.startLine = Math.min(lastSelectionRange.startLine, lastSelectionRange.endLine);
+      }
+      
       // Extract only the selected range if applicable
       if (lastSelectionRange && lastSelectionRange.startLine !== undefined && lastSelectionRange.endLine !== undefined) {
         const doc = e.document;
@@ -66,8 +164,13 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
         lastTemplate = e.document.getText();
       }
       
-      // Clear highlight on document change
+      // Clear error highlight on document change
       clearHighlight();
+      
+      // Reapply selection range highlight (if applicable)
+      setTimeout(() => {
+        applySelectionHighlight();
+      }, 50);
       
       // Send updated template to the webview (without auto-extraction)
       webview.postMessage({ 
@@ -302,9 +405,12 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
   
   return {
     dispose: () => {
-      clearHighlight(); // Clear highlight when disposing
+      clearHighlight(); // Clear error highlight when disposing
+      clearSelectionHighlight(); // Clear selection range highlight
+      selectionRangeDecorationType.dispose(); // Dispose decoration type
       changeDocumentSubscription.dispose();
       messageSubscription.dispose();
+      activeEditorChangeSubscription.dispose(); // Dispose editor change listener
     }
   };
 }
