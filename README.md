@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.3.2-blue)
+![Version](https://img.shields.io/badge/version-1.3.3-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -8,15 +8,11 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 > 🎯 **Perfect for**: Python developers, DevOps engineers, Ansible users, configuration management, and anyone working with Jinja2 templates.
 
-<!-- TODO: Add screenshots here -->
-<!-- ![Demo](images/demo.gif) -->
-
 ## ✨ Key Features
 
 ### 🐍 **Authentic Python Jinja2**
 - Uses **real Python Jinja2** engine via Pyodide (not a JavaScript port)
 - 100% compatible with Python Jinja2 behavior
-- No surprises when moving templates to production
 
 ### 🎨 **Flexible UI Options**
 - **Sidebar View**: Persistent panel in Activity Bar (like Source Control or Debug)
@@ -24,293 +20,121 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 - Switch between views based on your workflow
 
 ### ⚡ **Real-time Everything**
-- Instant rendering as you type
+- Instant rendering as you type (or manual control with auto-rerender toggle)
 - Live variable updates with JSON editing
 - Auto-sync when switching between files
 - Multi-file support with automatic context switching
 
 ### 📝 **Rich Content Support**
 - **Markdown rendering**: Beautiful formatted output
-- **Mermaid diagrams**: Flowcharts, sequence diagrams, gantt charts, and more
-- **Whitespace management**: Smart whitespace culling and visualization
-- **Syntax highlighting**: Clear, readable variable JSON editing
+- **Mermaid diagrams**: Flowcharts, sequence diagrams, gantt charts
+- **Whitespace management**: Smart culling and visualization
 
 ### 🎯 **Developer Experience**
-
-- **Native VS Code UI**: Controls integrated into title bar and menus
-- **Quick Access Buttons**: Markdown, Mermaid, and Update icons in navigation bar
-- **Organized Menu**: All settings and actions in the three-dot menu
-- **Save/Load Variable Presets**: Save complex JSON configurations and load them instantly
-- **Auto-Resizing Variable Section**: Variables window automatically expands/shrinks to fit content
-- **Smart Error Navigation**: Click on error messages to jump directly to the error line in your template
-- **Visual Error Highlighting**: Errors are highlighted with red background and border
-- Resizable panes with drag handles for manual adjustment
-- Beautiful UI with VS Code theme integration
+- **Smart Error Navigation**: Click errors to jump to the line in your template
+- **Visual Error Highlighting**: Red highlights on error lines
+- **Save/Load Variable Presets**: Reuse complex JSON configurations
+- **Ghost Save**: Variables auto-save per file and restore across sessions
+- **Auto-Resizing**: Variables section adapts to content
 - Keyboard shortcuts for quick access
 
 ---
 
-## Usage
+## Quick Start
 
 ### Sidebar View (Recommended)
 
-1. Open a `.txt`, `.jinja`, `.j2`, or plaintext file containing Jinja2 template syntax
-2. Click the **Jinja Renderer icon** in the Activity Bar (left sidebar)
-3. The Live Preview panel will open showing:
-   - **Variables section**: Enter your template variables in JSON format
-   - **Output section**: See the rendered result in real-time
-4. Use the **navigation bar buttons** for quick access:
-   - **Markdown** (📝): Toggle markdown rendering
-   - **Mermaid** (diagram icon): Toggle mermaid diagram rendering
-   - **Update** (🔄): Manually refresh to update for current file
-5. Access more options via the **three-dot menu** (⋯):
-   - **Rendering**: Toggle Markdown, Toggle Mermaid
-   - **Whitespace**: Toggle Show Whitespace, Toggle Cull Whitespace
-   - **Actions**: Re-extract Variables, Copy Output
-   - **Variables**: Save Variables Preset, Load Variables Preset, Delete Variables Preset
-   - **View**: Open in Editor Pane
-6. The sidebar stays open as you switch between files and updates automatically
+1. Open a `.txt`, `.jinja`, `.j2`, or plaintext file with Jinja2 syntax
+2. Press `Ctrl+Alt+J` (Windows/Linux) or `Cmd+Shift+J` (Mac)
+3. Edit variables in JSON format
+4. See rendered output in real-time
+5. Use the **auto-rerender toggle button** (▶️⏸️) to control automatic updates
 
-**Keyboard shortcut**:
-- **Mac**: `Cmd+Shift+J`
-- **Windows/Linux**: `Ctrl+Alt+J`
+**Quick Actions**:
+- **Navigation bar**: Markdown, Mermaid, Update icons
+- **Three-dot menu** (⋯): All settings and actions
+- **Auto-rerender button**: Toggle automatic rendering on/off
 
-**Command Palette**:
-- Press `Cmd+Shift+P` (or `Ctrl+Shift+P`)
-- Type "Show Jinja Renderer Sidebar"
-- Press Enter
+### Panel View
 
-**Context Menu**:
-- Right-click in the editor
-- Select "Jinja: Open in Sidebar"
+Press `Ctrl+Alt+Shift+J` (Windows/Linux) or `Cmd+Shift+Alt+J` (Mac) for side-by-side editor view.
 
-### Panel View (Alternative)
+## Features in Detail
 
-If you prefer to open the renderer in a separate editor pane:
+### Auto-Rerender Control
+**NEW in v1.3.3**: Toggle automatic rendering for better performance with large templates.
 
-1. Open a `.txt`, `.jinja`, `.j2`, or plaintext file
-2. Click the **play icon** in the editor toolbar (or use the three-dot menu → "Open in Editor Pane")
-3. A panel opens beside your editor with:
-   - **Toggle switches**: Markdown, Mermaid, Show Whitespace, Cull Whitespace (visible in header)
-   - **Action buttons**: Re-extract Variables, Rerender, Copy Output (visible in footer)
-   - Same live preview functionality as sidebar view
+- **Enabled (default)**: Template re-renders on every file/variable change
+- **Disabled**: Manual render only - prevents automatic updates
+- **Toggle button**: Click the play/pause icon in the sidebar file name bar
+- **Setting**: `liveJinjaRenderer.autoRerender` in VS Code settings
 
-**Keyboard shortcut**:
-- **Mac**: `Cmd+Shift+Alt+J`
-- **Windows/Linux**: `Ctrl+Alt+Shift+J`
+### File Name Display
+**NEW in v1.3.3**: See which file you're rendering at a glance.
 
-**Command Palette**:
-- Type "Open Jinja Renderer in Panel"
-
-**Context Menu**:
-- Right-click in the editor
-- Select "Jinja: Open in Editor Pane"
+- Displayed prominently above the Variables section
+- Automatically updates when switching files
+- Handles special characters correctly
 
 ### Variable Extraction
 
-The extension intelligently extracts variables from your Jinja2 templates:
+**Automatic**: When opening or switching files
+**Manual**: `Ctrl+Alt+E` (Windows/Linux) or `Cmd+Shift+E` (Mac)
 
-**Automatic Extraction**:
-- When you **first open a file**, variables are automatically detected and extracted
-- When you **switch to a different file**, variables are extracted for that file
+Intelligently detects:
+- `{{ variable }}` patterns
+- `{% for item in items %}` loops
+- Object properties like `{{ user.name }}`
+- Preserves custom values on re-extraction
 
-**Manual Extraction** (preserves your custom values during editing):
-- **Keyboard shortcut**: 
-  - **Mac**: `Cmd+Shift+E`
-  - **Windows/Linux**: `Ctrl+Alt+E`
-- **Three-dot menu**: Select "Extract Variables from Template"
-- **Footer button** (panel mode): Click "🔄 Extract Variables"
-- **Command Palette**: Type "Jinja: Extract Variables from Template"
-- **Context Menu**: Right-click in editor → "Jinja: Extract Variables from Template"
+### Ghost Save
+**Auto in v1.3.2**: Variables save automatically per file (1 second after editing) and restore when you reopen files.
 
-**How it works**:
-- Detects `{{ variable }}` patterns in your template
-- Identifies `{% for item in items %}` loops (creates arrays)
-- Recognizes object properties like `{{ user.name }}`
-- Creates appropriate JSON structures (objects, arrays, nested properties)
-- Preserves your custom values when you manually re-extract
+### Variable Presets
+**v1.1.0**: Save, load, and reuse variable configurations.
 
-### Ghost Save (Automatic Per-File Variables)
-
-**NEW in v1.3.2**: Variables automatically save and restore per file! 👻
-
-Your variables are now saved automatically in the background (1 second after editing) and restored when you reopen the file. Each file remembers its own variables across sessions. When you re-extract variables, your custom values are preserved and new variables are added.
-
-**Ghost Save vs. Named Presets**:
-- **Ghost Save**: Automatic, per-file, invisible
-- **Named Presets**: Manual, reusable across files, global
-
-### Save & Load Variable Presets
-
-**NEW in v1.1.0**: Save and reuse complex variable configurations!
-
-**Quick Access** (v1.3.1):
-- **Icon Buttons**: Click the Save or Load icons in the Variables header
-- **Native Context Menu**: Right-click anywhere in the Sidebar or Panel webview for quick access to:
-  - Rendering options (Toggle Markdown/Mermaid)
-  - Whitespace options (Show/Cull Whitespace)
-  - Jinja actions (Re-extract Variables)
-  - Output actions (Copy Output - Panel only)
-  - Variable presets (Save/Load)
-
-**Saving a Preset**:
-1. Configure your variables in the JSON editor
-2. Click the **Save icon** in Variables header, or **three-dot menu** (⋯) → **Save Variables Preset**, or **right-click** in Variables → **Save Variables Preset**
-3. Enter a name (default: `{filename} Variables`, e.g., "template Variables")
-4. Press Enter to save
-
-**Loading a Preset**:
-1. Click the **Load icon** in Variables header, or **three-dot menu** (⋯) → **Load Variables Preset**, or **right-click** in Variables → **Load Variables Preset**
-2. Select from your saved presets in the Quick Pick menu
-3. Variables are loaded instantly into the editor
-
-**Deleting a Preset**:
-1. Click the **three-dot menu** (⋯) → **Delete Variables Preset**
-2. Select the preset to delete
-3. Confirm the deletion
-
-**Use Cases**:
-- **Complex API Responses**: Save sample API response structures for testing
-- **Multiple Scenarios**: Store different test data configurations
-- **Common Templates**: Reuse variable sets across projects
-- **Quick Switching**: Easily switch between different data sets
-
-**Storage**: Presets are saved globally in VS Code and persist across all workspaces and sessions.
+- **Save**: Click save icon or three-dot menu
+- **Load**: Click load icon or three-dot menu
+- **Use cases**: API responses, test scenarios, common templates
 
 ## Examples
 
 ### Basic Template
-
-Template:
 ```jinja
 Hello {{ name }}!
-
-Your items:
 {% for item in items %}
   - {{ item }}
 {% endfor %}
 ```
 
-Variables:
-```json
-{
-  "name": "World",
-  "items": ["apple", "banana", "orange"]
-}
-```
+### Markdown Output
+Enable "Markdown" toggle for formatted output with headers, lists, and code blocks.
 
-### Markdown Example
-
-Template:
-```jinja
-# {{ title }}
-
-## Features
-{% for feature in features %}
-- {{ feature }}
-{% endfor %}
-
-## Code Example
-```python
-print("{{ message }}")
-```
-```
-
-Variables:
-```json
-{
-  "title": "My Project",
-  "features": ["Fast", "Reliable", "Easy to use"],
-  "message": "Hello from Jinja!"
-}
-```
-
-Enable the "Markdown" toggle to see formatted markdown output with proper headers, lists, and code blocks.
-
-### Mermaid Diagram Example
-
-Template:
-```jinja
-graph TD
-    A[{{ start }}] --> B{{{ decision }}}
-    B -->|Yes| C[{{ yes_action }}]
-    B -->|No| D[{{ no_action }}]
-```
-
-Variables:
-```json
-{
-  "start": "Start Process",
-  "decision": "Is Valid?",
-  "yes_action": "Process Data",
-  "no_action": "Show Error"
-}
-```
-
-Enable the "Mermaid" toggle to see a rendered flowchart diagram.
-
-### Whitespace Management
-
-The "Cull Whitespace" toggle (enabled by default) removes excessive blank lines and consolidates multiple spaces:
-- Multiple consecutive blank lines are reduced to at most 2 newlines
-- Multiple spaces are reduced to a single space
-- Lines containing only whitespace are removed
-
-The "Show Whitespace" toggle visualizes whitespace characters in plain text mode:
-- Spaces appear as `·`
-- Tabs appear as `→`
-- Newlines appear as `↵`
-
-## Requirements
-
-No additional requirements. The extension uses:
-- **Pyodide** (v0.25.1) - Python runtime in the browser for authentic Python Jinja2 rendering
-- **Python Jinja2** - The real Jinja2 template engine, not a JavaScript port
-- **Marked.js** (v11.1.0) - Markdown rendering (loaded from CDN)
-- **Mermaid.js** (v10.6.1) - Diagram rendering (loaded from CDN)
-
-**Note**: Internet connection is required to load libraries from CDN. First launch will take a few seconds to load the Python environment.
+### Mermaid Diagrams
+Enable "Mermaid" toggle for flowcharts and sequence diagrams.
 
 ## Extension Settings
 
-This extension contributes the following VS Code settings:
+- `liveJinjaRenderer.enableMarkdown`: Markdown rendering (default: `false`)
+- `liveJinjaRenderer.enableMermaid`: Mermaid diagrams (default: `false`)
+- `liveJinjaRenderer.showWhitespace`: Show whitespace characters (default: `false`)
+- `liveJinjaRenderer.cullWhitespace`: Remove excessive whitespace (default: `true`)
+- `liveJinjaRenderer.autoRerender`: Automatic re-rendering (default: `true`)
 
-- `liveJinjaRenderer.enableMarkdown`: Enable markdown rendering for the output (default: `false`)
-- `liveJinjaRenderer.enableMermaid`: Enable mermaid diagram rendering (default: `false`)
-- `liveJinjaRenderer.showWhitespace`: Show whitespace characters (spaces, tabs, newlines) in the output (default: `false`)
-- `liveJinjaRenderer.cullWhitespace`: Automatically remove excessive blank lines and whitespace from output (default: `true`)
+## Recent Updates
 
-**Note**: These settings can be toggled via the navigation bar buttons or three-dot menu. Changes are reflected in real-time across all views.
-
-## Known Issues
-
-None at this time.
-
-## Release Notes
+### 1.3.3
+- Dynamic file name display above variables
+- Auto-rerender toggle control for performance
+- Sidebar toggle button for quick access
 
 ### 1.3.2
-
-**Ghost Save Feature** 👻:
-- Variables automatically save per file in the background (1 second after editing)
-- Auto-restore when reopening files - each file remembers its own variables across sessions
-
-**Smarter Variable Extraction** 🧠:
-- Re-extraction now merges with existing variables instead of replacing them
-- Your custom values are preserved, new variables are added seamlessly
+- Ghost save: Variables auto-save per file
+- Smarter variable extraction with merge
 
 ### 1.3.1
-
-**Context Menu Integration** 🖱️:
-- Right-click in editor to access Jinja Renderer commands (Open in Sidebar, Open in Editor Pane, Extract Variables)
-
-**Variables Quick Actions** ⚡:
-- Save and Load variable preset icon buttons in the Variables header (using VS Code codicons)
-- Icon buttons feature hover highlighting in VS Code style
-
-**Native Context Menu** 📋:
-- Right-click anywhere in Sidebar or Panel webviews for VS Code's native context menu
-- Quick access to: Rendering options (Markdown/Mermaid), Whitespace options, Re-extract Variables, Copy Output (Panel), Save/Load Variable Presets
-- No clipping issues, native look and feel with full keyboard navigation
+- Editor context menu integration
+- Variable preset quick action buttons
 
 ### 1.3.0
 Clickable error messages with line highlighting - jump directly to errors in your template. Enhanced error detection and navigation for faster debugging.

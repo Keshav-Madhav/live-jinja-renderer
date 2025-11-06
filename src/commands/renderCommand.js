@@ -69,7 +69,8 @@ function registerConfigurationListener(context, sidebarProvider) {
           enableMarkdown: config.get('enableMarkdown', false),
           enableMermaid: config.get('enableMermaid', false),
           showWhitespace: config.get('showWhitespace', false),
-          cullWhitespace: config.get('cullWhitespace', true)
+          cullWhitespace: config.get('cullWhitespace', true),
+          autoRerender: config.get('autoRerender', true)
         };
         
         // Update sidebar webview if active

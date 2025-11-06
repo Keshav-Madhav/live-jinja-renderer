@@ -22,7 +22,8 @@ function setupWebviewForEditor(webview, editor, context) {
     enableMarkdown: config.get('enableMarkdown', false),
     enableMermaid: config.get('enableMermaid', false),
     showWhitespace: config.get('showWhitespace', false),
-    cullWhitespace: config.get('cullWhitespace', true)
+    cullWhitespace: config.get('cullWhitespace', true),
+    autoRerender: config.get('autoRerender', true)
   };
   
   // Send initial settings to webview
@@ -34,6 +35,7 @@ function setupWebviewForEditor(webview, editor, context) {
   }, 100);
   
   // Update template if the original file changes
+  // The webview will decide whether to auto-render based on autoRerender setting
   const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
     if (e.document.uri.toString() === editor.document.uri.toString()) {
       lastTemplate = e.document.getText();

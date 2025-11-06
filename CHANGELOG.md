@@ -4,6 +4,26 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.3.3] - 2025-11-07
+
+### Added
+- **Dynamic File Name Display** 📄
+  - Current file name displayed prominently above Variables section
+  - Centered display with file icon for easy identification
+  - Automatically updates when switching between files
+  - Handles special characters and URI-encoded filenames correctly
+
+- **Auto-Rerender Toggle** 🎮
+  - New configuration setting to enable/disable automatic re-rendering
+  - Default: `true` (maintains existing behavior)
+  - When disabled, prevents automatic updates on file/variable changes
+  - Setting available in VS Code settings: `liveJinjaRenderer.autoRerender`
+
+### Improved
+- **Settings Synchronization** 🔄
+  - Auto-rerender setting syncs between VS Code config and webview
+  - Changes to setting apply immediately without reload
+
 ## [1.3.2] - 2025-11-06
 
 ### Added

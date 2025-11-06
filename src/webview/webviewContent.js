@@ -93,6 +93,49 @@ function getWebviewContent(isSidebar = false) {
             letter-spacing: 0.5px;
             opacity: 0.9;
         }
+        .file-name-display {
+            text-align: center;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            background-color: var(--vscode-editorWidget-background);
+            border: 1px solid var(--vscode-editorWidget-border);
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--vscode-foreground);
+            font-family: var(--vscode-editor-font-family);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .file-name-display .codicon {
+            margin-right: 0;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        .file-name-display .auto-rerender-toggle {
+            margin-left: auto;
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.1s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .file-name-display .auto-rerender-toggle:hover {
+            background-color: var(--vscode-toolbar-hoverBackground);
+        }
+        .file-name-display .auto-rerender-toggle.disabled {
+            opacity: 0.5;
+        }
+        .file-name-display .auto-rerender-toggle .codicon {
+            font-size: 14px;
+        }
         .controls {
             display: flex;
             gap: 12px;
@@ -492,6 +535,16 @@ function getWebviewContent(isSidebar = false) {
     <div id="loading-indicator" style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: var(--vscode-notifications-background); color: var(--vscode-notifications-foreground); padding: 6px 12px; border: 1px solid var(--vscode-notifications-border); border-radius: 2px; z-index: 1000; font-size: 11px; display: none;">Loading...</div>
     
     <div class="container">
+        <div class="file-name-display" id="file-name-display">
+            <i class="codicon codicon-file"></i>
+            <span id="file-name-text">No file selected</span>
+            ${isSidebar ? `
+            <div class="auto-rerender-toggle" id="auto-rerender-toggle" title="Toggle Auto-rerender">
+                <i class="codicon codicon-debug-start"></i>
+            </div>
+            ` : ''}
+        </div>
+        
         <div class="variables-section" id="variables-section">
             <div class="header-group">
                 <h2>Variables (JSON)</h2>
@@ -570,6 +623,52 @@ function getWebviewContent(isSidebar = false) {
         const outputDisplay = document.getElementById('output');
         const markdownOutput = document.getElementById('markdown-output');
         const loadingIndicator = document.getElementById('loading-indicator');
+        const fileNameDisplay = document.getElementById('file-name-text');
+        const autoRerenderToggle = isSidebarMode ? document.getElementById('auto-rerender-toggle') : null;
+        
+        // Function to update auto-rerender toggle button appearance
+        function updateAutoRerenderToggle() {
+            if (!autoRerenderToggle) return;
+            
+            const icon = autoRerenderToggle.querySelector('.codicon');
+            if (autoRerender) {
+                autoRerenderToggle.classList.remove('disabled');
+                autoRerenderToggle.title = 'Auto-rerender: ON (click to disable)';
+                icon.className = 'codicon codicon-debug-start';
+            } else {
+                autoRerenderToggle.classList.add('disabled');
+                autoRerenderToggle.title = 'Auto-rerender: OFF (click to enable)';
+                icon.className = 'codicon codicon-debug-pause';
+            }
+        }
+        
+        // Function to update file name display
+        function updateFileNameDisplay(fileUri) {
+            if (!fileUri) {
+                fileNameDisplay.textContent = 'No file selected';
+                return;
+            }
+            
+            // Extract filename from URI
+            try {
+                const uri = fileUri.replace(/\\\\/g, '/');
+                const parts = uri.split('/');
+                let fileName = parts[parts.length - 1] || 'Untitled';
+                
+                // Decode URI component to handle encoded special characters
+                try {
+                    fileName = decodeURIComponent(fileName);
+                } catch (decodeError) {
+                    // If decoding fails, use the original filename
+                    console.warn('Failed to decode filename:', decodeError);
+                }
+                
+                // Use textContent instead of innerHTML to automatically escape HTML entities
+                fileNameDisplay.textContent = fileName;
+            } catch (e) {
+                fileNameDisplay.textContent = 'Unknown file';
+            }
+        }
         
         // Get controls based on mode
         let markdownToggle, mermaidToggle, showWhitespaceToggle, cullWhitespaceToggle;
@@ -591,6 +690,7 @@ function getWebviewContent(isSidebar = false) {
         let isMermaidMode = false;
         let showWhitespace = false;
         let cullWhitespace = true; // Default on
+        let autoRerender = true; // Default on
         let currentTemplate = '';
         let currentFileUri = ''; // Track the file URI for error navigation
         
@@ -1157,9 +1257,11 @@ result
         // Initialize JSON editor features
         setupJsonEditor(variablesEditor);
         
-        // Listen for variable changes and auto-rerender
+        // Listen for variable changes and auto-rerender (if enabled)
         variablesEditor.addEventListener('input', () => {
-            debouncedUpdate();
+            if (autoRerender) {
+                debouncedUpdate();
+            }
             autoResizeVariablesSection();
             debouncedGhostSave(); // Automatically save variables in the background
         });
@@ -1217,6 +1319,9 @@ result
                     currentTemplate = message.template;
                     currentFileUri = message.fileUri || ''; // Store the file URI
                     
+                    // Update the file name display
+                    updateFileNameDisplay(currentFileUri);
+                    
                     // Only extract/merge variables if explicitly provided (manual extraction)
                     if (message.extractedVariables) {
                         showLoading('Extracting variables...');
@@ -1272,7 +1377,10 @@ result
                         hideLoading();
                     }
                     
-                    await update();
+                    // Only auto-update if autoRerender is enabled
+                    if (autoRerender) {
+                        await update();
+                    }
                     break;
                 
                 case 'replaceVariables':
@@ -1329,6 +1437,10 @@ result
                         isMermaidMode = message.settings.enableMermaid;
                         showWhitespace = message.settings.showWhitespace;
                         cullWhitespace = message.settings.cullWhitespace;
+                        autoRerender = message.settings.autoRerender !== undefined ? message.settings.autoRerender : true;
+                        
+                        // Update the toggle button appearance (sidebar only)
+                        updateAutoRerenderToggle();
                         
                         if (!isSidebarMode) {
                             // Update panel toggles (panel mode)
@@ -1494,6 +1606,22 @@ result
         loadVariablesBtn.addEventListener('click', () => {
             vscode.postMessage({ type: 'executeCommand', command: 'live-jinja-tester.loadVariables' });
         });
+        
+        // Auto-rerender toggle handler (sidebar mode only)
+        if (isSidebarMode && autoRerenderToggle) {
+            autoRerenderToggle.addEventListener('click', async () => {
+                autoRerender = !autoRerender;
+                updateAutoRerenderToggle();
+                
+                // If we just enabled auto-rerender, trigger a render
+                if (autoRerender) {
+                    await update();
+                }
+            });
+            
+            // Initialize the toggle button appearance
+            updateAutoRerenderToggle();
+        }
         
         // Panel mode: Attach action button listeners
         if (!isSidebarMode) {
