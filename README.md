@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.4.2-blue)
+![Version](https://img.shields.io/badge/version-1.4.3-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -18,6 +18,7 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 - **Sidebar View**: Persistent panel in Activity Bar (like Source Control or Debug)
 - **Panel View**: Separate editor pane that opens beside your file
 - **Selection Rendering**: Select any portion of text to render just that section
+- **File History Dropdown**: Quick access to recently opened files/selections
 - Switch between views based on your workflow
 
 ### ⚡ **Real-time Everything**
@@ -25,6 +26,7 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 - Live variable updates with JSON editing
 - Auto-sync when switching between files
 - Multi-file support with automatic context switching
+- File history tracks last 5 contexts for easy switching
 
 ### 📝 **Rich Content Support**
 - **Markdown rendering**: Beautiful formatted output
@@ -37,6 +39,7 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 - **Save/Load Variable Presets**: Reuse complex JSON configurations
 - **Ghost Save**: Variables auto-save per file and restore across sessions
 - **Auto-Resizing**: Variables section adapts to content
+- **File History**: Dropdown menu for quick context switching
 - Keyboard shortcuts for quick access
 
 ---
@@ -50,11 +53,13 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 3. Edit variables in JSON format
 4. See rendered output in real-time
 5. Use the **auto-rerender toggle button** (▶️⏸️) to control automatic updates
+6. Click the **chevron icon** (🔽) to access recently opened files/selections
 
 **Quick Actions**:
 - **Navigation bar**: Markdown, Mermaid, Update icons
 - **Three-dot menu** (⋯): All settings and actions
 - **Auto-rerender button**: Toggle automatic rendering on/off
+- **File history dropdown**: Switch between recent files/selections
 
 ### Panel View
 
@@ -62,8 +67,18 @@ Press `Ctrl+Alt+Shift+J` (Windows/Linux) or `Cmd+Shift+Alt+J` (Mac) for side-by-
 
 ## Features in Detail
 
+### File History Dropdown
+**NEW in v1.5.0**: Switch between multiple files and selections effortlessly! 📂
+
+- **Quick access**: Click the chevron icon next to the file name in sidebar
+- **Last 5 contexts**: Tracks your most recent files and selections
+- **Live-linked**: Each entry stays connected to its source file for automatic updates
+- **Unique states**: Each context maintains its own variables and selection range
+- **Active indicator**: Checkmark shows which context is currently active
+- **Use cases**: Multi-file projects, comparing template sections, rapid context switching
+
 ### Selection-Based Rendering
-**NEW in v1.4.0**: Render only the portion of your file that matters! 🎯
+**v1.4.0**: Render only the portion of your file that matters! 🎯
 
 - **Select text** in your Jinja/text file (any lines)
 - **Open renderer** via sidebar, panel, or context menu
@@ -71,6 +86,7 @@ Press `Ctrl+Alt+Shift+J` (Windows/Linux) or `Cmd+Shift+Alt+J` (Mac) for side-by-
 - **File name shows selection**: `filename.txt (Lines 5-12)`
 - **Scoped operations**: Variables, auto-refresh, ghost save all work on selected lines only
 - **Persistent**: Each file remembers its rendering scope
+- **History support**: Different selections of the same file appear as separate history entries
 - **Use cases**: Large templates, focusing on sections, testing specific blocks
 
 ### Auto-Rerender Control
@@ -87,6 +103,7 @@ Press `Ctrl+Alt+Shift+J` (Windows/Linux) or `Cmd+Shift+Alt+J` (Mac) for side-by-
 - Displayed prominently above the Variables section
 - Automatically updates when switching files
 - Shows selection range if rendering partial document
+- History dropdown for quick context switching
 - Handles special characters correctly
 
 ### Variable Extraction
@@ -135,6 +152,13 @@ Enable "Mermaid" toggle for flowcharts and sequence diagrams.
 - `liveJinjaRenderer.autoRerender`: Automatic re-rendering (default: `true`)
 
 ## Recent Updates
+
+### 1.5.0 - MAJOR UPDATE
+- **File History Dropdown**: Quick access to last 5 files/selections via dropdown menu
+- Each history entry maintains its own state (file, selection, variables)
+- Live-linked to source files for automatic updates
+- Click chevron icon next to file name to switch contexts
+- Perfect for multi-file workflows and rapid context switching
 
 ### 1.4.0 - MAJOR UPDATE
 - **Selection-based rendering**: Select any portion of text to render just that section

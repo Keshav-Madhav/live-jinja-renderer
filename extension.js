@@ -20,7 +20,7 @@ function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ What's New:\n• Selection-based rendering - render only selected lines\n• Dynamic range adjustment as you edit\n• Visual highlighting of selected range`;
+        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ What's New:\n• File History Dropdown - quick access to last 5 files/selections\n• Better UI/UX with left-aligned dropdown items\n• Enhanced context switching workflow`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
@@ -48,7 +48,7 @@ function activate(context) {
     registerSettingsCommands(context);
     registerVariableCommands(context, sidebarProvider, getCurrentPanel);
     registerActionCommands(context, sidebarProvider, getCurrentPanel);
-    registerRenderCommand(context, sidebarProvider);
+    registerRenderCommand(context);
     
     // Register configuration listener
     registerConfigurationListener(context, sidebarProvider);

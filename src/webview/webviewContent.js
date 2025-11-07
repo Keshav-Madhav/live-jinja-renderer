@@ -39,6 +39,7 @@ function getWebviewContent(isSidebar = false) {
             height: 100vh;
             padding: 12px;
             gap: 12px;
+            position: relative;
         }
         .header-group {
             display: flex;
@@ -104,21 +105,79 @@ function getWebviewContent(isSidebar = false) {
             font-weight: 500;
             color: var(--vscode-foreground);
             font-family: var(--vscode-editor-font-family);
-            overflow: hidden;
+            overflow: visible; /* Changed from hidden to visible for dropdown */
             text-overflow: ellipsis;
             white-space: nowrap;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            position: relative;
         }
         .file-name-display .codicon {
             margin-right: 0;
             font-size: 14px;
             vertical-align: middle;
         }
-        .file-name-display .auto-rerender-toggle {
+        .file-history-dropdown {
             margin-left: auto;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 3px;
+            transition: background-color 0.1s ease;
+            position: relative;
+            z-index: 100;
+        }
+        .file-history-dropdown:hover {
+            background-color: var(--vscode-toolbar-hoverBackground);
+        }
+        .file-history-dropdown .codicon {
+            font-size: 16px;
+        }
+        .file-history-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background-color: var(--vscode-menu-background);
+            border: 1px solid var(--vscode-menu-border);
+            border-radius: 3px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            z-index: 10000;
+            min-width: 250px;
+            max-width: 400px;
+            display: none;
+            overflow: hidden;
+        }
+        .file-history-menu.show {
+            display: block;
+        }
+        .file-history-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--vscode-menu-foreground);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: left;
+            transition: background-color 0.1s ease;
+        }
+        .file-history-item:hover {
+            background-color: var(--vscode-menu-selectionBackground);
+            color: var(--vscode-menu-selectionForeground);
+        }
+        .file-history-item.active {
+            background-color: var(--vscode-list-activeSelectionBackground);
+            color: var(--vscode-list-activeSelectionForeground);
+            font-weight: 600;
+        }
+        .file-history-item .codicon {
+            margin-right: 6px;
+            font-size: 14px;
+        }
+        .auto-rerender-toggle {
             padding: 2px 6px;
             border-radius: 3px;
             cursor: pointer;
@@ -127,13 +186,13 @@ function getWebviewContent(isSidebar = false) {
             align-items: center;
             gap: 4px;
         }
-        .file-name-display .auto-rerender-toggle:hover {
+        .auto-rerender-toggle:hover {
             background-color: var(--vscode-toolbar-hoverBackground);
         }
-        .file-name-display .auto-rerender-toggle.disabled {
+        .auto-rerender-toggle.disabled {
             opacity: 0.5;
         }
-        .file-name-display .auto-rerender-toggle .codicon {
+        .auto-rerender-toggle .codicon {
             font-size: 14px;
         }
         .controls {
@@ -539,8 +598,11 @@ function getWebviewContent(isSidebar = false) {
             <i class="codicon codicon-file"></i>
             <span id="file-name-text">No file selected</span>
             ${isSidebar ? `
-            <div class="auto-rerender-toggle" id="auto-rerender-toggle" title="Toggle Auto-rerender">
-                <i class="codicon codicon-debug-start"></i>
+            <div class="file-history-dropdown" id="file-history-dropdown" title="Recent files">
+                <i class="codicon codicon-chevron-down"></i>
+            </div>
+            <div class="file-history-menu" id="file-history-menu">
+                <!-- History items will be populated here -->
             </div>
             ` : ''}
         </div>
@@ -567,6 +629,13 @@ function getWebviewContent(isSidebar = false) {
         <div class="output-section" id="output-section">
             <div class="header-group">
         <h2>Output</h2>
+                ${isSidebar ? `
+                <div class="header-actions">
+                    <div class="auto-rerender-toggle" id="auto-rerender-toggle" title="Toggle Auto-rerender">
+                        <i class="codicon codicon-debug-start"></i>
+                    </div>
+                </div>
+                ` : ''}
             </div>
             ${isSidebar ? '' : `
             <!-- Panel mode: Toggle switches -->
@@ -625,6 +694,84 @@ function getWebviewContent(isSidebar = false) {
         const loadingIndicator = document.getElementById('loading-indicator');
         const fileNameDisplay = document.getElementById('file-name-text');
         const autoRerenderToggle = isSidebarMode ? document.getElementById('auto-rerender-toggle') : null;
+        const fileHistoryDropdown = isSidebarMode ? document.getElementById('file-history-dropdown') : null;
+        const fileHistoryMenu = isSidebarMode ? document.getElementById('file-history-menu') : null;
+        
+        // File history management (sidebar only)
+        let fileHistory = [];
+        
+        // Setup file history dropdown (sidebar only)
+        if (isSidebarMode && fileHistoryDropdown && fileHistoryMenu) {
+            // Initialize with empty state
+            updateFileHistoryUI([]);
+            
+            // Toggle dropdown visibility
+            fileHistoryDropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isShown = fileHistoryMenu.classList.toggle('show');
+                console.log('Dropdown toggled:', isShown ? 'OPEN' : 'CLOSED');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', () => {
+                if (fileHistoryMenu.classList.contains('show')) {
+                    console.log('Closing dropdown (clicked outside)');
+                    fileHistoryMenu.classList.remove('show');
+                }
+            });
+            
+            // Prevent dropdown from closing when clicking inside menu
+            fileHistoryMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+        
+        // Update file history dropdown UI
+        function updateFileHistoryUI(history) {
+            if (!isSidebarMode || !fileHistoryMenu) return;
+            
+            console.log('Updating file history UI with', history?.length || 0, 'items');
+            fileHistory = history || [];
+            fileHistoryMenu.innerHTML = '';
+            
+            if (fileHistory.length === 0) {
+                const emptyItem = document.createElement('div');
+                emptyItem.className = 'file-history-item';
+                emptyItem.style.opacity = '0.6';
+                emptyItem.style.cursor = 'default';
+                emptyItem.textContent = 'No recent files';
+                fileHistoryMenu.appendChild(emptyItem);
+                console.log('Added empty state item');
+                return;
+            }
+            
+            fileHistory.forEach((item, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'file-history-item' + (item.isActive ? ' active' : '');
+                
+                const icon = document.createElement('i');
+                icon.className = item.isActive ? 'codicon codicon-check' : 'codicon codicon-file';
+                
+                const label = document.createElement('span');
+                label.textContent = item.label;
+                
+                historyItem.appendChild(icon);
+                historyItem.appendChild(label);
+                
+                historyItem.addEventListener('click', () => {
+                    console.log('Switching to history item:', item.index);
+                    vscode.postMessage({
+                        type: 'switchToHistoryItem',
+                        index: item.index
+                    });
+                    fileHistoryMenu.classList.remove('show');
+                });
+                
+                fileHistoryMenu.appendChild(historyItem);
+            });
+            
+            console.log('File history UI updated with', fileHistory.length, 'items');
+        }
         
         // Function to update auto-rerender toggle button appearance
         function updateAutoRerenderToggle() {
@@ -1322,6 +1469,13 @@ result
         window.addEventListener('message', async event => {
             const message = event.data;
             switch (message.type) {
+                case 'updateFileHistory':
+                    // Update file history dropdown (sidebar only)
+                    if (isSidebarMode) {
+                        updateFileHistoryUI(message.history);
+                    }
+                    break;
+                
                 case 'updateTemplate':
                     // Template content updated from the extension
                     currentTemplate = message.template;

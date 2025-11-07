@@ -4,6 +4,31 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.4.3] - 2025-11-08
+
+### Added - QoL Enhancement
+- **File History Dropdown** 📂🔄
+  - Sidebar now features a dropdown menu to quickly switch between recently opened files/selections
+  - Tracks last 5 file contexts (file + selection range combinations)
+  - Each history entry maintains its own state: file URI, selection range, and variables
+  - Entries remain live-linked to their source files for automatic updates
+  - Click the chevron icon (right side of file name) to access history dropdown
+  - Active context is highlighted with a checkmark in the dropdown
+  - Perfect for working with multiple templates or different sections of the same file
+
+### Improved
+- **Enhanced Workflow** 🚀
+  - Switch between templates/selections without navigating in the editor
+  - Each file/selection combination remembers its own variables (ghost save)
+  - History updates automatically when opening new files or changing selections
+  - Most recent context always appears at the top of the list
+
+- **Better UI Layout** 🎨
+  - Auto-rerender toggle moved to Output header for better visibility
+  - File history dropdown positioned on right side for clear separation from file icon
+  - Improved spacing and button placement for cleaner interface
+  - Dropdown menu items are left-aligned for better readability
+
 ## [1.4.2] - 2025-11-07
 
 ### Added - Minor Enhancement
