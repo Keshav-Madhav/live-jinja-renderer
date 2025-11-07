@@ -4,6 +4,14 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.4.4] - 2025-11-08
+
+### Fixed
+- **Selection Highlight Persistence** 🔧
+  - Selection range highlights now properly clear when sidebar/panel is closed or hidden
+  - Highlights are re-applied when sidebar becomes visible again
+  - Prevents visual clutter when switching between different views
+
 ## [1.4.3] - 2025-11-08
 
 ### Added - QoL Enhancement

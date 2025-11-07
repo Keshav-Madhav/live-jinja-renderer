@@ -266,6 +266,18 @@ class JinjaRendererViewProvider {
       this._disposables.forEach(d => d.dispose());
       this._disposables = [];
     });
+    
+    // Clean up highlights when view becomes hidden
+    webviewView.onDidChangeVisibility(() => {
+      if (!webviewView.visible) {
+        // View is hidden, clean up decorations
+        this._disposables.forEach(d => d.dispose());
+        this._disposables = [];
+      } else {
+        // View is visible again, re-setup for active editor
+        updateForActiveEditor();
+      }
+    });
   }
   
   /**

@@ -20,7 +20,7 @@ function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ What's New:\n• File History Dropdown - quick access to last 5 files/selections\n• Better UI/UX with left-aligned dropdown items\n• Enhanced context switching workflow`;
+        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n🔧 Bug Fix:\n• Selection highlights now clear properly when sidebar/panel is closed`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
