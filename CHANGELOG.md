@@ -4,6 +4,15 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.4.6] - 2025-11-09
+
+### Added
+- Status bar indicator showing current settings (hover to see all toggle states)
+- Click status bar to open extension settings
+
+### Changed
+- Removed toast notifications when toggling settings (less intrusive)
+
 ## [1.4.5] - 2025-11-08
 
 ### Changed - Code Quality Improvements 📁✨

@@ -4,6 +4,7 @@ const { registerSettingsCommands } = require('./src/commands/settingsCommands');
 const { registerVariableCommands } = require('./src/commands/variableCommands');
 const { registerActionCommands } = require('./src/commands/actionCommands');
 const { registerRenderCommand, registerConfigurationListener, getCurrentPanel } = require('./src/commands/renderCommand');
+const { createStatusBarItem, updateStatusBar } = require('./src/utils/statusBar');
 
 /**
  * This method is called when your extension is activated
@@ -20,7 +21,7 @@ function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n🔧 Bug Fix:\n• Selection highlights now clear properly when sidebar/panel is closed`;
+        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n� New Feature:\n• Status bar indicator with settings tooltip\n• Click "Jinja Renderer" in status bar to view/change settings\n• Hover to see all current toggle states`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
@@ -38,6 +39,9 @@ function activate(context) {
     // Show a notification to confirm activation
     vscode.window.showInformationMessage('✅ Live Jinja Renderer is now active!');
     
+    // Create status bar item
+    createStatusBarItem(context);
+    
     // Register the sidebar webview view provider
     const sidebarProvider = new JinjaRendererViewProvider(context);
     context.subscriptions.push(
@@ -52,6 +56,15 @@ function activate(context) {
     
     // Register configuration listener
     registerConfigurationListener(context, sidebarProvider);
+    
+    // Listen for configuration changes to update status bar
+    context.subscriptions.push(
+      vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration('liveJinjaRenderer')) {
+          updateStatusBar();
+        }
+      })
+    );
     
     console.log('✅ Commands registered successfully!');
   
