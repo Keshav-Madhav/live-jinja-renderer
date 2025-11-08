@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.4.6-blue)
+![Version](https://img.shields.io/badge/version-1.5.0-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -145,13 +145,48 @@ Enable "Mermaid" toggle for flowcharts and sequence diagrams.
 
 ## Extension Settings
 
-- `liveJinjaRenderer.enableMarkdown`: Markdown rendering (default: `false`)
-- `liveJinjaRenderer.enableMermaid`: Mermaid diagrams (default: `false`)
-- `liveJinjaRenderer.showWhitespace`: Show whitespace characters (default: `false`)
-- `liveJinjaRenderer.cullWhitespace`: Remove excessive whitespace (default: `true`)
-- `liveJinjaRenderer.autoRerender`: Automatic re-rendering (default: `true`)
+All settings are now organized into clear categories for easier configuration:
+
+### Rendering
+- `liveJinjaRenderer.rendering.enableMarkdown`: Markdown rendering (default: `false`)
+- `liveJinjaRenderer.rendering.enableMermaid`: Mermaid diagrams (default: `false`)
+- `liveJinjaRenderer.rendering.showWhitespace`: Show whitespace characters (default: `true`)
+- `liveJinjaRenderer.rendering.cullWhitespace`: Remove excessive whitespace (default: `false`)
+- `liveJinjaRenderer.rendering.autoRerender`: Automatic re-rendering (default: `true`)
+- `liveJinjaRenderer.rendering.rerenderDelay`: Delay before auto-rerender in ms (default: `300`)
+
+### Editor
+- `liveJinjaRenderer.editor.autoResizeVariables`: Auto-resize variables section (default: `true`)
+- `liveJinjaRenderer.editor.formatVariablesJson`: Auto-format JSON (default: `true`)
+
+### Variables
+- `liveJinjaRenderer.variables.autoExtract`: Auto-extract variables (default: `true`)
+- `liveJinjaRenderer.variables.preserveCustomValues`: Preserve custom values on re-extract (default: `true`)
+
+### History
+- `liveJinjaRenderer.history.enabled`: Enable file history tracking (default: `true`)
+- `liveJinjaRenderer.history.size`: Max history items, 3-15 (default: `5`)
+
+### Advanced
+- `liveJinjaRenderer.advanced.ghostSave`: Auto-save variables per file (default: `true`)
+- `liveJinjaRenderer.advanced.ghostSaveDelay`: Delay before ghost-save in ms (default: `1000`)
+- `liveJinjaRenderer.advanced.showLoadingIndicators`: Show loading messages (default: `true`)
+
+> **Note**: Old setting names (e.g., `liveJinjaRenderer.enableMarkdown`) still work for backwards compatibility.
 
 ## Recent Updates
+
+### 1.5.0 - Enhanced Settings & Customization
+- **Reorganized Settings**: Clear categories (Rendering, Editor, Variables, History, Advanced)
+- **8 New Settings**: Control render delay, auto-resize, JSON formatting, file history, ghost save delay, and more
+- **Better Defaults**: Show Whitespace now ON, Cull Whitespace now OFF by default
+- **Smart UI**: File history dropdown hides when disabled, ghost save respects settings
+- **Backwards Compatible**: Old setting names still work
+
+### 1.4.6 - Status Bar Indicator
+- Status bar shows current settings (hover to see all)
+- Click status bar to open extension settings
+- Removed toast notifications for less intrusive experience
 
 ### 1.4.5 - Code Quality & Type Safety
 - **Major Refactor**: Split webview code into separate files (HTML, CSS, JS) for better maintainability

@@ -21,16 +21,19 @@ function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n� New Feature:\n• Status bar indicator with settings tooltip\n• Click "Jinja Renderer" in status bar to view/change settings\n• Hover to see all current toggle states`;
+        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ New in this version:\n• Enhanced settings with clear categories (Rendering, Editor, Variables, History, Advanced)\n• 8 new customization options for better control\n\nCheck the settings for all new options!`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
+          'Open Settings',
           'Dismiss'
         ).then(result => {
           if (result === 'View Release Notes') {
             vscode.env.openExternal(vscode.Uri.parse(
               'https://github.com/Keshav-Madhav/live-jinja-renderer/blob/main/CHANGELOG.md'
             ));
+          } else if (result === 'Open Settings') {
+            vscode.commands.executeCommand('workbench.action.openSettings', '@ext:KilloWatts.live-jinja-renderer');
           }
         });
       }

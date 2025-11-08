@@ -89,12 +89,18 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
   
   // Get current settings from VS Code configuration
   const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+  
+  // Try new setting names first, fallback to old names for backwards compatibility
   const settings = {
-    enableMarkdown: config.get('enableMarkdown', false),
-    enableMermaid: config.get('enableMermaid', false),
-    showWhitespace: config.get('showWhitespace', false),
-    cullWhitespace: config.get('cullWhitespace', true),
-    autoRerender: config.get('autoRerender', true),
+    enableMarkdown: config.get('rendering.enableMarkdown') ?? config.get('enableMarkdown', false),
+    enableMermaid: config.get('rendering.enableMermaid') ?? config.get('enableMermaid', false),
+    showWhitespace: config.get('rendering.showWhitespace') ?? config.get('showWhitespace', true),
+    cullWhitespace: config.get('rendering.cullWhitespace') ?? config.get('cullWhitespace', false),
+    autoRerender: config.get('rendering.autoRerender') ?? config.get('autoRerender', true),
+    autoExtractVariables: config.get('variables.autoExtract', true),
+    ghostSaveEnabled: config.get('advanced.ghostSave', true),
+    historyEnabled: config.get('history.enabled', true),
+    historySize: config.get('history.size', 5),
     selectionRange: lastSelectionRange // Include selection range in settings
   };
   
@@ -198,16 +204,20 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
     async message => {
       switch (message.type) {
         case 'ready':
-          // On initial load or forced refresh, auto-extract variables
-          if (isInitialLoad || message.force) {
+          // On initial load or forced refresh, auto-extract variables if enabled
+          const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+          const autoExtract = config.get('variables.autoExtract', true);
+          
+          if ((isInitialLoad || message.force) && autoExtract) {
             const extractedVars = extractVariablesFromTemplate(lastTemplate);
             
             // Try to load ghost-saved variables for this file (with selection range)
+            const ghostSaveEnabled = config.get('advanced.ghostSave', true);
             const ghostVariables = context.workspaceState.get('jinjaGhostVariables', {});
             const ghostKey = lastSelectionRange 
               ? `${lastFileUri}:${lastSelectionRange.startLine}-${lastSelectionRange.endLine}`
               : lastFileUri;
-            const ghostVars = ghostVariables[ghostKey] || null;
+            const ghostVars = (ghostSaveEnabled && ghostVariables[ghostKey]) || null;
             
             webview.postMessage({
               type: 'updateTemplate',
@@ -223,7 +233,7 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
               isInitialLoad = false;
             }
           } else {
-            // Subsequent loads: just send template without extraction
+            // Subsequent loads or auto-extract disabled: just send template without extraction
             webview.postMessage({
               type: 'updateTemplate',
               template: lastTemplate,
@@ -283,6 +293,15 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
         case 'ghostSaveVariables':
           // Ghost save variables for the current file (automatic background save)
           try {
+            // Check if ghost save is enabled
+            const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+            const ghostSaveEnabled = config.get('advanced.ghostSave', true);
+            
+            if (!ghostSaveEnabled) {
+              // Ghost save is disabled, skip silently
+              return;
+            }
+            
             const fileUri = message.fileUri;
             const variables = message.variables;
             const msgSelectionRange = message.selectionRange;

@@ -79,12 +79,18 @@ function registerConfigurationListener(context, sidebarProvider) {
       if (e.affectsConfiguration('liveJinjaRenderer')) {
         // Get updated settings
         const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+        
+        // Try new setting names first, fallback to old names for backwards compatibility
         const settings = {
-          enableMarkdown: config.get('enableMarkdown', false),
-          enableMermaid: config.get('enableMermaid', false),
-          showWhitespace: config.get('showWhitespace', false),
-          cullWhitespace: config.get('cullWhitespace', true),
-          autoRerender: config.get('autoRerender', true)
+          enableMarkdown: config.get('rendering.enableMarkdown') ?? config.get('enableMarkdown', false),
+          enableMermaid: config.get('rendering.enableMermaid') ?? config.get('enableMermaid', false),
+          showWhitespace: config.get('rendering.showWhitespace') ?? config.get('showWhitespace', true),
+          cullWhitespace: config.get('rendering.cullWhitespace') ?? config.get('cullWhitespace', false),
+          autoRerender: config.get('rendering.autoRerender') ?? config.get('autoRerender', true),
+          autoExtractVariables: config.get('variables.autoExtract', true),
+          ghostSaveEnabled: config.get('advanced.ghostSave', true),
+          historyEnabled: config.get('history.enabled', true),
+          historySize: config.get('history.size', 5)
         };
         
         // Update sidebar webview if active

@@ -4,6 +4,32 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.5.0] - 2025-11-09
+
+### Added - Enhanced Settings & Customization 🎛️
+- **Reorganized Settings** into clear categories (Rendering, Editor, Variables, History, Advanced)
+- **New Settings**: 
+  - Render delay control (100-2000ms)
+  - Auto-resize variables section toggle
+  - Auto-extract variables toggle
+  - File history enable/disable and size (3-15 files)
+  - Ghost save enable/disable and delay
+  - JSON formatting toggle
+  - Loading indicators toggle
+  - Preserve custom values toggle
+
+### Changed - Better Defaults 🎨
+- **Show Whitespace** now `true` by default (better template debugging)
+- **Cull Whitespace** now `false` by default (preserves all formatting)
+- All settings use categorized names (e.g., `rendering.enableMarkdown`)
+- Full backwards compatibility with old setting names
+
+### Improved
+- File history dropdown hides when history is disabled
+- Ghost save respects settings
+- Status bar shows all settings in organized categories
+- Dynamic UI updates based on configuration
+
 ## [1.4.6] - 2025-11-09
 
 ### Added

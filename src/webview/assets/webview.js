@@ -19,14 +19,17 @@ const fileHistoryMenu = isSidebarMode ? /** @type {HTMLDivElement | null} */ (do
 
 // File history management (sidebar only)
 let fileHistory = [];
+let historyEnabled = true;
 
 // State variables
 let lastRenderedOutput = '';
 let isMarkdownMode = false;
 let isMermaidMode = false;
-let showWhitespace = false;
-let cullWhitespace = true;
+let showWhitespace = true;
+let cullWhitespace = false;
 let autoRerender = true;
+let autoExtractVariables = true;
+let ghostSaveEnabled = true;
 let currentTemplate = '';
 let currentFileUri = '';
 let currentSelectionRange = null;
@@ -261,12 +264,24 @@ function updateAutoRerenderToggle() {
   }
 }
 
-function updateFileHistoryUI(history) {
+function updateFileHistoryUI(history, enabled = true) {
   if (!isSidebarMode || !fileHistoryMenu) return;
   
-  console.log('Updating file history UI with', history?.length || 0, 'items');
+  console.log('Updating file history UI with', history?.length || 0, 'items, enabled:', enabled);
   fileHistory = history || [];
+  historyEnabled = enabled;
+  
+  // Hide dropdown if history is disabled
+  if (fileHistoryDropdown) {
+    fileHistoryDropdown.style.display = historyEnabled ? 'flex' : 'none';
+  }
+  
   fileHistoryMenu.innerHTML = '';
+  
+  if (!historyEnabled) {
+    // Don't populate menu if history is disabled
+    return;
+  }
   
   if (fileHistory.length === 0) {
     const emptyItem = document.createElement('div');
@@ -495,6 +510,11 @@ const debouncedUpdate = debounce(update, 300);
 function ghostSaveVariables() {
   if (!currentFileUri) return;
   
+  // Check if ghost save is enabled
+  if (!ghostSaveEnabled) {
+    return;
+  }
+  
   try {
     const variables = JSON.parse(variablesEditor.value || '{}');
     vscode.postMessage({
@@ -636,7 +656,10 @@ function setupJsonEditor(textarea) {
 
 // Setup file history dropdown (sidebar only)
 if (isSidebarMode && fileHistoryDropdown && fileHistoryMenu) {
-  updateFileHistoryUI([]);
+  // Initialize visibility based on history enabled setting
+  fileHistoryDropdown.style.display = historyEnabled ? 'flex' : 'none';
+  
+  updateFileHistoryUI([], historyEnabled);
   
   fileHistoryDropdown.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -818,7 +841,7 @@ window.addEventListener('message', async event => {
   switch (message.type) {
     case 'updateFileHistory':
       if (isSidebarMode) {
-        updateFileHistoryUI(message.history);
+        updateFileHistoryUI(message.history, message.historyEnabled);
       }
       break;
     
@@ -919,6 +942,9 @@ window.addEventListener('message', async event => {
         showWhitespace = message.settings.showWhitespace;
         cullWhitespace = message.settings.cullWhitespace;
         autoRerender = message.settings.autoRerender !== undefined ? message.settings.autoRerender : true;
+        autoExtractVariables = message.settings.autoExtractVariables !== undefined ? message.settings.autoExtractVariables : true;
+        ghostSaveEnabled = message.settings.ghostSaveEnabled !== undefined ? message.settings.ghostSaveEnabled : true;
+        historyEnabled = message.settings.historyEnabled !== undefined ? message.settings.historyEnabled : true;
         
         if (message.settings.selectionRange !== undefined) {
           currentSelectionRange = message.settings.selectionRange;
@@ -926,6 +952,11 @@ window.addEventListener('message', async event => {
         }
         
         updateAutoRerenderToggle();
+        
+        // Update file history dropdown visibility based on history enabled setting
+        if (isSidebarMode && fileHistoryDropdown) {
+          fileHistoryDropdown.style.display = historyEnabled ? 'flex' : 'none';
+        }
         
         if (!isSidebarMode) {
           if (markdownToggle) markdownToggle.checked = isMarkdownMode;

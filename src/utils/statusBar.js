@@ -20,11 +20,17 @@ function updateStatusBar() {
   if (!statusBarItem) return;
   
   const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
-  const markdown = config.get('enableMarkdown', false);
-  const mermaid = config.get('enableMermaid', false);
-  const showWhitespace = config.get('showWhitespace', false);
-  const cullWhitespace = config.get('cullWhitespace', true);
-  const autoRerender = config.get('autoRerender', true);
+  
+  // Try new setting names first, fallback to old names for backwards compatibility
+  const markdown = config.get('rendering.enableMarkdown') ?? config.get('enableMarkdown', false);
+  const mermaid = config.get('rendering.enableMermaid') ?? config.get('enableMermaid', false);
+  const showWhitespace = config.get('rendering.showWhitespace') ?? config.get('showWhitespace', true);
+  const cullWhitespace = config.get('rendering.cullWhitespace') ?? config.get('cullWhitespace', false);
+  const autoRerender = config.get('rendering.autoRerender') ?? config.get('autoRerender', true);
+  const autoExtract = config.get('variables.autoExtract', true);
+  const historyEnabled = config.get('history.enabled', true);
+  const historySize = config.get('history.size', 5);
+  const ghostSave = config.get('advanced.ghostSave', true);
   
   // Simple text display
   statusBarItem.text = 'Jinja Renderer';
@@ -32,11 +38,18 @@ function updateStatusBar() {
   // Detailed tooltip with all settings
   const tooltip = new vscode.MarkdownString();
   tooltip.appendMarkdown('**Live Jinja Renderer Settings**\n\n');
+  tooltip.appendMarkdown('**Rendering**\n\n');
   tooltip.appendMarkdown(`${markdown ? '✓' : '○'} Markdown Rendering\n\n`);
   tooltip.appendMarkdown(`${mermaid ? '✓' : '○'} Mermaid Diagrams\n\n`);
   tooltip.appendMarkdown(`${showWhitespace ? '✓' : '○'} Show Whitespace\n\n`);
   tooltip.appendMarkdown(`${cullWhitespace ? '✓' : '○'} Cull Whitespace\n\n`);
   tooltip.appendMarkdown(`${autoRerender ? '✓' : '○'} Auto Re-render\n\n`);
+  tooltip.appendMarkdown('**Variables**\n\n');
+  tooltip.appendMarkdown(`${autoExtract ? '✓' : '○'} Auto Extract Variables\n\n`);
+  tooltip.appendMarkdown('**History**\n\n');
+  tooltip.appendMarkdown(`${historyEnabled ? '✓' : '○'} History Enabled${historyEnabled ? ` (${historySize} files)` : ''}\n\n`);
+  tooltip.appendMarkdown('**Advanced**\n\n');
+  tooltip.appendMarkdown(`${ghostSave ? '✓' : '○'} Ghost Save Variables\n\n`);
   tooltip.appendMarkdown('---\n\n');
   tooltip.appendMarkdown('*Click to open settings*');
   

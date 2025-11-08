@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.4.6",
+  "version": "1.5.0",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -379,30 +379,101 @@
     "configuration": {
       "title": "Live Jinja Renderer",
       "properties": {
-        "liveJinjaRenderer.enableMarkdown": {
+        "liveJinjaRenderer.rendering.enableMarkdown": {
           "type": "boolean",
           "default": false,
-          "description": "Enable markdown rendering for the output"
+          "description": "Enable markdown rendering for the output",
+          "order": 1
         },
-        "liveJinjaRenderer.enableMermaid": {
+        "liveJinjaRenderer.rendering.enableMermaid": {
           "type": "boolean",
           "default": false,
-          "description": "Enable mermaid diagram rendering"
+          "description": "Enable mermaid diagram rendering",
+          "order": 2
         },
-        "liveJinjaRenderer.showWhitespace": {
-          "type": "boolean",
-          "default": false,
-          "description": "Show whitespace characters (spaces, tabs, newlines) in the output"
-        },
-        "liveJinjaRenderer.cullWhitespace": {
+        "liveJinjaRenderer.rendering.showWhitespace": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically remove excessive blank lines and whitespace from output"
+          "description": "Show whitespace characters (spaces, tabs, newlines) in the output",
+          "order": 3
         },
-        "liveJinjaRenderer.autoRerender": {
+        "liveJinjaRenderer.rendering.cullWhitespace": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically remove excessive blank lines and whitespace from output",
+          "order": 4
+        },
+        "liveJinjaRenderer.rendering.autoRerender": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically re-render the template when the file or variables change"
+          "description": "Automatically re-render the template when the file or variables change",
+          "order": 5
+        },
+        "liveJinjaRenderer.rendering.rerenderDelay": {
+          "type": "number",
+          "default": 300,
+          "minimum": 100,
+          "maximum": 2000,
+          "description": "Delay in milliseconds before auto-rerendering after changes (min: 100ms, max: 2000ms)",
+          "order": 6
+        },
+        "liveJinjaRenderer.editor.autoResizeVariables": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically resize the variables section based on content",
+          "order": 8
+        },
+        "liveJinjaRenderer.editor.formatVariablesJson": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically format variables JSON with proper indentation",
+          "order": 9
+        },
+        "liveJinjaRenderer.variables.autoExtract": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically extract variables from templates. When disabled, variables are only extracted when using the shortcut or manual extraction command",
+          "order": 10
+        },
+        "liveJinjaRenderer.variables.preserveCustomValues": {
+          "type": "boolean",
+          "default": true,
+          "description": "Preserve custom variable values when re-extracting variables from templates",
+          "order": 11
+        },
+        "liveJinjaRenderer.history.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable file history tracking in sidebar view",
+          "order": 20
+        },
+        "liveJinjaRenderer.history.size": {
+          "type": "number",
+          "default": 5,
+          "minimum": 3,
+          "maximum": 15,
+          "description": "Maximum number of files to keep in history (min: 3, max: 15). Only applies when history is enabled",
+          "order": 21
+        },
+        "liveJinjaRenderer.advanced.ghostSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically save variable values in the background for each file/selection. When enabled, your variable values are restored when switching back to a file",
+          "order": 30
+        },
+        "liveJinjaRenderer.advanced.ghostSaveDelay": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 500,
+          "maximum": 5000,
+          "description": "Delay in milliseconds before ghost-saving variable changes (min: 500ms, max: 5000ms)",
+          "order": 31
+        },
+        "liveJinjaRenderer.advanced.showLoadingIndicators": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show loading indicators when processing templates",
+          "order": 32
         }
       }
     }

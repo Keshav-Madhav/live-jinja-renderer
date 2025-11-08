@@ -12,15 +12,58 @@ class JinjaRendererViewProvider {
     this._view = undefined;
     this._currentEditor = undefined;
     this._disposables = [];
-    this._fileHistory = []; // Track last 5 file contexts
-    this._maxHistorySize = 5;
+    this._fileHistory = []; // Track file contexts
     this._currentHistoryIndex = -1; // Index of currently active history item
+    
+    // Get initial history size from settings
+    const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+    this._maxHistorySize = config.get('history.size', 5);
+  }
+  
+  /**
+   * Update max history size from settings
+   */
+  _updateHistorySize() {
+    const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+    const newSize = config.get('history.size', 5);
+    
+    if (newSize !== this._maxHistorySize) {
+      this._maxHistorySize = newSize;
+      
+      // Trim history if it's now too large
+      if (this._fileHistory.length > this._maxHistorySize) {
+        this._fileHistory = this._fileHistory.slice(0, this._maxHistorySize);
+        
+        // Adjust current index if needed
+        if (this._currentHistoryIndex >= this._maxHistorySize) {
+          this._currentHistoryIndex = this._maxHistorySize - 1;
+        }
+        
+        // Update webview with trimmed history
+        this._sendHistoryToWebview();
+      }
+    }
   }
   
   /**
    * Add a file context to history
    */
   _addToHistory(editor, selectionRange) {
+    // Check if history is enabled
+    const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+    const historyEnabled = config.get('history.enabled', true);
+    
+    if (!historyEnabled) {
+      // Clear history when disabled
+      this._fileHistory = [];
+      this._currentHistoryIndex = -1;
+      this._sendHistoryToWebview();
+      return;
+    }
+    
+    // Update history size from settings
+    this._updateHistorySize();
+    
     const fileUri = editor.document.uri.toString();
     const fileName = editor.document.fileName.split(/[/\\]/).pop();
     
@@ -54,7 +97,7 @@ class JinjaRendererViewProvider {
       
       this._fileHistory.unshift(newContext);
       
-      // Keep only last 5 items
+      // Keep only up to max history size
       if (this._fileHistory.length > this._maxHistorySize) {
         this._fileHistory.pop();
       }
@@ -72,6 +115,20 @@ class JinjaRendererViewProvider {
   _sendHistoryToWebview() {
     if (!this._view) return;
     
+    // Check if history is enabled
+    const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+    const historyEnabled = config.get('history.enabled', true);
+    
+    if (!historyEnabled) {
+      // Send empty history when disabled
+      this._view.webview.postMessage({
+        type: 'updateFileHistory',
+        history: [],
+        historyEnabled: false
+      });
+      return;
+    }
+    
     const historyItems = this._fileHistory.map((item, index) => ({
       label: item.fileName + (item.selectionRange 
         ? ` (Lines ${item.selectionRange.startLine + 1}-${item.selectionRange.endLine + 1})`
@@ -82,7 +139,8 @@ class JinjaRendererViewProvider {
     
     this._view.webview.postMessage({
       type: 'updateFileHistory',
-      history: historyItems
+      history: historyItems,
+      historyEnabled: true
     });
   }
   
@@ -258,6 +316,17 @@ class JinjaRendererViewProvider {
     this._disposables.push(
       vscode.window.onDidChangeActiveTextEditor(() => {
         updateForActiveEditor();
+      })
+    );
+    
+    // Listen for configuration changes
+    this._disposables.push(
+      vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration('liveJinjaRenderer.history')) {
+          // Update history size or enabled state
+          this._updateHistorySize();
+          this._sendHistoryToWebview();
+        }
       })
     );
     
