@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.4.4-blue)
+![Version](https://img.shields.io/badge/version-1.4.5-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -153,12 +153,32 @@ Enable "Mermaid" toggle for flowcharts and sequence diagrams.
 
 ## Recent Updates
 
-### 1.5.0 - MAJOR UPDATE
+### 1.4.5 - Code Quality & Type Safety
+- **Major Refactor**: Split webview code into separate files (HTML, CSS, JS) for better maintainability
+- **Clean Code**: Fixed all TypeScript and ESLint errors without using `@ts-nocheck`
+- Added comprehensive type declarations for webview APIs and external libraries
+- Improved code organization following separation of concerns best practices
+- Zero linting errors with proper type checking enabled
+- No functional changes - all features work exactly as before
+
+### 1.4.4 - Bug Fixes
+- Fixed selection highlight persistence when closing/reopening sidebar
+- Highlights properly clear and re-apply when switching views
+
+### 1.4.3 - File History
 - **File History Dropdown**: Quick access to last 5 files/selections via dropdown menu
 - Each history entry maintains its own state (file, selection, variables)
 - Live-linked to source files for automatic updates
 - Click chevron icon next to file name to switch contexts
 - Perfect for multi-file workflows and rapid context switching
+
+### 1.4.2 - Selection Range Adjustment
+- Dynamic selection range adjustment when adding/removing lines
+- Selection automatically expands and shrinks based on edits
+
+### 1.4.1 - Visual Highlighting
+- Subtle blue background tint highlights selected rendering range
+- Shows in overview ruler for easy navigation
 
 ### 1.4.0 - MAJOR UPDATE
 - **Selection-based rendering**: Select any portion of text to render just that section
@@ -167,50 +187,50 @@ Enable "Mermaid" toggle for flowcharts and sequence diagrams.
 - File name displays line range when rendering selection
 - Smart error navigation adjusts for selection offset
 
-### 1.3.3
+### 1.3.3 - Auto-Rerender Control
 - Dynamic file name display above variables
 - Auto-rerender toggle control for performance
 - Sidebar toggle button for quick access
 
-### 1.3.2
+### 1.3.2 - Ghost Save
 - Ghost save: Variables auto-save per file
 - Smarter variable extraction with merge
 
-### 1.3.1
+### 1.3.1 - Context Menu Integration
 - Editor context menu integration
 - Variable preset quick action buttons
 
-### 1.3.0
+### 1.3.0 - Error Navigation
 Clickable error messages with line highlighting - jump directly to errors in your template. Enhanced error detection and navigation for faster debugging.
 
-### 1.2.1
+### 1.2.1 - Enhanced JSON Editor
 Enhanced JSON editor with smart auto-closing brackets, auto-indentation, tab support, and better editing experience.
 
-### 1.2.0
+### 1.2.0 - Loading Indicators
 Loading indicators for async operations, improved variable extraction algorithm (30+ test cases), and cleaner JSON output with 2-space indentation.
 
-### 1.1.4
+### 1.1.4 - Auto-Resizing
 Auto-resizing variables section that dynamically adjusts height based on content (100px min, 60% viewport max).
 
-### 1.1.3
+### 1.1.3 - Bug Fixes
 Fixed "Update for Current File" button functionality for proper variable extraction and live updates.
 
-### 1.1.2
+### 1.1.2 - Bug Fixes
 Fixed "Extract Variables" button in panel view and improved icon visibility in menus.
 
-### 1.1.0
+### 1.1.0 - Variable Presets
 Variable Presets feature - save, load, and delete variable configurations for reuse across templates.
 
-### 1.0.2
+### 1.0.2 - Smart Extraction
 Smart variable extraction (auto-extract on file load, manual via `Ctrl+Alt+E`). Fixed newline rendering and whitespace preservation bugs.
 
-### 1.0.1
+### 1.0.1 - UI/UX Improvements
 UI/UX improvements - moved controls to native VS Code menus, added navigation bar buttons, fixed clipboard functionality.
 
-### 1.0.0
+### 1.0.0 - Initial Release
 Initial Marketplace Release - production-ready with full feature set.
 
-### 0.0.1
+### 0.0.1 - Development Release
 Initial Development Release - Authentic Python Jinja2 via Pyodide, JSON editor, live preview, Markdown/Mermaid rendering, whitespace control.
 
 ---

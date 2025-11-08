@@ -4,6 +4,41 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.4.5] - 2025-11-08
+
+### Changed - Code Quality Improvements 📁✨
+- **Major Refactor**: Split webview code into separate HTML, CSS, and JavaScript files for better readability and maintainability
+  - Created `src/webview/assets/template.html` - HTML structure and layout
+  - Created `src/webview/assets/styles.css` - All CSS styles in one organized file
+  - Created `src/webview/assets/webview.js` - All JavaScript logic and functionality
+  - Created `src/webview/assets/globals.d.ts` - TypeScript declarations for webview globals
+  - Updated `src/webview/webviewContent.js` to assemble components dynamically
+- Improved code organization with proper separation of concerns (structure, presentation, behavior)
+- Template placeholders allow dynamic content injection based on view mode (sidebar vs panel)
+- Easier to maintain, update, and debug individual components
+- **No functional changes** - all features remain exactly the same
+
+### Fixed - Type Safety & Linting 🔧
+- **Clean Code**: Resolved all TypeScript and ESLint errors in webview code
+  - Added proper TypeScript type declarations for VS Code webview APIs
+  - Added type declarations for external libraries (Pyodide, Mermaid, Marked)
+  - Fixed DOM type casting issues with proper HTMLElement types
+  - Enabled `downlevelIteration` for better ES5 compatibility
+  - Configured ESLint to properly recognize browser and webview globals
+  - Removed unused variables in catch blocks
+  - Fixed Set iteration compatibility issues
+- **Better Developer Experience**: Code now has zero linting errors without using `@ts-nocheck`
+- **Type-Safe**: Proper TypeScript checking enabled for all webview code
+
+### Technical Details
+- Files are now properly separated by concern following best practices
+- Reduced complexity of monolithic template strings
+- Added comprehensive type definitions for webview environment
+- Updated `jsconfig.json` to include DOM library and proper compiler options
+- Split ESLint configuration for Node.js and browser contexts
+- Better developer experience for future updates
+- Maintains full backward compatibility
+
 ## [1.4.4] - 2025-11-08
 
 ### Fixed

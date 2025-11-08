@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Jinja Renderer (Python/Pyodide)</title>
+    
+    <!-- Pyodide for Python Jinja2 -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+    
+    <!-- Markdown and Mermaid libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.0/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    
+    <!-- VS Code Codicons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.35/dist/codicon.css">
+    
+    <!-- Main Stylesheet (will be injected) -->
+    {{STYLES}}
+</head>
+<body>
+    <div id="loading-indicator" style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: var(--vscode-notifications-background); color: var(--vscode-notifications-foreground); padding: 6px 12px; border: 1px solid var(--vscode-notifications-border); border-radius: 2px; z-index: 1000; font-size: 11px; display: none;">Loading...</div>
+    
+    <div class="container">
+        <div class="file-name-display" id="file-name-display">
+            <i class="codicon codicon-file"></i>
+            <span id="file-name-text">No file selected</span>
+            {{FILE_HISTORY_DROPDOWN}}
+        </div>
+        
+        <div class="variables-section" id="variables-section">
+            <div class="header-group">
+                <h2>Variables (JSON)</h2>
+                <div class="header-actions">
+                    <button class="icon-button" id="save-variables-btn" title="Save Variables Preset">
+                        <i class="codicon codicon-save"></i>
+                    </button>
+                    <button class="icon-button" id="load-variables-btn" title="Load Variables Preset">
+                        <i class="codicon codicon-folder-opened"></i>
+                    </button>
+                </div>
+            </div>
+            <textarea id="variables">{
+  "name": "World"
+}</textarea>
+        </div>
+        
+        <div class="resize-handle" id="resize-handle"></div>
+        
+        <div class="output-section" id="output-section">
+            <div class="header-group">
+                <h2>Output</h2>
+                {{AUTO_RERENDER_TOGGLE}}
+            </div>
+            {{PANEL_CONTROLS}}
+            <div class="output-container">
+                <pre id="output"></pre>
+                <div id="markdown-output" style="display: none;"></div>
+            </div>
+            {{OUTPUT_FOOTER}}
+        </div>
+    </div>
+
+    <!-- Main Script (will be injected) -->
+    {{SCRIPT}}
+</body>
+</html>
