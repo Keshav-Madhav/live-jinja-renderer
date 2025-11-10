@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.5.0-blue)
+![Version](https://img.shields.io/badge/version-1.5.1-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -175,6 +175,10 @@ All settings are now organized into clear categories for easier configuration:
 > **Note**: Old setting names (e.g., `liveJinjaRenderer.enableMarkdown`) still work for backwards compatibility.
 
 ## Recent Updates
+
+### 1.5.1 - Migration & Compatibility Patch
+- Fixed settings migration and backwards compatibility for toggle commands
+- Improved fallback logic for reading old/new setting names
 
 ### 1.5.0 - Enhanced Settings & Customization
 - **Reorganized Settings**: Clear categories (Rendering, Editor, Variables, History, Advanced)

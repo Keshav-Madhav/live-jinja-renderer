@@ -4,6 +4,12 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.5.1] - 2025-11-10
+
+### Fixed
+- Settings migration and backwards compatibility for toggle commands
+- Improved fallback logic when reading old/new setting names
+
 ## [1.5.0] - 2025-11-09
 
 ### Added - Enhanced Settings & Customization 🎛️
