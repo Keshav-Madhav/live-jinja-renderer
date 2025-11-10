@@ -21,12 +21,22 @@ function updateStatusBar() {
   
   const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
   
-  // Try new setting names first, fallback to old names for backwards compatibility
-  const markdown = config.get('rendering.enableMarkdown') ?? config.get('enableMarkdown', false);
-  const mermaid = config.get('rendering.enableMermaid') ?? config.get('enableMermaid', false);
-  const showWhitespace = config.get('rendering.showWhitespace') ?? config.get('showWhitespace', true);
-  const cullWhitespace = config.get('rendering.cullWhitespace') ?? config.get('cullWhitespace', false);
-  const autoRerender = config.get('rendering.autoRerender') ?? config.get('autoRerender', true);
+  // Read from new settings first, then fallback to old settings
+  let markdown = config.get('rendering.enableMarkdown');
+  if (markdown === undefined) markdown = config.get('enableMarkdown', false);
+  
+  let mermaid = config.get('rendering.enableMermaid');
+  if (mermaid === undefined) mermaid = config.get('enableMermaid', false);
+  
+  let showWhitespace = config.get('rendering.showWhitespace');
+  if (showWhitespace === undefined) showWhitespace = config.get('showWhitespace', true);
+  
+  let cullWhitespace = config.get('rendering.cullWhitespace');
+  if (cullWhitespace === undefined) cullWhitespace = config.get('cullWhitespace', false);
+  
+  let autoRerender = config.get('rendering.autoRerender');
+  if (autoRerender === undefined) autoRerender = config.get('autoRerender', true);
+  
   const autoExtract = config.get('variables.autoExtract', true);
   const historyEnabled = config.get('history.enabled', true);
   const historySize = config.get('history.size', 5);

@@ -7,11 +7,26 @@ const { updateStatusBar } = require('../utils/statusBar');
 async function updateContextKeys() {
   const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
   
-  // Try new setting names first, fallback to old names for backwards compatibility
-  const markdownEnabled = config.get('rendering.enableMarkdown') ?? config.get('enableMarkdown', false);
-  const mermaidEnabled = config.get('rendering.enableMermaid') ?? config.get('enableMermaid', false);
-  const showWhitespaceEnabled = config.get('rendering.showWhitespace') ?? config.get('showWhitespace', true);
-  const cullWhitespaceEnabled = config.get('rendering.cullWhitespace') ?? config.get('cullWhitespace', false);
+  // Read from new settings first, then fallback to old settings
+  let markdownEnabled = config.get('rendering.enableMarkdown');
+  if (markdownEnabled === undefined) {
+    markdownEnabled = config.get('enableMarkdown', false);
+  }
+  
+  let mermaidEnabled = config.get('rendering.enableMermaid');
+  if (mermaidEnabled === undefined) {
+    mermaidEnabled = config.get('enableMermaid', false);
+  }
+  
+  let showWhitespaceEnabled = config.get('rendering.showWhitespace');
+  if (showWhitespaceEnabled === undefined) {
+    showWhitespaceEnabled = config.get('showWhitespace', true);
+  }
+  
+  let cullWhitespaceEnabled = config.get('rendering.cullWhitespace');
+  if (cullWhitespaceEnabled === undefined) {
+    cullWhitespaceEnabled = config.get('cullWhitespace', false);
+  }
   
   // Update context keys for when clauses
   await vscode.commands.executeCommand('setContext', 'liveJinjaRenderer.markdownEnabled', markdownEnabled);
@@ -42,7 +57,14 @@ function registerSettingsCommands(context) {
   // Toggle Markdown
   const toggleMarkdownCommand = vscode.commands.registerCommand('live-jinja-tester.toggleMarkdown', async () => {
     const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
-    const currentValue = config.get('rendering.enableMarkdown') ?? config.get('enableMarkdown', false);
+    
+    // Read from new setting first, then fallback to old
+    let currentValue = config.get('rendering.enableMarkdown');
+    if (currentValue === undefined) {
+      currentValue = config.get('enableMarkdown', false);
+    }
+    
+    // Always write to new setting
     await config.update('rendering.enableMarkdown', !currentValue, vscode.ConfigurationTarget.Global);
   });
   context.subscriptions.push(toggleMarkdownCommand);
@@ -50,7 +72,14 @@ function registerSettingsCommands(context) {
   // Toggle Mermaid
   const toggleMermaidCommand = vscode.commands.registerCommand('live-jinja-tester.toggleMermaid', async () => {
     const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
-    const currentValue = config.get('rendering.enableMermaid') ?? config.get('enableMermaid', false);
+    
+    // Read from new setting first, then fallback to old
+    let currentValue = config.get('rendering.enableMermaid');
+    if (currentValue === undefined) {
+      currentValue = config.get('enableMermaid', false);
+    }
+    
+    // Always write to new setting
     await config.update('rendering.enableMermaid', !currentValue, vscode.ConfigurationTarget.Global);
   });
   context.subscriptions.push(toggleMermaidCommand);
@@ -58,7 +87,14 @@ function registerSettingsCommands(context) {
   // Toggle Show Whitespace
   const toggleShowWhitespaceCommand = vscode.commands.registerCommand('live-jinja-tester.toggleShowWhitespace', async () => {
     const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
-    const currentValue = config.get('rendering.showWhitespace') ?? config.get('showWhitespace', true);
+    
+    // Read from new setting first, then fallback to old
+    let currentValue = config.get('rendering.showWhitespace');
+    if (currentValue === undefined) {
+      currentValue = config.get('showWhitespace', true);
+    }
+    
+    // Always write to new setting
     await config.update('rendering.showWhitespace', !currentValue, vscode.ConfigurationTarget.Global);
   });
   context.subscriptions.push(toggleShowWhitespaceCommand);
@@ -66,7 +102,14 @@ function registerSettingsCommands(context) {
   // Toggle Cull Whitespace
   const toggleCullWhitespaceCommand = vscode.commands.registerCommand('live-jinja-tester.toggleCullWhitespace', async () => {
     const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
-    const currentValue = config.get('rendering.cullWhitespace') ?? config.get('cullWhitespace', false);
+    
+    // Read from new setting first, then fallback to old
+    let currentValue = config.get('rendering.cullWhitespace');
+    if (currentValue === undefined) {
+      currentValue = config.get('cullWhitespace', false);
+    }
+    
+    // Always write to new setting
     await config.update('rendering.cullWhitespace', !currentValue, vscode.ConfigurationTarget.Global);
   });
   context.subscriptions.push(toggleCullWhitespaceCommand);

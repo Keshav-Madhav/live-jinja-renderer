@@ -91,12 +91,27 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
   const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
   
   // Try new setting names first, fallback to old names for backwards compatibility
+  let enableMarkdown = config.get('rendering.enableMarkdown');
+  if (enableMarkdown === undefined) enableMarkdown = config.get('enableMarkdown', false);
+  
+  let enableMermaid = config.get('rendering.enableMermaid');
+  if (enableMermaid === undefined) enableMermaid = config.get('enableMermaid', false);
+  
+  let showWhitespace = config.get('rendering.showWhitespace');
+  if (showWhitespace === undefined) showWhitespace = config.get('showWhitespace', true);
+  
+  let cullWhitespace = config.get('rendering.cullWhitespace');
+  if (cullWhitespace === undefined) cullWhitespace = config.get('cullWhitespace', false);
+  
+  let autoRerender = config.get('rendering.autoRerender');
+  if (autoRerender === undefined) autoRerender = config.get('autoRerender', true);
+  
   const settings = {
-    enableMarkdown: config.get('rendering.enableMarkdown') ?? config.get('enableMarkdown', false),
-    enableMermaid: config.get('rendering.enableMermaid') ?? config.get('enableMermaid', false),
-    showWhitespace: config.get('rendering.showWhitespace') ?? config.get('showWhitespace', true),
-    cullWhitespace: config.get('rendering.cullWhitespace') ?? config.get('cullWhitespace', false),
-    autoRerender: config.get('rendering.autoRerender') ?? config.get('autoRerender', true),
+    enableMarkdown,
+    enableMermaid,
+    showWhitespace,
+    cullWhitespace,
+    autoRerender,
     autoExtractVariables: config.get('variables.autoExtract', true),
     ghostSaveEnabled: config.get('advanced.ghostSave', true),
     historyEnabled: config.get('history.enabled', true),

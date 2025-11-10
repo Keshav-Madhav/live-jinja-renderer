@@ -7,12 +7,60 @@ const { registerRenderCommand, registerConfigurationListener, getCurrentPanel } 
 const { createStatusBarItem, updateStatusBar } = require('./src/utils/statusBar');
 
 /**
+ * Migrate old settings to new categorized settings
+ */
+async function migrateSettings() {
+  const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+  const inspect = (key) => config.inspect(key);
+  
+  // Mapping of old settings to new settings
+  const migrations = [
+    { old: 'enableMarkdown', new: 'rendering.enableMarkdown' },
+    { old: 'enableMermaid', new: 'rendering.enableMermaid' },
+    { old: 'showWhitespace', new: 'rendering.showWhitespace' },
+    { old: 'cullWhitespace', new: 'rendering.cullWhitespace' },
+    { old: 'autoRerender', new: 'rendering.autoRerender' }
+  ];
+  
+  let migrated = false;
+  
+  for (const { old, new: newKey } of migrations) {
+    const oldInspect = inspect(old);
+    const newInspect = inspect(newKey);
+    
+    // Check if old setting exists in user settings and new one doesn't
+    if (oldInspect && (oldInspect.globalValue !== undefined || oldInspect.workspaceValue !== undefined)) {
+      // Migrate global value
+      if (oldInspect.globalValue !== undefined && newInspect.globalValue === undefined) {
+        await config.update(newKey, oldInspect.globalValue, vscode.ConfigurationTarget.Global);
+        await config.update(old, undefined, vscode.ConfigurationTarget.Global); // Remove old setting
+        migrated = true;
+      }
+      
+      // Migrate workspace value
+      if (oldInspect.workspaceValue !== undefined && newInspect.workspaceValue === undefined) {
+        await config.update(newKey, oldInspect.workspaceValue, vscode.ConfigurationTarget.Workspace);
+        await config.update(old, undefined, vscode.ConfigurationTarget.Workspace); // Remove old setting
+        migrated = true;
+      }
+    }
+  }
+  
+  if (migrated) {
+    console.log('✅ Settings migrated to new categorized format');
+  }
+}
+
+/**
  * This method is called when your extension is activated
  */
-function activate(context) {
+async function activate(context) {
   try {
     console.log('🚀 live-jinja-renderer extension is now ACTIVE!');
     console.log('Extension path:', context.extensionPath);
+
+    // Migrate old settings to new format
+    await migrateSettings();
 
     const currentVersion = context.extension.packageJSON.version;
     const previousVersion = context.globalState.get('extensionVersion');
