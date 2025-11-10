@@ -69,7 +69,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ New in this version:\n• Enhanced settings with clear categories (Rendering, Editor, Variables, History, Advanced)\n• 8 new customization options for better control\n\nCheck the settings for all new options!`;
+        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ New in this version:\n• Enhanced variable extraction with 40+ new Jinja keywords\n• Support for ternary expressions and slice notation\n• Negative array indices and method calls\n• Better accuracy for complex templates\n\nCheck the CHANGELOG for full details!`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

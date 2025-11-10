@@ -8,20 +8,41 @@ function extractVariablesFromTemplate(template) {
   const loopVariables = new Set(); // Track loop iteration variables
   
   const jinjaKeywords = new Set([
+    // Control structures
     'if', 'elif', 'else', 'endif', 'for', 'endfor', 'while', 'endwhile',
     'set', 'endset', 'block', 'endblock', 'extends', 'include', 'import',
     'from', 'macro', 'endmacro', 'call', 'endcall', 'filter', 'endfilter',
     'with', 'endwith', 'autoescape', 'endautoescape', 'raw', 'endraw',
-    'trans', 'endtrans', 'pluralize',
+    'trans', 'endtrans', 'pluralize', 'do',
+    
+    // Operators and logic
     'not', 'and', 'or', 'in', 'is', 'true', 'false', 'none', 'null',
     'True', 'False', 'None', 'NULL',
+    
+    // Tests
     'defined', 'undefined', 'none', 'boolean', 'false', 'true', 'integer',
     'float', 'number', 'string', 'sequence', 'iterable', 'mapping',
     'sameas', 'escaped', 'odd', 'even', 'divisibleby', 'equalto',
-    'range', 'lipsum', 'dict', 'cycler', 'joiner', 'len', 'abs', 'round',
-    'min', 'max', 'sum', 'list', 'tuple', 'set', 'sorted', 'reversed',
-    'enumerate', 'zip', 'filter', 'map', 'any', 'all',
-    'loop'
+    'lower', 'upper', 'callable',
+    
+    // Built-in functions
+    'range', 'lipsum', 'dict', 'cycler', 'joiner', 'namespace',
+    
+    // Built-in filters (common ones that might be confused with variables)
+    'abs', 'attr', 'batch', 'capitalize', 'center', 'default', 'dictsort',
+    'escape', 'filesizeformat', 'first', 'float', 'forceescape', 'format',
+    'groupby', 'indent', 'int', 'join', 'last', 'length', 'list', 'lower',
+    'map', 'max', 'min', 'pprint', 'random', 'reject', 'rejectattr',
+    'replace', 'reverse', 'round', 'safe', 'select', 'selectattr', 'slice',
+    'sort', 'string', 'striptags', 'sum', 'title', 'tojson', 'trim', 'truncate',
+    'unique', 'upper', 'urlencode', 'urlize', 'wordcount', 'wordwrap', 'xmlattr',
+    
+    // Python built-ins commonly used in Jinja
+    'len', 'sorted', 'reversed', 'enumerate', 'zip', 'filter', 'any', 'all',
+    'tuple', 'set',
+    
+    // Special variables
+    'loop', 'self', 'super', 'varargs', 'kwargs'
   ]);
   
   function isJinjaKeyword(varName) {
@@ -153,9 +174,12 @@ function extractVariablesFromTemplate(template) {
   }
   
   // Track all {% set %} assignments first to identify inferred variables
+  // Handle both inline: {% set x = value %} and block: {% set x %}...{% endset %}
   const setAssignmentPattern = /\{\%\s*set\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^%]+)\s*\%\}/g;
+  const setBlockPattern = /\{\%\s*set\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\%\}(.*?)\{\%\s*endset\s*\%\}/gs;
   let match;
   
+  // Handle inline set statements
   while ((match = setAssignmentPattern.exec(template)) !== null) {
     const assignedVar = match[1];
     const expression = match[2].trim();
@@ -184,6 +208,13 @@ function extractVariablesFromTemplate(template) {
         }
       }
     }
+  }
+  
+  // Handle block set statements
+  while ((match = setBlockPattern.exec(template)) !== null) {
+    const assignedVar = match[1];
+    assignedVariables.add(assignedVar);
+    // Note: We don't extract from block content as it's typically literal content
   }
   
   // Extract {{ variable.property }} patterns with optional filters
@@ -225,6 +256,62 @@ function extractVariablesFromTemplate(template) {
             safeSetVariable(filterRoot, '');
           }
         }
+      }
+    }
+  }
+  
+  // Extract ternary expressions: {{ 'yes' if condition else 'no' }}
+  const ternaryPattern = /\{\{\s*[^}]*\s+if\s+([^}]+?)\s+else\s+[^}]*\}\}/g;
+  while ((match = ternaryPattern.exec(template)) !== null) {
+    const condition = match[1];
+    const varsInCondition = extractVariablesFromExpression(condition, true);
+    
+    for (const fullPath of varsInCondition) {
+      const rootVar = fullPath.split('.')[0];
+      
+      if (assignedVariables.has(rootVar)) continue;
+      if (loopVariables.has(rootVar)) continue;
+      
+      referencedVariables.add(rootVar);
+      
+      if (fullPath.includes('.')) {
+        safeSetVariable(rootVar, {}, true);
+        setNestedProperty(variableStructures, fullPath, '');
+      } else {
+        safeSetVariable(rootVar, '');
+      }
+    }
+  }
+  
+  // Extract method calls: {{ variable.keys() }}, {{ variable.values() }}, etc.
+  const methodCallPattern = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)\s*\.\s*(\w+)\s*\(\s*\)\s*(?:\s*\|[^}]+)?\s*\}\}/g;
+  while ((match = methodCallPattern.exec(template)) !== null) {
+    const fullPath = match[1];
+    const methodName = match[2];
+    const rootVar = fullPath.split('.')[0];
+    
+    if (isJinjaKeyword(rootVar)) continue;
+    if (assignedVariables.has(rootVar)) continue;
+    if (loopVariables.has(rootVar)) continue;
+    
+    referencedVariables.add(rootVar);
+    
+    // Infer type based on method name
+    if (['keys', 'values', 'items'].includes(methodName)) {
+      // It's a dictionary
+      if (fullPath.includes('.')) {
+        safeSetVariable(rootVar, {}, true);
+        setNestedProperty(variableStructures, fullPath, { key: 'value' });
+      } else {
+        safeSetVariable(rootVar, { key: 'value' }, true);
+      }
+    } else {
+      // Generic object with method
+      if (fullPath.includes('.')) {
+        safeSetVariable(rootVar, {}, true);
+        setNestedProperty(variableStructures, fullPath, '');
+      } else {
+        safeSetVariable(rootVar, '');
       }
     }
   }
@@ -324,8 +411,8 @@ function extractVariablesFromTemplate(template) {
     }
   }
   
-  // Extract array access patterns like {{ variable[0] }} or {{ variable[key] }}
-  const arrayAccessPattern = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)\s*\[\s*([^\]]+)\s*\](?:\s*\|\s*[^}]+)?\s*\}\}/g;
+  // Extract array/dict access patterns like {{ variable[0] }}, {{ variable[key] }}, {{ variable[-1] }}
+  const arrayAccessPattern = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)\s*\[\s*([^\]:]+)\s*\](?:\s*\|\s*[^}]+)?\s*\}\}/g;
   while ((match = arrayAccessPattern.exec(template)) !== null) {
     const basePath = match[1];
     const indexOrKey = match[2].trim();
@@ -345,15 +432,37 @@ function extractVariablesFromTemplate(template) {
       }
     }
     
-    if (/^\d+$/.test(indexOrKey)) {
-      // Numeric index - it's an array
+    if (/^-?\d+$/.test(indexOrKey)) {
+      // Numeric index (positive or negative) - it's an array
       const index = parseInt(indexOrKey);
+      const absIndex = Math.abs(index);
       safeSetVariable(rootVar, basePath.includes('.') ? {} : [], true);
-      const arrayPath = basePath + '.' + index;
+      const arrayPath = basePath + '.' + absIndex;
       setNestedProperty(variableStructures, arrayPath, '');
     } else {
       // String/variable key - could be dict or array
       safeSetVariable(rootVar, basePath.includes('.') ? {} : [], true);
+    }
+  }
+  
+  // Extract slice notation: {{ variable[1:5] }}, {{ items[:3] }}, {{ items[2:] }}
+  const slicePattern = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)\s*\[\s*(-?\d*)\s*:\s*(-?\d*)\s*(?::\s*(-?\d+))?\s*\](?:\s*\|\s*[^}]+)?\s*\}\}/g;
+  while ((match = slicePattern.exec(template)) !== null) {
+    const fullPath = match[1];
+    const rootVar = fullPath.split('.')[0];
+    
+    if (isJinjaKeyword(rootVar)) continue;
+    if (assignedVariables.has(rootVar)) continue;
+    if (loopVariables.has(rootVar)) continue;
+    
+    referencedVariables.add(rootVar);
+    
+    // Slice notation means it's definitely an array/list
+    if (fullPath.includes('.')) {
+      safeSetVariable(rootVar, {}, true);
+      setNestedProperty(variableStructures, fullPath, ['']);
+    } else {
+      safeSetVariable(rootVar, [''], true);
     }
   }
   

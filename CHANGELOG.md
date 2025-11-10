@@ -4,6 +4,14 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.5.2] - 2025-11-10
+
+### Added
+- **Enhanced Variable Extraction**: Added 40+ Jinja filters and keywords (truncate, lower, upper, capitalize, etc.)
+- **Advanced Template Support**: Ternary expressions, slice notation, negative indices, method calls, multi-line set blocks
+- **Better Type Inference**: Automatically detects arrays, dicts, and objects from template patterns
+- **Improved Accuracy**: Organized keywords into categories, smarter filtering to prevent false positives
+
 ## [1.5.1] - 2025-11-10
 
 ### Fixed

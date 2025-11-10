@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.5.1-blue)
+![Version](https://img.shields.io/badge/version-1.5.2-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -175,6 +175,15 @@ All settings are now organized into clear categories for easier configuration:
 > **Note**: Old setting names (e.g., `liveJinjaRenderer.enableMarkdown`) still work for backwards compatibility.
 
 ## Recent Updates
+
+### 1.5.2 - Enhanced Variable Extraction
+- Expanded Jinja keyword list with 40+ new filters and built-ins
+- Added support for ternary expressions in templates
+- Added support for slice notation (e.g., `{{ items[1:5] }}`)
+- Added support for negative array indices (e.g., `{{ items[-1] }}`)
+- Added support for method calls (e.g., `{{ dict.keys() }}`)
+- Improved handling of multi-line `{% set %}` blocks
+- Better variable extraction accuracy for complex templates
 
 ### 1.5.1 - Migration & Compatibility Patch
 - Fixed settings migration and backwards compatibility for toggle commands
