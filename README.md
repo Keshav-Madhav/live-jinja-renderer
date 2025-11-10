@@ -37,6 +37,7 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 - **Smart Error Navigation**: Click errors to jump to the line in your template
 - **Visual Error Highlighting**: Red highlights on error lines
 - **Save/Load Variable Presets**: Reuse complex JSON configurations
+- **Import/Export Variables**: Share variables via JSON files or clipboard
 - **Ghost Save**: Variables auto-save per file and restore across sessions
 - **Auto-Resizing**: Variables section adapts to content
 - **File History**: Dropdown menu for quick context switching
@@ -126,6 +127,15 @@ Intelligently detects:
 - **Save**: Click save icon or three-dot menu
 - **Load**: Click load icon or three-dot menu
 - **Use cases**: API responses, test scenarios, common templates
+
+### Import/Export Variables
+**NEW**: Share and backup variable configurations with intuitive import/export.
+
+- **Export to File**: Save variables as formatted JSON files with smart naming
+- **Export to Clipboard**: Copy variables as JSON for quick sharing
+- **Import from Workspace**: Choose from JSON files in your workspace
+- **Import from File Browser**: Load from any JSON file on your system  
+- **Import from Active Editor**: Use JSON from currently open file
 
 ## Examples
 

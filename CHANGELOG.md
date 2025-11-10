@@ -4,6 +4,15 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.5.3] - 2025-11-11
+
+### Added - Variables Import/Export System 📤📥
+- Export variables to JSON file (smart naming) or clipboard
+- Import from workspace files, file browser, or active editor (JSON only)
+- Native VS Code Quick Pick UI with smart context-aware options
+- Variables submenu organization for cleaner three-dot menu
+- Full JSON validation with helpful error messages
+
 ## [1.5.2] - 2025-11-10
 
 ### Added

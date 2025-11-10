@@ -751,6 +751,8 @@ if (!isSidebarMode) {
 // Save and Load Variables handlers
 const saveVariablesBtn = document.getElementById('save-variables-btn');
 const loadVariablesBtn = document.getElementById('load-variables-btn');
+const importVariablesBtn = document.getElementById('import-variables-btn');
+const exportVariablesBtn = document.getElementById('export-variables-btn');
 
 saveVariablesBtn.addEventListener('click', () => {
   vscode.postMessage({ type: 'executeCommand', command: 'live-jinja-tester.saveVariables' });
@@ -758,6 +760,27 @@ saveVariablesBtn.addEventListener('click', () => {
 
 loadVariablesBtn.addEventListener('click', () => {
   vscode.postMessage({ type: 'executeCommand', command: 'live-jinja-tester.loadVariables' });
+});
+
+importVariablesBtn.addEventListener('click', () => {
+  // Request VS Code to show native quick pick for import options
+  vscode.postMessage({ type: 'showImportQuickPick' });
+});
+
+exportVariablesBtn.addEventListener('click', () => {
+  // Request VS Code to show native quick pick for export options
+  try {
+    const variables = JSON.parse(variablesEditor.value || '{}');
+    vscode.postMessage({ 
+      type: 'showExportQuickPick',
+      variables: variables
+    });
+  } catch {
+    vscode.postMessage({
+      type: 'showError',
+      message: 'Invalid JSON in variables'
+    });
+  }
 });
 
 // Panel mode: Action button listeners

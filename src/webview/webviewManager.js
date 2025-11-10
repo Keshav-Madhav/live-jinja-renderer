@@ -1,5 +1,6 @@
 const vscode = require('vscode');
 const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
+const { handleExportVariables } = require('../commands/importExportCommands');
 
 /**
  * Sets up webview with template rendering capabilities
@@ -338,6 +339,96 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
             }
           } catch (err) {
             console.error('Ghost save failed:', err);
+          }
+          return;
+        
+        case 'requestVariablesForExport':
+          // Handle export request from webview
+          try {
+            const exportType = message.exportType;
+            const variables = message.variables;
+            await handleExportVariables(variables, exportType, lastFileUri);
+          } catch (err) {
+            vscode.window.showErrorMessage('Failed to export variables');
+            console.error('Export failed:', err);
+          }
+          return;
+        
+        case 'showImportQuickPick':
+          // Show native VS Code quick pick for import options
+          try {
+            const importOptions = [
+              {
+                label: '$(file-code) Workspace JSON File',
+                description: 'Choose from JSON files in your workspace',
+                command: 'live-jinja-tester.importVariablesFromWorkspace'
+              },
+              {
+                label: '$(folder-opened) File Browser',
+                description: 'Browse and select any JSON file',
+                command: 'live-jinja-tester.importVariablesFromFile'
+              }
+            ];
+            
+            // Only add "Active Editor" option if the current file is JSON
+            const activeEditor = vscode.window.activeTextEditor;
+            if (activeEditor) {
+              const fileName = activeEditor.document.fileName.toLowerCase();
+              const isJsonFile = fileName.endsWith('.json') || 
+                                 activeEditor.document.languageId === 'json' ||
+                                 activeEditor.document.languageId === 'jsonc';
+              
+              if (isJsonFile) {
+                importOptions.push({
+                  label: '$(json) Active Editor',
+                  description: 'Import from currently open JSON file',
+                  command: 'live-jinja-tester.importVariablesFromEditor'
+                });
+              }
+            }
+            
+            const selected = await vscode.window.showQuickPick(importOptions, {
+              placeHolder: 'Select import source',
+              title: 'Import Variables From'
+            });
+            
+            if (selected) {
+              await vscode.commands.executeCommand(selected.command);
+            }
+          } catch (err) {
+            console.error('Import quick pick failed:', err);
+          }
+          return;
+        
+        case 'showExportQuickPick':
+          // Show native VS Code quick pick for export options
+          try {
+            const variables = message.variables;
+            
+            const exportOptions = [
+              {
+                label: '$(export) JSON File',
+                description: 'Save as a formatted JSON file',
+                type: 'file'
+              },
+              {
+                label: '$(clippy) Clipboard',
+                description: 'Copy to clipboard as JSON',
+                type: 'clipboard'
+              }
+            ];
+            
+            const selected = await vscode.window.showQuickPick(exportOptions, {
+              placeHolder: 'Select export destination',
+              title: 'Export Variables To'
+            });
+            
+            if (selected) {
+              await handleExportVariables(variables, selected.type, lastFileUri);
+            }
+          } catch (err) {
+            vscode.window.showErrorMessage('Failed to export variables');
+            console.error('Export quick pick failed:', err);
           }
           return;
         

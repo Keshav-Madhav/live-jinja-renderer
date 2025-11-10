@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -140,6 +140,42 @@
         "title": "Delete Variables Preset",
         "icon": "$(trash)",
         "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.exportVariablesToFile",
+        "title": "Export Variables to JSON File",
+        "icon": "$(export)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.exportVariablesToClipboard",
+        "title": "Export Variables to Clipboard",
+        "icon": "$(clippy)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.importVariablesFromFile",
+        "title": "Import Variables from File Browser",
+        "icon": "$(file-add)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.importVariablesFromEditor",
+        "title": "Import Variables from Active Editor",
+        "icon": "$(json)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.importVariablesFromWorkspace",
+        "title": "Import Variables from Workspace JSON",
+        "icon": "$(file-code)",
+        "category": "Jinja"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "jinjaVariablesSubmenu",
+        "label": "Variables"
       }
     ],
     "menus": {
@@ -219,24 +255,48 @@
           "group": "3_actions@2"
         },
         {
-          "command": "live-jinja-tester.saveVariables",
+          "submenu": "jinjaVariablesSubmenu",
           "when": "view == jinjaRendererView",
-          "group": "4_variables@1"
-        },
-        {
-          "command": "live-jinja-tester.loadVariables",
-          "when": "view == jinjaRendererView",
-          "group": "4_variables@2"
-        },
-        {
-          "command": "live-jinja-tester.deleteVariables",
-          "when": "view == jinjaRendererView",
-          "group": "4_variables@3"
+          "group": "4_variables"
         },
         {
           "command": "live-jinja-tester.openInPanel",
           "when": "view == jinjaRendererView",
           "group": "5_view@1"
+        }
+      ],
+      "jinjaVariablesSubmenu": [
+        {
+          "command": "live-jinja-tester.saveVariables",
+          "group": "1_presets@1"
+        },
+        {
+          "command": "live-jinja-tester.loadVariables",
+          "group": "1_presets@2"
+        },
+        {
+          "command": "live-jinja-tester.deleteVariables",
+          "group": "1_presets@3"
+        },
+        {
+          "command": "live-jinja-tester.exportVariablesToFile",
+          "group": "2_export@1"
+        },
+        {
+          "command": "live-jinja-tester.exportVariablesToClipboard",
+          "group": "2_export@2"
+        },
+        {
+          "command": "live-jinja-tester.importVariablesFromFile",
+          "group": "3_import@1"
+        },
+        {
+          "command": "live-jinja-tester.importVariablesFromEditor",
+          "group": "3_import@2"
+        },
+        {
+          "command": "live-jinja-tester.importVariablesFromWorkspace",
+          "group": "3_import@3"
         }
       ],
       "webview/context": [
@@ -266,14 +326,9 @@
           "group": "2_jinja@1"
         },
         {
-          "command": "live-jinja-tester.saveVariables",
+          "submenu": "jinjaVariablesSubmenu",
           "when": "webviewId == 'jinjaRendererView'",
-          "group": "3_variables@1"
-        },
-        {
-          "command": "live-jinja-tester.loadVariables",
-          "when": "webviewId == 'jinjaRendererView'",
-          "group": "3_variables@2"
+          "group": "3_variables"
         },
         {
           "command": "live-jinja-tester.toggleMarkdown",
@@ -304,16 +359,6 @@
           "command": "live-jinja-tester.copyOutput",
           "when": "webviewId == 'jinjaRenderer'",
           "group": "3_actions@1"
-        },
-        {
-          "command": "live-jinja-tester.saveVariables",
-          "when": "webviewId == 'jinjaRenderer'",
-          "group": "4_variables@1"
-        },
-        {
-          "command": "live-jinja-tester.loadVariables",
-          "when": "webviewId == 'jinjaRenderer'",
-          "group": "4_variables@2"
         }
       ],
       "commandPalette": [
@@ -355,6 +400,21 @@
         },
         {
           "command": "live-jinja-tester.deleteVariables"
+        },
+        {
+          "command": "live-jinja-tester.exportVariablesToFile"
+        },
+        {
+          "command": "live-jinja-tester.exportVariablesToClipboard"
+        },
+        {
+          "command": "live-jinja-tester.importVariablesFromFile"
+        },
+        {
+          "command": "live-jinja-tester.importVariablesFromEditor"
+        },
+        {
+          "command": "live-jinja-tester.importVariablesFromWorkspace"
         }
       ]
     },

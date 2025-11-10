@@ -2,6 +2,7 @@ const vscode = require('vscode');
 const { JinjaRendererViewProvider } = require('./src/providers/jinjaRendererViewProvider');
 const { registerSettingsCommands } = require('./src/commands/settingsCommands');
 const { registerVariableCommands } = require('./src/commands/variableCommands');
+const { registerImportExportCommands } = require('./src/commands/importExportCommands');
 const { registerActionCommands } = require('./src/commands/actionCommands');
 const { registerRenderCommand, registerConfigurationListener, getCurrentPanel } = require('./src/commands/renderCommand');
 const { createStatusBarItem, updateStatusBar } = require('./src/utils/statusBar');
@@ -102,6 +103,7 @@ async function activate(context) {
     // Register all commands
     registerSettingsCommands(context);
     registerVariableCommands(context, sidebarProvider, getCurrentPanel);
+    registerImportExportCommands(context, sidebarProvider, getCurrentPanel);
     registerActionCommands(context, sidebarProvider, getCurrentPanel);
     registerRenderCommand(context);
     
