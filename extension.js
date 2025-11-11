@@ -71,19 +71,19 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ New in this version:\n• Enhanced variable extraction with 40+ new Jinja keywords\n• Support for ternary expressions and slice notation\n• Negative array indices and method calls\n• Better accuracy for complex templates\n\nCheck the CHANGELOG for full details!`;
+        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ New in this version:\n• Jinja2 Extensions Support (i18n, do, loopcontrols, with, autoescape, debug)\n• Single settings object with expandable checkbox list\n• "Configure Extensions" menu in sidebar\n• Custom extension paths support\n• Instant activation with auto-rerender\n• Status bar shows extension count\n\nCheck the CHANGELOG for full details!`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
-          'Open Settings',
+          'Configure Extensions',
           'Dismiss'
         ).then(result => {
           if (result === 'View Release Notes') {
             vscode.env.openExternal(vscode.Uri.parse(
               'https://github.com/Keshav-Madhav/live-jinja-renderer/blob/main/CHANGELOG.md'
             ));
-          } else if (result === 'Open Settings') {
-            vscode.commands.executeCommand('workbench.action.openSettings', '@ext:KilloWatts.live-jinja-renderer');
+          } else if (result === 'Configure Extensions') {
+            vscode.commands.executeCommand('workbench.action.openSettings', 'liveJinjaRenderer.extensions');
           }
         });
       }

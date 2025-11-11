@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.5.2-blue)
+![Version](https://img.shields.io/badge/version-1.6.0-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -137,6 +137,22 @@ Intelligently detects:
 - **Import from File Browser**: Load from any JSON file on your system  
 - **Import from Active Editor**: Use JSON from currently open file
 
+### Jinja2 Extensions
+**v1.6.0**: Full support for Jinja2 extensions with instant activation! 🔌
+
+- **Built-in Extensions**: 6 standard Jinja2 extensions available via settings
+  - **i18n**: Internationalization support with `{% trans %}` tags
+  - **do**: Execute statements without output using `{% do %}`
+  - **loopcontrols**: Use `{% break %}` and `{% continue %}` in loops
+  - **with**: Create scoped contexts with `{% with %}`
+  - **autoescape**: Automatic HTML escaping control
+  - **debug**: Use `{% debug %}` tag for template debugging
+- **Custom Extensions**: Add your own extensions via comma-separated paths
+- **Instant Activation**: Extensions activate immediately upon selection
+- **Visual Indicator**: See active extensions displayed above the output
+- **Status Bar Indicator**: Shows count of active extensions (hover for details)
+- **Use cases**: Complex templates, multilingual content, advanced control flow
+
 ## Examples
 
 ### Basic Template
@@ -182,9 +198,40 @@ All settings are now organized into clear categories for easier configuration:
 - `liveJinjaRenderer.advanced.ghostSaveDelay`: Delay before ghost-save in ms (default: `1000`)
 - `liveJinjaRenderer.advanced.showLoadingIndicators`: Show loading messages (default: `true`)
 
+### Extensions
+- `liveJinjaRenderer.extensions`: Configure Jinja2 extensions via a single settings object with checkboxes:
+  - `i18n`: Enable i18n extension for internationalization (default: `false`)
+  - `do`: Enable do extension for statements without output (default: `false`)
+  - `loopcontrols`: Enable loop controls (break/continue) (default: `false`)
+  - `with`: Enable with extension for scoped context (default: `false`)
+  - `autoescape`: Enable autoescape extension for HTML escaping (default: `false`)
+  - `debug`: Enable debug extension for {% debug %} tag (default: `false`)
+  - `custom`: Comma-separated list of custom extension paths (default: `""`)
+
 > **Note**: Old setting names (e.g., `liveJinjaRenderer.enableMarkdown`) still work for backwards compatibility.
 
 ## Recent Updates
+
+### 1.6.0 - Jinja2 Extensions Support
+- **Built-in Extensions**: 6 standard Jinja2 extensions (i18n, do, loopcontrols, with, autoescape, debug)
+- **Single Settings Object**: Expandable checkbox list in settings (like ESLint rules)
+- **Quick Access**: "Configure Jinja2 Extensions" option in sidebar three-dot menu
+- **Custom Extensions**: Support for custom extension paths
+- **Instant Activation**: Extensions activate immediately with auto-rerender
+- **Visual Indicator**: Active extensions displayed above output
+- **Status Bar Integration**: Shows extension count with detailed tooltip
+- **Better Error Messages**: Clear feedback when extensions fail to load
+- **All Disabled by Default**: Enable only what you need
+
+### 1.5.4 - Quick Selection Actions
+- **Lightbulb Actions**: Select text to see quick action buttons
+- **One-Click Rendering**: Instantly render selected text
+- Works on `.jinja`, `.j2`, `.txt`, and plaintext files
+
+### 1.5.3 - Variables Import/Export System
+- Export variables to JSON file or clipboard
+- Import from workspace files, file browser, or active editor
+- Full JSON validation with helpful error messages
 
 ### 1.5.2 - Enhanced Variable Extraction
 - Expanded Jinja keyword list with 40+ new filters and built-ins

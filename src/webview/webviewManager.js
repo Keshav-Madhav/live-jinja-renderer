@@ -117,7 +117,16 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
     ghostSaveEnabled: config.get('advanced.ghostSave', true),
     historyEnabled: config.get('history.enabled', true),
     historySize: config.get('history.size', 5),
-    selectionRange: lastSelectionRange // Include selection range in settings
+    selectionRange: lastSelectionRange, // Include selection range in settings
+    extensions: config.get('extensions', {
+      i18n: false,
+      do: false,
+      loopcontrols: false,
+      with: false,
+      autoescape: false,
+      debug: false,
+      custom: ''
+    })
   };
   
   // Send initial settings to webview

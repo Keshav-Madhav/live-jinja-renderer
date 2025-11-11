@@ -58,6 +58,10 @@
                 <h2>Output</h2>
                 {{AUTO_RERENDER_TOGGLE}}
             </div>
+            <div class="extensions-indicator" id="extensions-indicator" style="display: none; font-size: 11px; padding: 4px 8px; margin: 0 0 8px 0; background: var(--vscode-editor-inactiveSelectionBackground); border-left: 2px solid var(--vscode-activityBarBadge-background); color: var(--vscode-descriptionForeground);">
+                <i class="codicon codicon-extensions" style="font-size: 12px; margin-right: 4px;"></i>
+                <span id="extensions-list"></span>
+            </div>
             {{PANEL_CONTROLS}}
             <div class="output-container">
                 <pre id="output"></pre>

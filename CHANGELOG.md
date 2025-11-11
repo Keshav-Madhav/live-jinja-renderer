@@ -4,6 +4,26 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.6.0] - 2025-11-12
+
+### Added - Jinja2 Extensions Support 🔌
+- **Built-in Extensions**: 6 standard Jinja2 extensions with unified settings object
+  - i18n: Internationalization support with `{% trans %}` tags
+  - do: Execute statements without output using `{% do %}`
+  - loopcontrols: Use `{% break %}` and `{% continue %}` in loops
+  - with: Create scoped contexts with `{% with %}`
+  - autoescape: Automatic HTML escaping control
+  - debug: Use `{% debug %}` tag for template debugging
+- **Custom Extensions**: Add your own extensions via comma-separated paths in settings
+- **Single Settings Object**: All extensions configured via `liveJinjaRenderer.extensions` with expandable checkbox list (like ESLint rules)
+- **Quick Access**: "Configure Jinja2 Extensions" menu option in sidebar three-dot menu
+- **Instant Activation**: Extensions activate immediately when toggled with automatic re-render
+- **Visual Indicator**: Active extensions displayed above output with extension names
+- **Status Bar Integration**: Extension count displayed in status bar (e.g., "Jinja Renderer (3 ext)")
+- **Enhanced Tooltips**: Hover over status bar to see all enabled extensions
+- **Better Error Messages**: Clear error messages when extensions fail to load
+- **All Disabled by Default**: Extensions start disabled; enable only what you need
+
 ## [1.5.4] - 2025-11-11
 
 ### Added - Quick Selection Actions 💡

@@ -105,7 +105,16 @@ function registerConfigurationListener(context, sidebarProvider) {
           autoExtractVariables: config.get('variables.autoExtract', true),
           ghostSaveEnabled: config.get('advanced.ghostSave', true),
           historyEnabled: config.get('history.enabled', true),
-          historySize: config.get('history.size', 5)
+          historySize: config.get('history.size', 5),
+          extensions: config.get('extensions', {
+            i18n: false,
+            do: false,
+            loopcontrols: false,
+            with: false,
+            autoescape: false,
+            debug: false,
+            custom: ''
+          })
         };
         
         // Update sidebar webview if active

@@ -113,6 +113,13 @@ function registerSettingsCommands(context) {
     await config.update('rendering.cullWhitespace', !currentValue, vscode.ConfigurationTarget.Global);
   });
   context.subscriptions.push(toggleCullWhitespaceCommand);
+  
+  // Open Extension Settings
+  const openExtensionSettingsCommand = vscode.commands.registerCommand('live-jinja-tester.openExtensionSettings', async () => {
+    // Open VS Code settings UI directly to the extensions section
+    await vscode.commands.executeCommand('workbench.action.openSettings', 'liveJinjaRenderer.extensions');
+  });
+  context.subscriptions.push(openExtensionSettingsCommand);
 }
 
 module.exports = {

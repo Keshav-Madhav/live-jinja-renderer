@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.5.4",
+  "version": "1.6.0",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -170,6 +170,12 @@
         "title": "Import Variables from Workspace JSON",
         "icon": "$(file-code)",
         "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.openExtensionSettings",
+        "title": "Configure Jinja2 Extensions",
+        "icon": "$(extensions)",
+        "category": "Jinja"
       }
     ],
     "submenus": [
@@ -260,9 +266,14 @@
           "group": "4_variables"
         },
         {
+          "command": "live-jinja-tester.openExtensionSettings",
+          "when": "view == jinjaRendererView",
+          "group": "6_settings@1"
+        },
+        {
           "command": "live-jinja-tester.openInPanel",
           "when": "view == jinjaRendererView",
-          "group": "5_view@1"
+          "group": "7_view@1"
         }
       ],
       "jinjaVariablesSubmenu": [
@@ -415,6 +426,9 @@
         },
         {
           "command": "live-jinja-tester.importVariablesFromWorkspace"
+        },
+        {
+          "command": "live-jinja-tester.openExtensionSettings"
         }
       ]
     },
@@ -534,6 +548,51 @@
           "default": true,
           "description": "Show loading indicators when processing templates",
           "order": 32
+        },
+        "liveJinjaRenderer.extensions": {
+          "type": "object",
+          "default": {
+            "i18n": false,
+            "do": false,
+            "loopcontrols": false,
+            "with": false,
+            "autoescape": false,
+            "debug": false,
+            "custom": ""
+          },
+          "description": "Configure Jinja2 extensions",
+          "order": 40,
+          "properties": {
+            "i18n": {
+              "type": "boolean",
+              "description": "Enable i18n extension for internationalization support (gettext, trans blocks)"
+            },
+            "do": {
+              "type": "boolean",
+              "description": "Enable 'do' extension for expression statements without output ({% do ... %})"
+            },
+            "loopcontrols": {
+              "type": "boolean",
+              "description": "Enable loop controls extension for break and continue in loops"
+            },
+            "with": {
+              "type": "boolean",
+              "description": "Enable enhanced 'with' statement extension"
+            },
+            "autoescape": {
+              "type": "boolean",
+              "description": "Enable autoescape extension for controlling HTML escaping"
+            },
+            "debug": {
+              "type": "boolean",
+              "description": "Enable debug extension for {% debug %} tag to inspect context"
+            },
+            "custom": {
+              "type": "string",
+              "description": "Comma-separated list of custom extension module paths (e.g., 'my.custom.Extension')"
+            }
+          },
+          "additionalProperties": false
         }
       }
     }

@@ -16,6 +16,8 @@ const fileNameDisplay = /** @type {HTMLSpanElement} */ (document.getElementById(
 const autoRerenderToggle = isSidebarMode ? /** @type {HTMLButtonElement | null} */ (document.getElementById('auto-rerender-toggle')) : null;
 const fileHistoryDropdown = isSidebarMode ? /** @type {HTMLButtonElement | null} */ (document.getElementById('file-history-dropdown')) : null;
 const fileHistoryMenu = isSidebarMode ? /** @type {HTMLDivElement | null} */ (document.getElementById('file-history-menu')) : null;
+const extensionsIndicator = /** @type {HTMLDivElement | null} */ (document.getElementById('extensions-indicator'));
+const extensionsList = /** @type {HTMLSpanElement | null} */ (document.getElementById('extensions-list'));
 
 // File history management (sidebar only)
 let fileHistory = [];
@@ -33,6 +35,17 @@ let ghostSaveEnabled = true;
 let currentTemplate = '';
 let currentFileUri = '';
 let currentSelectionRange = null;
+
+// Jinja2 Extensions
+let enabledExtensions = {
+  i18n: false,
+  do: false,
+  loopcontrols: false,
+  with: false,
+  autoescape: false,
+  debug: false
+};
+let customExtensions = '';
 
 // Pyodide setup
 let pyodide = null;
@@ -222,6 +235,33 @@ function isDefaultValue(userValue, extractedValue) {
   return false;
 }
 
+/**
+ * Update extensions indicator UI
+ */
+function updateExtensionsIndicator() {
+  if (!extensionsIndicator || !extensionsList) return;
+  
+  const activeExtensions = [];
+  if (enabledExtensions.i18n) activeExtensions.push('i18n');
+  if (enabledExtensions.do) activeExtensions.push('do');
+  if (enabledExtensions.loopcontrols) activeExtensions.push('loopcontrols');
+  if (enabledExtensions.with) activeExtensions.push('with');
+  if (enabledExtensions.autoescape) activeExtensions.push('autoescape');
+  if (enabledExtensions.debug) activeExtensions.push('debug');
+  
+  if (customExtensions.trim()) {
+    const customExts = customExtensions.split(',').map(ext => ext.trim()).filter(ext => ext);
+    activeExtensions.push(...customExts);
+  }
+  
+  if (activeExtensions.length > 0) {
+    extensionsList.textContent = `Active: ${activeExtensions.join(', ')}`;
+    extensionsIndicator.style.display = 'block';
+  } else {
+    extensionsIndicator.style.display = 'none';
+  }
+}
+
 function updateFileNameDisplay(fileUri, selectionRange = null) {
   if (!fileUri) {
     fileNameDisplay.textContent = 'No file selected';
@@ -373,6 +413,23 @@ async function update() {
     const escapedTemplate = template.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     const escapedContext = contextJson.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     
+    // Build extensions list
+    const extensionsList = [];
+    if (enabledExtensions.i18n) extensionsList.push("'jinja2.ext.i18n'");
+    if (enabledExtensions.do) extensionsList.push("'jinja2.ext.do'");
+    if (enabledExtensions.loopcontrols) extensionsList.push("'jinja2.ext.loopcontrols'");
+    if (enabledExtensions.with) extensionsList.push("'jinja2.ext.with_'");
+    if (enabledExtensions.autoescape) extensionsList.push("'jinja2.ext.autoescape'");
+    if (enabledExtensions.debug) extensionsList.push("'jinja2.ext.debug'");
+    
+    // Add custom extensions
+    if (customExtensions.trim()) {
+      const customExts = customExtensions.split(',').map(ext => `'${ext.trim()}'`).filter(ext => ext !== "''");
+      extensionsList.push(...customExts);
+    }
+    
+    const extensionsStr = extensionsList.join(', ');
+    
     const result = pyodide.runPython(`
 import jinja2
 import json
@@ -383,7 +440,15 @@ try:
     template_str = """${escapedTemplate}"""
     context_str = """${escapedContext}"""
     
-    template = jinja2.Template(template_str)
+    # Create environment with extensions
+    extensions = [${extensionsStr}]
+    try:
+        env = jinja2.Environment(extensions=extensions)
+    except Exception as ext_error:
+        raise Exception(f"Failed to load extensions: {str(ext_error)}\\\\n\\\\nExtensions requested: {extensions}")
+    
+    # Create template from string
+    template = env.from_string(template_str)
     context = json.loads(context_str)
     result = template.render(context)
 except jinja2.exceptions.TemplateSyntaxError as e:
@@ -969,12 +1034,25 @@ window.addEventListener('message', async event => {
         ghostSaveEnabled = message.settings.ghostSaveEnabled !== undefined ? message.settings.ghostSaveEnabled : true;
         historyEnabled = message.settings.historyEnabled !== undefined ? message.settings.historyEnabled : true;
         
+        // Update extensions settings
+        if (message.settings.extensions) {
+          enabledExtensions.i18n = message.settings.extensions.i18n || false;
+          enabledExtensions.do = message.settings.extensions.do || false;
+          enabledExtensions.loopcontrols = message.settings.extensions.loopcontrols || false;
+          enabledExtensions.with = message.settings.extensions.with || false;
+          enabledExtensions.autoescape = message.settings.extensions.autoescape || false;
+          enabledExtensions.debug = message.settings.extensions.debug || false;
+          customExtensions = message.settings.extensions.custom || '';
+          updateExtensionsIndicator();
+        }
+        
         if (message.settings.selectionRange !== undefined) {
           currentSelectionRange = message.settings.selectionRange;
           updateFileNameDisplay(currentFileUri, currentSelectionRange);
         }
         
         updateAutoRerenderToggle();
+        updateExtensionsIndicator();
         
         // Update file history dropdown visibility based on history enabled setting
         if (isSidebarMode && fileHistoryDropdown) {
