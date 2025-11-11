@@ -1,5 +1,6 @@
 const vscode = require('vscode');
 const { JinjaRendererViewProvider } = require('./src/providers/jinjaRendererViewProvider');
+const { registerSelectionActionsProvider } = require('./src/providers/selectionActionsProvider');
 const { registerSettingsCommands } = require('./src/commands/settingsCommands');
 const { registerVariableCommands } = require('./src/commands/variableCommands');
 const { registerImportExportCommands } = require('./src/commands/importExportCommands');
@@ -99,6 +100,9 @@ async function activate(context) {
     context.subscriptions.push(
       vscode.window.registerWebviewViewProvider('jinjaRendererView', sidebarProvider)
     );
+    
+    // Register selection actions provider (lightbulb actions on text selection)
+    registerSelectionActionsProvider(context);
     
     // Register all commands
     registerSettingsCommands(context);

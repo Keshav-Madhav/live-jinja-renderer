@@ -4,6 +4,14 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.5.4] - 2025-11-11
+
+### Added - Quick Selection Actions 💡
+- **Lightbulb Actions**: Select text in Jinja/text files to see quick action buttons (like GitHub Copilot)
+- **One-Click Rendering**: Instantly render selected text in sidebar or editor pane
+- **Smart Context Menu**: Actions appear automatically when text is selected
+- Works on `.jinja`, `.j2`, `.txt`, and plaintext files
+
 ## [1.5.3] - 2025-11-11
 
 ### Added - Variables Import/Export System 📤📥
