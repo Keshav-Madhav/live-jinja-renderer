@@ -30,7 +30,6 @@ let isMermaidMode = false;
 let showWhitespace = true;
 let cullWhitespace = false;
 let autoRerender = true;
-let autoExtractVariables = true;
 let ghostSaveEnabled = true;
 let currentTemplate = '';
 let currentFileUri = '';
@@ -241,22 +240,55 @@ function isDefaultValue(userValue, extractedValue) {
 function updateExtensionsIndicator() {
   if (!extensionsIndicator || !extensionsList) return;
   
+  const extensionDescriptions = {
+    'i18n': 'Internationalization - {% trans %} tags for translatable content',
+    'do': 'Do statements - {% do ... %} for expressions without output',
+    'loopcontrols': 'Loop controls - {% break %} and {% continue %} in loops',
+    'with': 'With blocks - {% with %} for scoped variable contexts',
+    'autoescape': 'Autoescape - Automatic HTML escaping control',
+    'debug': 'Debug - {% debug %} tag to inspect template context'
+  };
+  
   const activeExtensions = [];
-  if (enabledExtensions.i18n) activeExtensions.push('i18n');
-  if (enabledExtensions.do) activeExtensions.push('do');
-  if (enabledExtensions.loopcontrols) activeExtensions.push('loopcontrols');
-  if (enabledExtensions.with) activeExtensions.push('with');
-  if (enabledExtensions.autoescape) activeExtensions.push('autoescape');
-  if (enabledExtensions.debug) activeExtensions.push('debug');
+  const tooltipParts = [];
+  
+  if (enabledExtensions.i18n) {
+    activeExtensions.push('i18n');
+    tooltipParts.push(extensionDescriptions.i18n);
+  }
+  if (enabledExtensions.do) {
+    activeExtensions.push('do');
+    tooltipParts.push(extensionDescriptions.do);
+  }
+  if (enabledExtensions.loopcontrols) {
+    activeExtensions.push('loopcontrols');
+    tooltipParts.push(extensionDescriptions.loopcontrols);
+  }
+  if (enabledExtensions.with) {
+    activeExtensions.push('with');
+    tooltipParts.push(extensionDescriptions.with);
+  }
+  if (enabledExtensions.autoescape) {
+    activeExtensions.push('autoescape');
+    tooltipParts.push(extensionDescriptions.autoescape);
+  }
+  if (enabledExtensions.debug) {
+    activeExtensions.push('debug');
+    tooltipParts.push(extensionDescriptions.debug);
+  }
   
   if (customExtensions.trim()) {
     const customExts = customExtensions.split(',').map(ext => ext.trim()).filter(ext => ext);
     activeExtensions.push(...customExts);
+    if (customExts.length > 0) {
+      tooltipParts.push('Custom: ' + customExts.join(', '));
+    }
   }
   
   if (activeExtensions.length > 0) {
     extensionsList.textContent = `Active: ${activeExtensions.join(', ')}`;
     extensionsIndicator.style.display = 'block';
+    extensionsIndicator.title = 'Click to configure extensions\n\n' + tooltipParts.join('\n');
   } else {
     extensionsIndicator.style.display = 'none';
   }
@@ -848,6 +880,13 @@ exportVariablesBtn.addEventListener('click', () => {
   }
 });
 
+// Extensions indicator click handler
+if (extensionsIndicator) {
+  extensionsIndicator.addEventListener('click', () => {
+    vscode.postMessage({ type: 'executeCommand', command: 'live-jinja-tester.openExtensionSettings' });
+  });
+}
+
 // Panel mode: Action button listeners
 if (!isSidebarMode) {
   copyOutputBtn.addEventListener('click', async function() {
@@ -1030,7 +1069,6 @@ window.addEventListener('message', async event => {
         showWhitespace = message.settings.showWhitespace;
         cullWhitespace = message.settings.cullWhitespace;
         autoRerender = message.settings.autoRerender !== undefined ? message.settings.autoRerender : true;
-        autoExtractVariables = message.settings.autoExtractVariables !== undefined ? message.settings.autoExtractVariables : true;
         ghostSaveEnabled = message.settings.ghostSaveEnabled !== undefined ? message.settings.ghostSaveEnabled : true;
         historyEnabled = message.settings.historyEnabled !== undefined ? message.settings.historyEnabled : true;
         

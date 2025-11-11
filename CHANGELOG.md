@@ -4,6 +4,16 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.6.1] - 2025-11-12
+
+### Improved - UX Enhancements ✨
+- **Clickable Extensions Indicator**: Click the extensions indicator above output to open extension settings
+- **Keyboard Shortcut**: Added `Ctrl+Alt+X` (Mac: `Cmd+Shift+X`) to quickly open extension settings
+- **Extension Tooltips**: Hover over the extensions indicator to see descriptions of all active extensions
+- **Help Examples**: Added practical code examples to all extension settings descriptions
+- **Better Placeholder Text**: Improved custom extensions placeholder with realistic examples
+- **Code Cleanup**: Removed unused `autoExtractVariables` variable for cleaner codebase
+
 ## [1.6.0] - 2025-11-12
 
 ### Added - Jinja2 Extensions Support 🔌

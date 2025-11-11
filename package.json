@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -448,6 +448,11 @@
         "key": "ctrl+alt+e",
         "mac": "cmd+shift+e",
         "when": "activeViewlet == 'workbench.view.extension.jinja-renderer' || activeWebviewPanelId == 'jinjaRenderer'"
+      },
+      {
+        "command": "live-jinja-tester.openExtensionSettings",
+        "key": "ctrl+alt+x",
+        "mac": "cmd+shift+x"
       }
     ],
     "configuration": {
@@ -565,31 +570,31 @@
           "properties": {
             "i18n": {
               "type": "boolean",
-              "description": "Enable i18n extension for internationalization support (gettext, trans blocks)"
+              "description": "Enable i18n extension for internationalization support. Example: {% trans %}Hello {{ name }}!{% endtrans %}"
             },
             "do": {
               "type": "boolean",
-              "description": "Enable 'do' extension for expression statements without output ({% do ... %})"
+              "description": "Enable 'do' extension for expression statements without output. Example: {% do navigation.append('home') %}"
             },
             "loopcontrols": {
               "type": "boolean",
-              "description": "Enable loop controls extension for break and continue in loops"
+              "description": "Enable loop controls extension for break and continue. Example: {% for i in range(10) %}{% if i == 5 %}{% break %}{% endif %}{{ i }}{% endfor %}"
             },
             "with": {
               "type": "boolean",
-              "description": "Enable enhanced 'with' statement extension"
+              "description": "Enable enhanced 'with' statement extension for scoped contexts. Example: {% with foo = 42 %}{{ foo }}{% endwith %}"
             },
             "autoescape": {
               "type": "boolean",
-              "description": "Enable autoescape extension for controlling HTML escaping"
+              "description": "Enable autoescape extension for controlling HTML escaping. Example: {% autoescape true %}<div>{{ content }}</div>{% endautoescape %}"
             },
             "debug": {
               "type": "boolean",
-              "description": "Enable debug extension for {% debug %} tag to inspect context"
+              "description": "Enable debug extension for {% debug %} tag to inspect template context and variables"
             },
             "custom": {
               "type": "string",
-              "description": "Comma-separated list of custom extension module paths (e.g., 'my.custom.Extension')"
+              "description": "Comma-separated list of custom extension module paths (e.g., myapp.ext.CustomExtension, another.Extension)"
             }
           },
           "additionalProperties": false
