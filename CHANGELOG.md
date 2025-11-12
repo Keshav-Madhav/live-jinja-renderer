@@ -4,6 +4,18 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.6.3] - 2025-11-13
+
+### Added - Smart Extension Suggestions & Performance Metrics ⚡💡
+- **Extension Auto-Detection**: Automatically detects when Jinja2 extensions are needed based on template syntax
+- **One-Click Enable**: Click suggested extensions below output to enable them instantly without opening settings
+- **Smart Suggestions**: Detects {% trans %}, {% do %}, {% break %}, {% continue %}, {% with %}, {% autoescape %}, and {% debug %} tags
+- **Performance Metrics**: Shows render time below output with color-coded indicators (green < 500ms, yellow < 1000ms, red ≥ 1000ms)
+- **Configurable Display**: Toggle performance metrics and extension suggestions in settings
+- **Settings**:
+  - `liveJinjaRenderer.advanced.showPerformanceMetrics` - Show/hide performance metrics (default: true)
+  - `liveJinjaRenderer.advanced.suggestExtensions` - Enable/disable extension suggestions (default: true)
+
 ## [1.6.2] - 2025-11-13
 
 ### Fixed - Extensions Support 🔧

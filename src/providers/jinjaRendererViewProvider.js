@@ -303,6 +303,34 @@ class JinjaRendererViewProvider {
               isUpdatingFromHistory = false;
             }, 100);
             break;
+          
+          case 'enableExtension':
+            // Enable an extension from the webview suggestion
+            try {
+              const extensionKey = message.extension;
+              const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+              const currentExtensions = config.get('extensions', {});
+              
+              // Enable the requested extension
+              currentExtensions[extensionKey] = true;
+              
+              await config.update('extensions', currentExtensions, vscode.ConfigurationTarget.Global);
+              
+              // Send updated settings back to webview
+              webviewView.webview.postMessage({
+                type: 'extensionEnabled',
+                extension: extensionKey,
+                settings: {
+                  extensions: currentExtensions
+                }
+              });
+              
+              vscode.window.showInformationMessage(`✅ Enabled ${extensionKey} extension`);
+            } catch (err) {
+              vscode.window.showErrorMessage(`Failed to enable extension: ${err.message}`);
+              console.error('Enable extension failed:', err);
+            }
+            break;
         }
       },
       undefined,

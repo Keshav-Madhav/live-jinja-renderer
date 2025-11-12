@@ -67,6 +67,17 @@
                 <pre id="output"></pre>
                 <div id="markdown-output" style="display: none;"></div>
             </div>
+            <div class="performance-metrics" id="performance-metrics" style="display: none; font-size: 11px; padding: 6px 10px; margin: 8px 0 0 0; background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border); border-radius: 3px; color: var(--vscode-descriptionForeground);">
+                <i class="codicon codicon-pulse" style="font-size: 12px; margin-right: 4px;"></i>
+                <span id="performance-text">Render time: 0ms</span>
+            </div>
+            <div class="extension-suggestions" id="extension-suggestions" style="display: none; font-size: 11px; padding: 8px 10px; margin: 8px 0 0 0; background: var(--vscode-inputValidation-infoBackground); border-left: 3px solid var(--vscode-inputValidation-infoBorder); border-radius: 2px;">
+                <div style="margin-bottom: 6px; color: var(--vscode-inputValidation-infoForeground); font-weight: 500;">
+                    <i class="codicon codicon-lightbulb" style="font-size: 12px; margin-right: 4px;"></i>
+                    Suggested Extensions:
+                </div>
+                <div id="extension-suggestions-list" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+            </div>
             {{OUTPUT_FOOTER}}
         </div>
     </div>

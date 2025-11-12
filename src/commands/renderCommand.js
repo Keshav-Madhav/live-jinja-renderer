@@ -106,6 +106,8 @@ function registerConfigurationListener(context, sidebarProvider) {
           ghostSaveEnabled: config.get('advanced.ghostSave', true),
           historyEnabled: config.get('history.enabled', true),
           historySize: config.get('history.size', 5),
+          showPerformanceMetrics: config.get('advanced.showPerformanceMetrics', true),
+          suggestExtensions: config.get('advanced.suggestExtensions', true),
           extensions: config.get('extensions', {
             i18n: false,
             do: false,

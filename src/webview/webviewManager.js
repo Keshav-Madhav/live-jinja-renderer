@@ -117,6 +117,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
     ghostSaveEnabled: config.get('advanced.ghostSave', true),
     historyEnabled: config.get('history.enabled', true),
     historySize: config.get('history.size', 5),
+    showPerformanceMetrics: config.get('advanced.showPerformanceMetrics', true),
+    suggestExtensions: config.get('advanced.suggestExtensions', true),
     selectionRange: lastSelectionRange, // Include selection range in settings
     extensions: config.get('extensions', {
       i18n: false,
@@ -293,6 +295,34 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
         case 'outputCopied':
           // Legacy message - show confirmation when output is copied
           vscode.window.showInformationMessage('Output copied to clipboard');
+          return;
+        
+        case 'enableExtension':
+          // Enable an extension from the webview suggestion
+          try {
+            const extensionKey = message.extension;
+            const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+            const currentExtensions = config.get('extensions', {});
+            
+            // Enable the requested extension
+            currentExtensions[extensionKey] = true;
+            
+            await config.update('extensions', currentExtensions, vscode.ConfigurationTarget.Global);
+            
+            // Send updated settings back to webview
+            webview.postMessage({
+              type: 'extensionEnabled',
+              extension: extensionKey,
+              settings: {
+                extensions: currentExtensions
+              }
+            });
+            
+            vscode.window.showInformationMessage(`✅ Enabled ${extensionKey} extension`);
+          } catch (err) {
+            vscode.window.showErrorMessage(`Failed to enable extension: ${err.message}`);
+            console.error('Enable extension failed:', err);
+          }
           return;
         
         case 'saveVariables':

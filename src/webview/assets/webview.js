@@ -18,6 +18,10 @@ const fileHistoryDropdown = isSidebarMode ? /** @type {HTMLButtonElement | null}
 const fileHistoryMenu = isSidebarMode ? /** @type {HTMLDivElement | null} */ (document.getElementById('file-history-menu')) : null;
 const extensionsIndicator = /** @type {HTMLDivElement | null} */ (document.getElementById('extensions-indicator'));
 const extensionsList = /** @type {HTMLSpanElement | null} */ (document.getElementById('extensions-list'));
+const performanceMetrics = /** @type {HTMLDivElement | null} */ (document.getElementById('performance-metrics'));
+const performanceText = /** @type {HTMLSpanElement | null} */ (document.getElementById('performance-text'));
+const extensionSuggestions = /** @type {HTMLDivElement | null} */ (document.getElementById('extension-suggestions'));
+const extensionSuggestionsList = /** @type {HTMLDivElement | null} */ (document.getElementById('extension-suggestions-list'));
 
 // File history management (sidebar only)
 let fileHistory = [];
@@ -31,6 +35,8 @@ let showWhitespace = true;
 let cullWhitespace = false;
 let autoRerender = true;
 let ghostSaveEnabled = true;
+let showPerformanceMetrics = true;
+let suggestExtensions = true;
 let currentTemplate = '';
 let currentFileUri = '';
 let currentSelectionRange = null;
@@ -294,6 +300,141 @@ function updateExtensionsIndicator() {
   }
 }
 
+/**
+ * Detect which extensions might be needed based on template syntax
+ */
+function detectSuggestedExtensions(template) {
+  const suggestions = [];
+  
+  // Check for i18n extension patterns
+  if (/\{%\s*trans\s*%\}|\{%\s*endtrans\s*%\}|\{%\s*pluralize\s*%\}/i.test(template)) {
+    if (!enabledExtensions.i18n) {
+      suggestions.push({
+        key: 'i18n',
+        name: 'i18n',
+        description: 'Internationalization - {% trans %} tags detected',
+        icon: 'globe'
+      });
+    }
+  }
+  
+  // Check for do extension patterns
+  if (/\{%\s*do\s+/i.test(template)) {
+    if (!enabledExtensions.do) {
+      suggestions.push({
+        key: 'do',
+        name: 'do',
+        description: 'Do statements - {% do %} tag detected',
+        icon: 'play'
+      });
+    }
+  }
+  
+  // Check for loop controls extension patterns
+  if (/\{%\s*break\s*%\}|\{%\s*continue\s*%\}/i.test(template)) {
+    if (!enabledExtensions.loopcontrols) {
+      suggestions.push({
+        key: 'loopcontrols',
+        name: 'loopcontrols',
+        description: 'Loop controls - {% break %} or {% continue %} detected',
+        icon: 'debug-step-over'
+      });
+    }
+  }
+  
+  // Check for with extension patterns
+  if (/\{%\s*with\s+/i.test(template)) {
+    if (!enabledExtensions.with) {
+      suggestions.push({
+        key: 'with',
+        name: 'with',
+        description: 'With blocks - {% with %} tag detected',
+        icon: 'symbol-namespace'
+      });
+    }
+  }
+  
+  // Check for autoescape extension patterns
+  if (/\{%\s*autoescape\s+|\{%\s*endautoescape\s*%\}/i.test(template)) {
+    if (!enabledExtensions.autoescape) {
+      suggestions.push({
+        key: 'autoescape',
+        name: 'autoescape',
+        description: 'Autoescape - {% autoescape %} tag detected',
+        icon: 'shield'
+      });
+    }
+  }
+  
+  // Check for debug extension patterns
+  if (/\{%\s*debug\s*%\}/i.test(template)) {
+    if (!enabledExtensions.debug) {
+      suggestions.push({
+        key: 'debug',
+        name: 'debug',
+        description: 'Debug - {% debug %} tag detected',
+        icon: 'bug'
+      });
+    }
+  }
+  
+  return suggestions;
+}
+
+/**
+ * Update the extension suggestions UI
+ */
+function updateExtensionSuggestions() {
+  if (!extensionSuggestions || !extensionSuggestionsList) return;
+  
+  const suggestions = detectSuggestedExtensions(currentTemplate);
+  
+  if (suggestions.length === 0) {
+    extensionSuggestions.style.display = 'none';
+    return;
+  }
+  
+  extensionSuggestions.style.display = 'block';
+  extensionSuggestionsList.innerHTML = '';
+  
+  suggestions.forEach(suggestion => {
+    const button = document.createElement('button');
+    button.className = 'extension-suggestion-btn';
+    button.style.cssText = `
+      padding: 4px 10px;
+      background: var(--vscode-button-secondaryBackground);
+      color: var(--vscode-button-secondaryForeground);
+      border: 1px solid var(--vscode-button-border);
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.1s;
+    `;
+    button.title = suggestion.description;
+    button.innerHTML = `<i class="codicon codicon-${suggestion.icon}"></i> Enable ${suggestion.name}`;
+    
+    button.addEventListener('mouseenter', () => {
+      button.style.background = 'var(--vscode-button-secondaryHoverBackground)';
+    });
+    button.addEventListener('mouseleave', () => {
+      button.style.background = 'var(--vscode-button-secondaryBackground)';
+    });
+    
+    button.addEventListener('click', () => {
+      // Enable the extension via VS Code settings
+      vscode.postMessage({
+        command: 'enableExtension',
+        extension: suggestion.key
+      });
+    });
+    
+    extensionSuggestionsList.appendChild(button);
+  });
+}
+
 function updateFileNameDisplay(fileUri, selectionRange = null) {
   if (!fileUri) {
     fileNameDisplay.textContent = 'No file selected';
@@ -445,6 +586,9 @@ async function update() {
     const escapedTemplate = template.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     const escapedContext = contextJson.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     
+    // Start performance tracking
+    const startTime = performance.now();
+    
     // Build extensions list
     const extensionsList = [];
     if (enabledExtensions.i18n) extensionsList.push("'jinja2.ext.i18n'");
@@ -572,6 +716,37 @@ except Exception as e:
 
 result
     `);
+    
+    // End performance tracking
+    const endTime = performance.now();
+    const renderTime = Math.round(endTime - startTime);
+    
+    // Update performance metrics
+    if (performanceMetrics && performanceText && showPerformanceMetrics) {
+      performanceText.textContent = `Render time: ${renderTime}ms`;
+      performanceMetrics.style.display = 'block';
+      
+      // Color code based on performance
+      if (renderTime > 1000) {
+        performanceMetrics.style.borderColor = 'var(--vscode-inputValidation-errorBorder)';
+        performanceMetrics.style.background = 'var(--vscode-inputValidation-errorBackground)';
+      } else if (renderTime > 500) {
+        performanceMetrics.style.borderColor = 'var(--vscode-inputValidation-warningBorder)';
+        performanceMetrics.style.background = 'var(--vscode-inputValidation-warningBackground)';
+      } else {
+        performanceMetrics.style.borderColor = 'var(--vscode-panel-border)';
+        performanceMetrics.style.background = 'var(--vscode-editor-background)';
+      }
+    } else if (performanceMetrics) {
+      performanceMetrics.style.display = 'none';
+    }
+    
+    // Update extension suggestions based on template syntax
+    if (suggestExtensions) {
+      updateExtensionSuggestions();
+    } else if (extensionSuggestions) {
+      extensionSuggestions.style.display = 'none';
+    }
     
     let processedResult = result;
     if (cullWhitespace) {
@@ -1106,6 +1281,8 @@ window.addEventListener('message', async event => {
         autoRerender = message.settings.autoRerender !== undefined ? message.settings.autoRerender : true;
         ghostSaveEnabled = message.settings.ghostSaveEnabled !== undefined ? message.settings.ghostSaveEnabled : true;
         historyEnabled = message.settings.historyEnabled !== undefined ? message.settings.historyEnabled : true;
+        showPerformanceMetrics = message.settings.showPerformanceMetrics !== undefined ? message.settings.showPerformanceMetrics : true;
+        suggestExtensions = message.settings.suggestExtensions !== undefined ? message.settings.suggestExtensions : true;
         
         // Update extensions settings
         if (message.settings.extensions) {
@@ -1179,6 +1356,22 @@ window.addEventListener('message', async event => {
       if (message.variables) {
         variablesEditor.value = JSON.stringify(message.variables, null, 2);
         autoResizeVariablesSection();
+        await update();
+      }
+      break;
+    
+    case 'extensionEnabled':
+      // Extension was enabled, update the UI
+      if (message.extension && message.settings && message.settings.extensions) {
+        enabledExtensions.i18n = message.settings.extensions.i18n || false;
+        enabledExtensions.do = message.settings.extensions.do || false;
+        enabledExtensions.loopcontrols = message.settings.extensions.loopcontrols || false;
+        enabledExtensions.with = message.settings.extensions.with || false;
+        enabledExtensions.autoescape = message.settings.extensions.autoescape || false;
+        enabledExtensions.debug = message.settings.extensions.debug || false;
+        customExtensions = message.settings.extensions.custom || '';
+        updateExtensionsIndicator();
+        updateExtensionSuggestions();
         await update();
       }
       break;

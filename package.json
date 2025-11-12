@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -553,6 +553,18 @@
           "default": true,
           "description": "Show loading indicators when processing templates",
           "order": 32
+        },
+        "liveJinjaRenderer.advanced.showPerformanceMetrics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show render time and performance metrics below the output",
+          "order": 33
+        },
+        "liveJinjaRenderer.advanced.suggestExtensions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically suggest Jinja2 extensions based on template syntax",
+          "order": 34
         },
         "liveJinjaRenderer.extensions": {
           "type": "object",

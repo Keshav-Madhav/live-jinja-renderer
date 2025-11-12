@@ -71,7 +71,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ New in this version:\n• Fixed i18n extension (gettext not found error resolved)\n• Enhanced custom extension validation\n• Better error messages for extension loading\n• All Jinja2 extensions now working correctly\n\nCheck the CHANGELOG for full details!`;
+        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ New in this version:\n• Smart extension suggestions based on template syntax\n• One-click extension enable from suggestions\n• Performance metrics with color-coded render times\n• Auto-detection for {% trans %}, {% break %}, {% do %}, etc.\n• Configurable display settings\n\nCheck the CHANGELOG for full details!`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
