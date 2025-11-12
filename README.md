@@ -1,18 +1,71 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.6.3-blue)
+![Version](https://img.shields.io/badge/version-1.7.0-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A powerful VS Code extension for **real-time Jinja2 template preview** with authentic Python Jinja2 (via Pyodide). Edit templates and variables side-by-side with instant rendering, markdown support, mermaid diagrams, intelligent whitespace management, and **smart error navigation**.
+A powerful VS Code extension for **real-time Jinja2 template preview** with authentic Python Jinja2 (via Pyodide). Edit templates and variables side-by-side with instant rendering, markdown support, mermaid diagrams, intelligent whitespace management, smart error navigation, and **full IntelliSense with autocomplete**.
 
 > 🎯 **Perfect for**: Python developers, DevOps engineers, Ansible users, configuration management, and anyone working with Jinja2 templates.
 
+---
+
+## 🚀 What's New in v1.7.0 - MAJOR UPDATE! 🎉
+
+### Complete IntelliSense System for Jinja2 Templates
+
+This is a **major update** that transforms Live Jinja Renderer into a full-featured IDE for Jinja2 development!
+
+#### New Features:
+- ✨ **Variable Autocomplete**: Press `Ctrl+Space` inside `{{ }}` to see all available variables with type information
+- ✨ **Dot Notation IntelliSense**: Type `.` after any variable to explore nested properties (e.g., `user.` → `name`, `email`, `address`)
+- ✨ **Hover Documentation**: Hover over variables to see types, current values, and available properties
+- ✨ **Filter Library**: Type `|` to see 20+ Jinja2 filters with complete documentation and examples
+- ✨ **Keyword Completion**: Autocomplete for `for`, `if`, `set`, `block`, `extends`, `include`, `macro`, and more
+- ✨ **Real-time Sync**: IntelliSense automatically updates as you extract and modify variables
+- ✨ **Smart Context Detection**: Only activates in Jinja template contexts (`.jinja`, `.jinja2`, `.j2`, `.txt` files)
+
+#### Try It Now:
+1. Open any `.jinja` file (or create one with `test-intellisense.jinja` included)
+2. Type `{{` and press `Ctrl+Space` to see variable suggestions
+3. Type a variable name + `.` to see nested properties
+4. Hover over any variable to see documentation
+5. Type `|` after a variable to see filter suggestions
+
+📚 **Full Documentation**: See `INTELLISENSE.md` for comprehensive usage guide and examples.
+
+---
+
 ## ✨ Key Features
+
+### � **Full IntelliSense System** ⭐ NEW!
+- **Variable Autocomplete**: Intelligent suggestions for all extracted variables
+  - Triggers inside `{{ }}` and `{% %}` blocks
+  - Shows type information and value previews
+  - Updates in real-time as you work
+- **Dot Notation IntelliSense**: Navigate nested objects effortlessly
+  - Type `.` after any variable to see properties (e.g., `user.` → `name`, `email`, `age`)
+  - Works with deeply nested structures (`user.address.city`)
+  - Smart array element detection
+- **Hover Documentation**: Rich information on hover
+  - Variable types (String, Array, Object, Number, Boolean)
+  - Current values with smart formatting
+  - Available properties and usage examples
+- **Filter Library**: 20+ Jinja2 filters with full documentation
+  - Type `|` after a variable to see filter suggestions
+  - Complete signatures and usage examples
+  - Includes: `default`, `length`, `upper`, `lower`, `join`, `replace`, `round`, `sort`, `map`, `select`, `tojson`, and more
+- **Keyword Completion**: Autocomplete for Jinja2 control structures
+  - `for`, `if`, `elif`, `else`, `set`, `block`, `extends`, `include`, `macro`, `with`
+  - Context-aware suggestions with descriptions
+- **Smart Context Detection**: Only activates in Jinja template syntax
+  - Works with `.jinja`, `.jinja2`, `.j2`, `.txt`, and plaintext files
+  - No interference with normal text editing
 
 ### 🐍 **Authentic Python Jinja2**
 - Uses **real Python Jinja2** engine via Pyodide (not a JavaScript port)
 - 100% compatible with Python Jinja2 behavior
+- All standard Jinja2 features supported
 
 ### 🎨 **Flexible UI Options**
 - **Sidebar View**: Persistent panel in Activity Bar (like Source Control or Debug)
@@ -27,6 +80,7 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 - Auto-sync when switching between files
 - Multi-file support with automatic context switching
 - File history tracks last 5 contexts for easy switching
+- IntelliSense updates automatically with variable changes
 
 ### 📝 **Rich Content Support**
 - **Markdown rendering**: Beautiful formatted output
@@ -41,6 +95,8 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 - **Ghost Save**: Variables auto-save per file and restore across sessions
 - **Auto-Resizing**: Variables section adapts to content
 - **File History**: Dropdown menu for quick context switching
+- **Performance Metrics**: Render time display with color indicators
+- **Extension Detection**: Smart suggestions for required Jinja2 extensions
 - Keyboard shortcuts for quick access
 
 ---
@@ -53,8 +109,9 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 2. Press `Ctrl+Alt+J` (Windows/Linux) or `Cmd+Shift+J` (Mac)
 3. Edit variables in JSON format
 4. See rendered output in real-time
-5. Use the **auto-rerender toggle button** (▶️⏸️) to control automatic updates
-6. Click the **chevron icon** (🔽) to access recently opened files/selections
+5. **Start typing** `{{` in your template and enjoy **IntelliSense autocomplete**! 🎉
+6. Use the **auto-rerender toggle button** (▶️⏸️) to control automatic updates
+7. Click the **chevron icon** (🔽) to access recently opened files/selections
 
 **Quick Actions**:
 - **Navigation bar**: Markdown, Mermaid, Update icons
@@ -66,10 +123,70 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 Press `Ctrl+Alt+Shift+J` (Windows/Linux) or `Cmd+Shift+Alt+J` (Mac) for side-by-side editor view.
 
+---
+
 ## Features in Detail
 
+### 💡 IntelliSense & Autocomplete
+**NEW in v1.7.0**: Complete IDE features for Jinja2 templates! 🚀
+
+#### Variable Autocomplete
+Press `Ctrl+Space` inside `{{ }}` or `{% %}` blocks to see all available variables:
+```jinja
+{{ user  <-- Shows: user, items, config (with types and previews)
+{{ user.  <-- Shows: name, email, age, address (nested properties)
+{{ user.address.  <-- Shows: city, country, zip (deeply nested)
+```
+
+#### Filter Suggestions
+Type `|` after any variable to see 20+ Jinja2 filters:
+```jinja
+{{ items|  <-- Shows: length, first, last, join, sort, reverse, unique, etc.
+{{ name|upper  <-- Hover to see: Converts string to uppercase
+```
+
+**Supported Filters**:
+- String: `upper`, `lower`, `capitalize`, `title`, `trim`, `replace`, `truncate`
+- List: `first`, `last`, `join`, `length`, `sort`, `reverse`, `unique`
+- Numeric: `round`, `abs`, `sum`, `min`, `max`
+- Logic: `default`, `select`, `reject`, `map`, `groupby`
+- Output: `tojson`, `safe`, `escape`, `striptags`
+
+#### Hover Documentation
+Hover over any variable to see:
+- **Type**: String, Array, Object, Number, Boolean, null
+- **Value**: Current value (truncated if large)
+- **Properties**: Available properties for objects
+- **Usage**: Examples for arrays (for loops)
+
+```jinja
+Hover over 'user':
+  Type: Object
+  Properties: name, email, age, address
+  
+Hover over 'items':
+  Type: Array (3 items)
+  Usage: {% for item in items %}
+```
+
+#### Keyword Completion
+Type `{%` and press `Ctrl+Space` for control structure suggestions:
+- `for` - Loop through iterables
+- `if`, `elif`, `else` - Conditional logic
+- `set` - Variable assignment
+- `block`, `extends`, `include` - Template inheritance
+- `macro` - Reusable template functions
+- `with` - Context management
+
+#### Try It Now!
+Open the included `test-intellisense.jinja` file to see all IntelliSense features in action!
+
+📚 **Complete Guide**: See `INTELLISENSE.md` for detailed documentation and examples.
+
+---
+
 ### File History Dropdown
-**NEW in v1.5.0**: Switch between multiple files and selections effortlessly! 📂
+**v1.5.0**: Switch between multiple files and selections effortlessly! 📂
 
 - **Quick access**: Click the chevron icon next to the file name in sidebar
 - **Last 5 contexts**: Tracks your most recent files and selections
@@ -212,6 +329,47 @@ All settings are now organized into clear categories for easier configuration:
 
 ## Recent Updates
 
+### 1.7.0 - Complete IntelliSense System 🎉 MAJOR UPDATE
+This is a **transformative release** that adds a complete IDE experience for Jinja2 templates!
+
+#### New Features:
+- **Variable Autocomplete**: Intelligent completion for all extracted variables with type information
+- **Dot Notation IntelliSense**: Smart property suggestions for nested objects (e.g., `user.address.city`)
+- **Hover Documentation**: Rich information showing types, current values, and available properties
+- **Filter Library**: 20+ Jinja2 filters with complete documentation (default, length, upper, join, etc.)
+- **Keyword Completion**: Autocomplete for control structures (for, if, set, block, extends, etc.)
+- **Real-time Sync**: IntelliSense automatically updates with variable extraction and changes
+- **Smart Context Detection**: Only activates in Jinja template contexts, no interference elsewhere
+
+#### Technical Implementation:
+- New `JinjaCompletionProvider` for autocomplete functionality
+- New `JinjaHoverProvider` for hover documentation
+- New `JinjaIntelliSenseManager` coordinating all providers
+- Comprehensive documentation in `INTELLISENSE.md`
+- Demo template `test-intellisense.jinja` showcasing all features
+
+#### Bug Fixes:
+- Fixed variable extraction incorrectly identifying list methods like `append` as variables
+
+### 1.6.3 - Smart Extension Detection & Performance
+- **Extension Auto-Detection**: Automatic detection of needed Jinja2 extensions from template syntax
+- **One-Click Enable**: Suggested extensions appear below output with instant enable buttons
+- **Performance Metrics**: Render time display with color-coded indicators (green/yellow/red)
+- **Configurable Display**: Toggle performance metrics and extension suggestions in settings
+
+### 1.6.2 - Extensions Support Fixes
+- **i18n Extension Fix**: Fixed `gettext` not found error by installing translation callbacks
+- **Enhanced Validation**: Improved custom extension validation and error handling
+- **Better Error Messages**: Clear error messages with specific guidance for extension loading failures
+
+### 1.6.1 - UX Enhancements
+- **Clickable Extensions Indicator**: Click the extensions indicator above output to open settings
+- **Keyboard Shortcut**: Added `Ctrl+Alt+X` (Mac: `Cmd+Shift+X`) to quickly open extension settings
+- **Extension Tooltips**: Hover over extensions indicator to see descriptions of all active extensions
+- **Help Examples**: Added practical code examples to all extension settings descriptions
+- **Improved Placeholder Text**: Better custom extensions placeholder with realistic examples
+- **Code Cleanup**: Removed unused variables for cleaner codebase
+
 ### 1.6.0 - Jinja2 Extensions Support
 - **Built-in Extensions**: 6 standard Jinja2 extensions (i18n, do, loopcontrols, with, autoescape, debug)
 - **Single Settings Object**: Expandable checkbox list in settings (like ESLint rules)
@@ -220,90 +378,51 @@ All settings are now organized into clear categories for easier configuration:
 - **Instant Activation**: Extensions activate immediately with auto-rerender
 - **Visual Indicator**: Active extensions displayed above output
 - **Status Bar Integration**: Shows extension count with detailed tooltip
-- **Better Error Messages**: Clear feedback when extensions fail to load
-- **All Disabled by Default**: Enable only what you need
 
 ### 1.5.4 - Quick Selection Actions
-- **Lightbulb Actions**: Select text to see quick action buttons
-- **One-Click Rendering**: Instantly render selected text
-- Works on `.jinja`, `.j2`, `.txt`, and plaintext files
+- Lightbulb actions for selected text with one-click rendering
 
 ### 1.5.3 - Variables Import/Export System
-- Export variables to JSON file or clipboard
-- Import from workspace files, file browser, or active editor
-- Full JSON validation with helpful error messages
+- Export/import variables to JSON file or clipboard with full validation
 
 ### 1.5.2 - Enhanced Variable Extraction
-- Expanded Jinja keyword list with 40+ new filters and built-ins
-- Added support for ternary expressions in templates
-- Added support for slice notation (e.g., `{{ items[1:5] }}`)
-- Added support for negative array indices (e.g., `{{ items[-1] }}`)
-- Added support for method calls (e.g., `{{ dict.keys() }}`)
-- Improved handling of multi-line `{% set %}` blocks
-- Better variable extraction accuracy for complex templates
+- 40+ new Jinja filters and keywords, support for ternary expressions, slice notation
 
 ### 1.5.1 - Migration & Compatibility Patch
-- Fixed settings migration and backwards compatibility for toggle commands
-- Improved fallback logic for reading old/new setting names
+- Fixed settings migration and backwards compatibility
 
 ### 1.5.0 - Enhanced Settings & Customization
-- **Reorganized Settings**: Clear categories (Rendering, Editor, Variables, History, Advanced)
-- **8 New Settings**: Control render delay, auto-resize, JSON formatting, file history, ghost save delay, and more
-- **Better Defaults**: Show Whitespace now ON, Cull Whitespace now OFF by default
-- **Smart UI**: File history dropdown hides when disabled, ghost save respects settings
-- **Backwards Compatible**: Old setting names still work
+- Reorganized settings into clear categories with 8 new settings
 
 ### 1.4.6 - Status Bar Indicator
-- Status bar shows current settings (hover to see all)
-- Click status bar to open extension settings
-- Removed toast notifications for less intrusive experience
+- Status bar shows current settings with click-to-open functionality
 
 ### 1.4.5 - Code Quality & Type Safety
-- **Major Refactor**: Split webview code into separate files (HTML, CSS, JS) for better maintainability
-- **Clean Code**: Fixed all TypeScript and ESLint errors without using `@ts-nocheck`
-- Added comprehensive type declarations for webview APIs and external libraries
-- Improved code organization following separation of concerns best practices
-- Zero linting errors with proper type checking enabled
-- No functional changes - all features work exactly as before
+- Major refactor: Split webview code into separate files
 
 ### 1.4.4 - Bug Fixes
-- Fixed selection highlight persistence when closing/reopening sidebar
-- Highlights properly clear and re-apply when switching views
+- Fixed selection highlight persistence
 
-### 1.4.3 - File History
-- **File History Dropdown**: Quick access to last 5 files/selections via dropdown menu
-- Each history entry maintains its own state (file, selection, variables)
-- Live-linked to source files for automatic updates
-- Click chevron icon next to file name to switch contexts
-- Perfect for multi-file workflows and rapid context switching
+### 1.4.3 - File History Dropdown
+- Quick access to last 5 files/selections via dropdown menu
 
 ### 1.4.2 - Selection Range Adjustment
 - Dynamic selection range adjustment when adding/removing lines
-- Selection automatically expands and shrinks based on edits
 
 ### 1.4.1 - Visual Highlighting
-- Subtle blue background tint highlights selected rendering range
-- Shows in overview ruler for easy navigation
+- Subtle blue background highlights selected rendering range
 
-### 1.4.0 - MAJOR UPDATE
-- **Selection-based rendering**: Select any portion of text to render just that section
-- **Visual highlight**: Subtle blue tint on selected range in editor
-- Scoped operations: Variables, auto-refresh, ghost save all work on selection
-- File name displays line range when rendering selection
-- Smart error navigation adjusts for selection offset
+### 1.4.0 - Selection-Based Rendering
+- Select any portion of text to render just that section
 
 ### 1.3.3 - Auto-Rerender Control
-- Dynamic file name display above variables
-- Auto-rerender toggle control for performance
-- Sidebar toggle button for quick access
+- Dynamic file name display, auto-rerender toggle, sidebar button
 
 ### 1.3.2 - Ghost Save
-- Ghost save: Variables auto-save per file
-- Smarter variable extraction with merge
+- Variables auto-save per file with smart extraction and merge
 
 ### 1.3.1 - Context Menu Integration
-- Editor context menu integration
-- Variable preset quick action buttons
+- Editor context menu integration with variable preset quick actions
 
 ### 1.3.0 - Error Navigation
 Clickable error messages with line highlighting - jump directly to errors in your template. Enhanced error detection and navigation for faster debugging.

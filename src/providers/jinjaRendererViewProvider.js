@@ -7,8 +7,9 @@ const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
  * Webview View Provider for sidebar
  */
 class JinjaRendererViewProvider {
-  constructor(context) {
+  constructor(context, intelliSenseManager = null) {
     this._context = context;
+    this._intelliSenseManager = intelliSenseManager;
     this._view = undefined;
     this._currentEditor = undefined;
     this._disposables = [];
@@ -214,6 +215,11 @@ class JinjaRendererViewProvider {
         
         // Extract variables
         const extractedVars = extractVariablesFromTemplate(templateContent);
+        
+        // Update IntelliSense providers with extracted variables
+        if (this._intelliSenseManager && extractedVars) {
+          this._intelliSenseManager.updateVariables(extractedVars);
+        }
         
         // Load ghost variables for this context
         const ghostVariables = this._context.workspaceState.get('jinjaGhostVariables', {});
@@ -425,6 +431,11 @@ class JinjaRendererViewProvider {
           if (this._view && this._view.webview && editor && editor.document) {
             // Extract variables directly
             const extractedVars = extractVariablesFromTemplate(templateContent);
+            
+            // Update IntelliSense providers with extracted variables
+            if (this._intelliSenseManager && extractedVars) {
+              this._intelliSenseManager.updateVariables(extractedVars);
+            }
             
             // Send extraction to webview
             this._view.webview.postMessage({

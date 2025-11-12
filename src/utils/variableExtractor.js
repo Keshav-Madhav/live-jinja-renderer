@@ -41,6 +41,12 @@ function extractVariablesFromTemplate(template) {
     'len', 'sorted', 'reversed', 'enumerate', 'zip', 'filter', 'any', 'all',
     'tuple', 'set',
     
+    // List/Dict/String methods (should not be treated as variables)
+    'append', 'extend', 'insert', 'remove', 'pop', 'clear', 'index', 'count',
+    'copy', 'keys', 'values', 'items', 'get', 'update', 'setdefault',
+    'split', 'strip', 'lstrip', 'rstrip', 'startswith', 'endswith',
+    'find', 'rfind', 'isdigit', 'isalpha', 'isalnum', 'islower', 'isupper',
+    
     // Special variables
     'loop', 'self', 'super', 'varargs', 'kwargs'
   ]);
@@ -75,7 +81,46 @@ function extractVariablesFromTemplate(template) {
   function extractVariablesFromExpression(expression, excludeAssigned = false) {
     const variables = [];
     
-    let cleanedExpression = expression
+    // First, extract method calls (e.g., list.append(x)) to handle them specially
+    const methodCallPattern = /([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)\s*\.\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)/g;
+    let methodMatch;
+    const methodCalls = [];
+    
+    while ((methodMatch = methodCallPattern.exec(expression)) !== null) {
+      const objectPath = methodMatch[1];
+      const methodName = methodMatch[2];
+      const args = methodMatch[3];
+      
+      methodCalls.push({
+        fullMatch: methodMatch[0],
+        objectPath: objectPath,
+        methodName: methodName,
+        args: args
+      });
+      
+      // Add the object being called (not the method name)
+      const rootVar = objectPath.split('.')[0];
+      if (!isJinjaKeyword(rootVar) && !loopVariables.has(rootVar)) {
+        if (!excludeAssigned || !assignedVariables.has(rootVar)) {
+          variables.push(objectPath);
+        }
+      }
+      
+      // Extract variables from arguments
+      if (args.trim()) {
+        const argsVars = extractVariablesFromExpression(args, excludeAssigned);
+        variables.push(...argsVars);
+      }
+    }
+    
+    // Remove method calls from expression to avoid double processing
+    let cleanedExpression = expression;
+    for (const call of methodCalls) {
+      cleanedExpression = cleanedExpression.replace(call.fullMatch, ' ');
+    }
+    
+    // Clean the expression
+    cleanedExpression = cleanedExpression
       .replace(/'[^']*'/g, '')
       .replace(/"[^"]*"/g, '')
       .replace(/\b\d+\.?\d*\b/g, '')
@@ -84,14 +129,17 @@ function extractVariablesFromTemplate(template) {
       .replace(/\s+/g, ' ')
       .trim();
         
+    // Handle remaining function calls (not methods)
     const functionCallPattern = /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(\s*([^)]*)\s*\)/g;
     let funcMatch;
-    while ((funcMatch = functionCallPattern.exec(expression)) !== null) {
+    while ((funcMatch = functionCallPattern.exec(cleanedExpression)) !== null) {
       const funcName = funcMatch[1];
       const args = funcMatch[2];
       
       if (!isJinjaKeyword(funcName) && !loopVariables.has(funcName)) {
-        variables.push(funcName);
+        if (!excludeAssigned || !assignedVariables.has(funcName)) {
+          variables.push(funcName);
+        }
       }
       
       if (args.trim()) {
@@ -100,16 +148,33 @@ function extractVariablesFromTemplate(template) {
       }
     }
     
+    // Extract variable paths, but filter out method names
     const varMatches = cleanedExpression.match(/\b[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*/g);
     
     if (varMatches) {
       for (const varName of varMatches) {
         const rootVar = varName.split('.')[0];
-        if (!isJinjaKeyword(rootVar) && !loopVariables.has(rootVar)) {
-          // Skip if this is an assigned variable and we're excluding those
-          if (excludeAssigned && assignedVariables.has(rootVar)) {
-            continue;
+        
+        // Skip keywords, loop variables, and method names
+        if (isJinjaKeyword(rootVar) || loopVariables.has(rootVar)) {
+          continue;
+        }
+        
+        // Skip if this is an assigned variable and we're excluding those
+        if (excludeAssigned && assignedVariables.has(rootVar)) {
+          continue;
+        }
+        
+        // Check if this variable path ends with a method name (shouldn't happen after cleaning, but extra safety)
+        const parts = varName.split('.');
+        const lastPart = parts[parts.length - 1];
+        if (parts.length > 1 && isJinjaKeyword(lastPart)) {
+          // This is something like "list.append" - only keep the object part
+          const objectPart = parts.slice(0, -1).join('.');
+          if (!variables.includes(objectPart)) {
+            variables.push(objectPart);
           }
+        } else {
           variables.push(varName);
         }
       }

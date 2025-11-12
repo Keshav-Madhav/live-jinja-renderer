@@ -1,6 +1,7 @@
 const vscode = require('vscode');
 const { JinjaRendererViewProvider } = require('./src/providers/jinjaRendererViewProvider');
 const { registerSelectionActionsProvider } = require('./src/providers/selectionActionsProvider');
+const { JinjaIntelliSenseManager } = require('./src/providers/jinjaIntelliSenseManager');
 const { registerSettingsCommands } = require('./src/commands/settingsCommands');
 const { registerVariableCommands } = require('./src/commands/variableCommands');
 const { registerImportExportCommands } = require('./src/commands/importExportCommands');
@@ -71,19 +72,20 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `Live Jinja Renderer updated to v${currentVersion}! 🎉\n\n✨ New in this version:\n• Smart extension suggestions based on template syntax\n• One-click extension enable from suggestions\n• Performance metrics with color-coded render times\n• Auto-detection for {% trans %}, {% break %}, {% do %}, etc.\n• Configurable display settings\n\nCheck the CHANGELOG for full details!`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}! MAJOR UPDATE\n\n🚀 Complete IntelliSense System:\n• Variable autocomplete with type information\n• Dot notation IntelliSense for nested objects\n• Hover documentation showing values and properties\n• 20+ Jinja2 filters with complete documentation\n• Keyword completion for control structures\n• Real-time sync with variable extraction\n• Smart context detection\n\n✨ Try it now: Type "{{" in any .jinja file!\n\nThis is a MAJOR update that transforms Live Jinja Renderer into a complete IDE for Jinja2 templates.`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
-          'Configure Extensions',
+          'Try Demo Template',
           'Dismiss'
         ).then(result => {
           if (result === 'View Release Notes') {
             vscode.env.openExternal(vscode.Uri.parse(
               'https://github.com/Keshav-Madhav/live-jinja-renderer/blob/main/CHANGELOG.md'
             ));
-          } else if (result === 'Configure Extensions') {
-            vscode.commands.executeCommand('workbench.action.openSettings', 'liveJinjaRenderer.extensions');
+          } else if (result === 'Try Demo Template') {
+            vscode.workspace.openTextDocument(vscode.Uri.joinPath(context.extensionUri, 'test-intellisense.jinja'))
+              .then(doc => vscode.window.showTextDocument(doc));
           }
         });
       }
@@ -95,8 +97,11 @@ async function activate(context) {
     // Create status bar item
     createStatusBarItem(context);
     
+    // Initialize IntelliSense manager
+    const intelliSenseManager = new JinjaIntelliSenseManager(context);
+    
     // Register the sidebar webview view provider
-    const sidebarProvider = new JinjaRendererViewProvider(context);
+    const sidebarProvider = new JinjaRendererViewProvider(context, intelliSenseManager);
     context.subscriptions.push(
       vscode.window.registerWebviewViewProvider('jinjaRendererView', sidebarProvider)
     );

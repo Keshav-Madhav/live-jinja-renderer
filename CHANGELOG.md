@@ -4,6 +4,143 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.7.0] - 2025-11-13 🎉 MAJOR UPDATE
+
+### 🚀 NEW - Complete IntelliSense System for Jinja2 Templates
+
+This is a **major update** that transforms Live Jinja Renderer into a complete IDE for Jinja2 template development! We've added a full-featured IntelliSense system that provides intelligent code completion, hover documentation, and context-aware suggestions.
+
+#### 💡 Variable Autocomplete & Smart Suggestions
+- **Intelligent Variable Completion**: Autocomplete for all extracted variables in your templates
+  - Triggers automatically inside `{{ }}` expression blocks
+  - Triggers in `{% %}` statement blocks for control structures
+  - Shows variable type information (String, Number, Array, Object, Boolean, null)
+  - Displays value previews directly in completion documentation
+  - Visual icons distinguish between variables, properties, filters, and keywords
+  
+- **Dot Notation IntelliSense**: Navigate complex nested objects with ease
+  - Type `.` after any variable to see all available properties
+  - Works seamlessly with deeply nested objects (e.g., `user.address.city`)
+  - Handles arrays and objects automatically
+  - Smart property traversal for complex data structures
+  - Shows property types and current values
+  
+- **Rich Hover Documentation**: Detailed information appears when you hover over variables
+  - **Variable Type**: Clearly labeled type (String, Array, Object, etc.)
+  - **Current Value**: Shows the actual value with smart formatting
+  - **Truncation**: Large values are intelligently truncated (150 chars max)
+  - **Available Properties**: For objects, see all accessible properties at a glance
+  - **Array Usage Examples**: For arrays, get helpful `for` loop syntax examples
+  - **Filter Chain Support**: Documentation works even with filters applied
+
+#### 🔧 Jinja2 Filter System
+- **Complete Filter Library**: 20+ built-in Jinja2 filters with comprehensive documentation
+  - Triggers after `|` pipe character
+  - Each filter includes signature, description, and usage examples
+  - Supported filters include:
+    - **String Filters**: `upper`, `lower`, `capitalize`, `title`, `trim`, `replace`, `truncate`
+    - **List/Array Filters**: `first`, `last`, `join`, `length`, `sort`, `reverse`, `unique`
+    - **Numeric Filters**: `round`, `abs`, `sum`, `min`, `max`
+    - **Logic Filters**: `default`, `select`, `reject`, `map`, `groupby`
+    - **Output Filters**: `tojson`, `safe`, `escape`, `striptags`
+    - **Testing Filters**: `length`, `dictsort`, `batch`
+  
+- **Filter Chaining**: IntelliSense works through multiple filter chains
+  - Example: `{{ items|sort|first|upper }}` - suggestions at every step
+
+#### 📝 Jinja2 Keyword Completion
+- **Control Structure Suggestions**: Autocomplete for Jinja2 keywords
+  - `for` - Loop through iterables with syntax examples
+  - `if`, `elif`, `else` - Conditional statements
+  - `set` - Variable assignment
+  - `block` - Template inheritance blocks
+  - `extends` - Template extension
+  - `include` - Template inclusion
+  - `macro` - Reusable template macros
+  - `with` - Context management
+  
+#### 🎯 Smart Context Detection
+- **File Type Support**: Automatically activates for:
+  - `.jinja` files
+  - `.jinja2` files
+  - `.j2` files
+  - `.txt` files
+  - Plaintext files
+  
+- **Syntax-Aware Activation**: 
+  - Only suggests variables inside `{{ }}` and `{% %}` blocks
+  - Detects context and provides relevant suggestions
+  - No interference with normal text editing
+  
+#### ⚡ Real-time Synchronization
+- **Automatic Updates**: IntelliSense stays in sync with your template
+  - Updates when you extract variables from the template
+  - Updates when you switch between template files
+  - Updates when you modify the template structure
+  - Updates when loading from history
+  
+- **Performance Optimized**: 
+  - Efficient caching of variable structures
+  - Fast property path traversal
+  - Minimal impact on editor performance
+  - Instant suggestion display
+
+#### 🛠️ Advanced Features
+- **Nested Object Traversal**: Automatically explores complex data structures
+- **Array Element Inference**: Smart detection of array item structures
+- **Type Detection**: Accurate JavaScript type identification
+- **Value Formatting**: Pretty-printed values for better readability
+- **Context-Aware Sorting**: Most relevant suggestions appear first
+
+### 🎨 Developer Experience Improvements
+- **Professional IDE Features**: VS Code-native IntelliSense integration
+- **Visual Indicators**: Type-specific icons for different completion items
+- **Organized Display**: Logical sorting (variables → keywords → filters)
+- **Rich Documentation**: Markdown-formatted hover and completion docs
+- **Keyboard Shortcuts**: Standard VS Code navigation (Ctrl+Space, hover, etc.)
+
+### 📚 Documentation & Resources
+- **Comprehensive Guide**: New `INTELLISENSE.md` document with:
+  - Feature overview and capabilities
+  - Detailed usage examples with code snippets
+  - Integration details and architecture
+  - Tips and best practices
+  - Known limitations and workarounds
+  - Future enhancement roadmap
+  
+- **Test Template**: `test-intellisense.jinja` demonstrates all features:
+  - Variable completion examples
+  - Dot notation usage
+  - Filter suggestions
+  - Nested property access
+  - Real-world template patterns
+
+### 🐛 Bug Fixes
+- **Variable Extraction**: Fixed issue where list methods like `append` were extracted as variables
+  - Added comprehensive method keyword detection (append, extend, insert, remove, pop, etc.)
+  - Improved method call parsing in expressions
+  - Better handling of chained method calls
+
+### 🔄 Technical Architecture
+- **New Providers**:
+  - `JinjaCompletionProvider`: Handles all autocomplete functionality
+  - `JinjaHoverProvider`: Manages hover documentation
+  - `JinjaIntelliSenseManager`: Coordinates provider registration and updates
+  
+- **Integration Points**:
+  - Extension activation: Initializes IntelliSense system
+  - Sidebar provider: Updates IntelliSense with extracted variables
+  - Multi-file support: Each file maintains its own context
+
+### 📈 Impact & Benefits
+- **Faster Development**: Reduce typing and errors with autocomplete
+- **Better Discovery**: Explore available variables and properties easily
+- **Fewer Mistakes**: Type and value information prevents errors
+- **Learning Aid**: Built-in documentation helps learn Jinja2 syntax
+- **Professional Workflow**: Industry-standard IDE features
+
+---
+
 ## [1.6.3] - 2025-11-13
 
 ### Added - Smart Extension Suggestions & Performance Metrics ⚡💡
