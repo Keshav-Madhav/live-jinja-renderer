@@ -475,7 +475,42 @@ try:
     # Create environment with extensions
     extensions = [${extensionsStr}]
     try:
-        env = jinja2.Environment(extensions=extensions)
+        # Validate and load custom extensions
+        validated_extensions = []
+        for ext in extensions:
+            if ext.startswith('jinja2.ext.'):
+                # Built-in Jinja2 extension
+                validated_extensions.append(ext)
+            else:
+                # Custom extension - attempt to import
+                try:
+                    parts = ext.rsplit('.', 1)
+                    if len(parts) == 2:
+                        module_name, class_name = parts
+                        # Try to import the module
+                        exec(f"from {module_name} import {class_name}")
+                        validated_extensions.append(ext)
+                    else:
+                        raise ValueError(f"Invalid extension format: {ext}")
+                except ImportError as ie:
+                    raise ImportError(f"Cannot import custom extension '{ext}': {str(ie)}\\\\n\\\\nMake sure the module is available in the Python environment.")
+                except Exception as ce:
+                    raise Exception(f"Error loading custom extension '{ext}': {str(ce)}")
+        
+        # Create environment with validated extensions
+        env = jinja2.Environment(extensions=validated_extensions)
+        
+        # Install translation functions for i18n extension
+        if 'jinja2.ext.i18n' in validated_extensions:
+            def simple_gettext(message):
+                return message
+            def simple_ngettext(singular, plural, n):
+                return singular if n == 1 else plural
+            
+            env.install_gettext_callables(simple_gettext, simple_ngettext, newstyle=True)
+        
+        # Configure policies for better error messages
+        env.policies['ext.i18n.trimmed'] = True
     except Exception as ext_error:
         raise Exception(f"Failed to load extensions: {str(ext_error)}\\\\n\\\\nExtensions requested: {extensions}")
     

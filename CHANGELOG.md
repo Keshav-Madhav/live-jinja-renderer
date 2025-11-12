@@ -4,6 +4,13 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.6.2] - 2025-11-13
+
+### Fixed - Extensions Support 🔧
+- **i18n Extension**: Fixed `gettext` not found error by installing translation callbacks
+- **Custom Extensions**: Enhanced validation and error handling for custom extension loading
+- **Better Error Messages**: Improved error messages for extension loading failures with specific guidance
+
 ## [1.6.1] - 2025-11-12
 
 ### Improved - UX Enhancements ✨
