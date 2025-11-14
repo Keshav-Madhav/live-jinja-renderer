@@ -33,12 +33,26 @@ function registerRenderCommand(context) {
     let titleSuffix = '';
     
     if (!selection.isEmpty) {
-      selectionRange = {
-        startLine: selection.start.line,
-        endLine: selection.end.line
-      };
-      // Add line range to title (1-indexed for user display)
-      titleSuffix = ` (Lines ${selectionRange.startLine + 1}-${selectionRange.endLine + 1})`;
+      const startLine = selection.start.line;
+      const endLine = selection.end.line;
+      const totalLines = editor.document.lineCount;
+      
+      // Check if the entire file is selected
+      // Consider it "entire file" if selection starts at line 0 and ends at/includes the last line
+      const isEntireFile = (
+        startLine === 0 && 
+        endLine >= totalLines - 1
+      );
+      
+      if (!isEntireFile) {
+        selectionRange = {
+          startLine: startLine,
+          endLine: endLine
+        };
+        // Add line range to title (1-indexed for user display)
+        titleSuffix = ` (Lines ${selectionRange.startLine + 1}-${selectionRange.endLine + 1})`;
+      }
+      // If entire file is selected, leave selectionRange as null and titleSuffix empty
     }
 
     // Create a new webview panel

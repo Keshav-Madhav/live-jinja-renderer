@@ -110,7 +110,7 @@ class JinjaHoverProvider {
    */
   provideHover(document, position) {
     const line = document.lineAt(position).text;
-    const wordRange = document.getWordRangeAtPosition(position, /[a-zA-Z_][a-zA-Z0-9_.]*/);
+    const wordRange = document.getWordRangeAtPosition(position, /[a-zA-Z_][a-zA-Z0-9_]*/);
     
     if (!wordRange) {
       return null;
@@ -118,21 +118,43 @@ class JinjaHoverProvider {
     
     const word = document.getText(wordRange);
     
-    // Check if we're inside Jinja syntax
+    // Check if we're inside Jinja syntax (more lenient check)
     const textBeforeWord = line.substring(0, wordRange.start.character);
     const textAfterWord = line.substring(wordRange.end.character);
     
-    const inJinja = /\{\{[^}]*$/.test(textBeforeWord) || /\{%[^%]*$/.test(textBeforeWord);
-    const endsJinja = /^[^}]*\}\}/.test(textAfterWord) || /^[^%]*%\}/.test(textAfterWord);
+    // Check if we're inside {{ }} or {% %}
+    const hasJinjaStart = /\{\{[^}]*$/.test(textBeforeWord) || /\{%[^%]*$/.test(textBeforeWord);
+    const hasJinjaEnd = /^[^}]*\}\}/.test(textAfterWord) || /^[^%]*%\}/.test(textAfterWord);
     
-    if (!inJinja && !endsJinja) {
+    // Also check if the entire line contains Jinja syntax around this position
+    const beforeAndWord = line.substring(0, wordRange.end.character);
+    const wordAndAfter = line.substring(wordRange.start.character);
+    const hasJinjaContext = (
+      /\{\{/.test(beforeAndWord) && /\}\}/.test(wordAndAfter)
+    ) || (
+      /\{%/.test(beforeAndWord) && /%\}/.test(wordAndAfter)
+    );
+    
+    // Accept if we have any Jinja context
+    if (!hasJinjaStart && !hasJinjaEnd && !hasJinjaContext) {
       return null;
     }
     
-    // Try to get the value
-    const value = this.getValueAtPath(word);
+    // Build the full path by checking for dot notation
+    let fullPath = word;
     
-    if (value === undefined) {
+    // Check if there are dots before or after to build full path
+    const extendedRange = document.getWordRangeAtPosition(position, /[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*/);
+    if (extendedRange) {
+      fullPath = document.getText(extendedRange);
+    }
+    
+    // Try to get the value
+    const value = this.getValueAtPath(fullPath);
+    
+    // Check if the root variable exists in our variables
+    const rootVar = fullPath.split('.')[0];
+    if (!(rootVar in this.variables)) {
       return null;
     }
     
@@ -143,7 +165,7 @@ class JinjaHoverProvider {
     markdown.isTrusted = true;
     
     // Add variable name as header
-    markdown.appendMarkdown(`### \`${word}\`\n\n`);
+    markdown.appendMarkdown(`### \`${fullPath}\`\n\n`);
     
     // Add type information
     markdown.appendMarkdown(`**Type:** ${typeDesc}\n\n`);
@@ -153,15 +175,21 @@ class JinjaHoverProvider {
     
     // Add helpful information based on type
     if (Array.isArray(value)) {
-      markdown.appendMarkdown(`*Use in loop:* \`{% for item in ${word} %}...{% endfor %}\`\n\n`);
+      markdown.appendMarkdown(`*Use in loop:* \`{% for item in ${fullPath} %}...{% endfor %}\`\n\n`);
     } else if (typeof value === 'object' && value !== null) {
       const keys = Object.keys(value).slice(0, 5);
       if (keys.length > 0) {
         markdown.appendMarkdown(`**Available properties:** ${keys.map(k => `\`${k}\``).join(', ')}${Object.keys(value).length > 5 ? ', ...' : ''}\n\n`);
       }
+    } else if (typeof value === 'boolean') {
+      markdown.appendMarkdown(`*Use in condition:* \`{% if ${fullPath} %}...{% endif %}\`\n\n`);
+    } else if (typeof value === 'number') {
+      markdown.appendMarkdown(`*Use in comparison:* \`{% if ${fullPath} > 0 %}...{% endif %}\`\n\n`);
+    } else if (typeof value === 'string') {
+      markdown.appendMarkdown(`*Use in output:* \`{{ ${fullPath} }}\`\n\n`);
     }
     
-    return new vscode.Hover(markdown, wordRange);
+    return new vscode.Hover(markdown, extendedRange || wordRange);
   }
 
   /**

@@ -4,6 +4,20 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.7.1] - 2025-11-14
+
+### 🔧 Improvements
+- **Enhanced Type Inference**: Variables now intelligently infer types (string, number, boolean) based on usage patterns in templates
+- **Improved Hover Provider**: Fixed hover functionality to work reliably in all Jinja contexts (`{% if %}`, `{{ }}`, loops, etc.)
+- **Smart Update Behavior**: "Update for Current File" now preserves the current rendering range when cursor is within it
+
+### 🐛 Bug Fixes
+- Fixed hover not working for variables in control structures
+- Fixed hover disappearing for falsy values (false, 0, empty strings)
+- Fixed type inference defaulting to string regardless of actual usage
+
+---
+
 ## [1.7.0] - 2025-11-13 🎉 MAJOR UPDATE
 
 ### 🚀 NEW - Complete IntelliSense System for Jinja2 Templates

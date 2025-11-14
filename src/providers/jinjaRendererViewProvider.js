@@ -280,10 +280,24 @@ class JinjaRendererViewProvider {
         let selectionRange = null;
         
         if (!selection.isEmpty) {
-          selectionRange = {
-            startLine: selection.start.line,
-            endLine: selection.end.line
-          };
+          const startLine = selection.start.line;
+          const endLine = selection.end.line;
+          const totalLines = editor.document.lineCount;
+          
+          // Check if the entire file is selected
+          // Consider it "entire file" if selection starts at line 0 and ends at/includes the last line
+          const isEntireFile = (
+            startLine === 0 && 
+            endLine >= totalLines - 1
+          );
+          
+          if (!isEntireFile) {
+            selectionRange = {
+              startLine: startLine,
+              endLine: endLine
+            };
+          }
+          // If entire file is selected, leave selectionRange as null
         }
         
         // Add to history
@@ -394,15 +408,57 @@ class JinjaRendererViewProvider {
         this._disposables.forEach(d => d.dispose());
         this._disposables = [];
         
-        // Capture selection range if any
-        const selection = editor.selection;
+        // Check if we have a current history entry for this file
         let selectionRange = null;
+        const fileUri = editor.document.uri.toString();
         
-        if (!selection.isEmpty) {
-          selectionRange = {
-            startLine: selection.start.line,
-            endLine: selection.end.line
-          };
+        // Get the current cursor position
+        const cursorLine = editor.selection.active.line;
+        
+        // Check if there's an active history item for this file
+        if (this._currentHistoryIndex >= 0 && this._currentHistoryIndex < this._fileHistory.length) {
+          const currentHistory = this._fileHistory[this._currentHistoryIndex];
+          
+          // Only consider the history if it's for the same file
+          if (currentHistory.fileUri === fileUri && currentHistory.selectionRange) {
+            const historyRange = currentHistory.selectionRange;
+            
+            // Check if cursor is within the previously rendered range
+            if (cursorLine >= historyRange.startLine && cursorLine <= historyRange.endLine) {
+              // Cursor is within the rendered range - keep the same range
+              selectionRange = historyRange;
+            }
+            // If cursor is outside the range, selectionRange stays null (whole file)
+          }
+        }
+        
+        // If no selection range determined yet, check for current selection
+        if (!selectionRange) {
+          const selection = editor.selection;
+          
+          if (!selection.isEmpty) {
+            const startLine = selection.start.line;
+            const endLine = selection.end.line;
+            const totalLines = editor.document.lineCount;
+            
+            // Check if the entire file is selected
+            // Consider it "entire file" if:
+            // 1. Selection starts at line 0
+            // 2. Selection ends at or includes the last line
+            // 3. Start is at beginning of first line and end is at end of last line
+            const isEntireFile = (
+              startLine === 0 && 
+              endLine >= totalLines - 1
+            );
+            
+            if (!isEntireFile) {
+              selectionRange = {
+                startLine: startLine,
+                endLine: endLine
+              };
+            }
+            // If entire file is selected, leave selectionRange as null
+          }
         }
         
         // Add to history

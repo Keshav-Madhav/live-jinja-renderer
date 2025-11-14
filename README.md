@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.7.0-blue)
+![Version](https://img.shields.io/badge/version-1.7.1-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,11 +10,11 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.7.0 - MAJOR UPDATE! 🎉
+## 🚀 What's New in v1.7.1
 
-### Complete IntelliSense System for Jinja2 Templates
+### Improvements & Bug Fixes
 
-This is a **major update** that transforms Live Jinja Renderer into a full-featured IDE for Jinja2 development!
+Continuing improvements to the IntelliSense system and overall stability.
 
 #### New Features:
 - ✨ **Variable Autocomplete**: Press `Ctrl+Space` inside `{{ }}` to see all available variables with type information

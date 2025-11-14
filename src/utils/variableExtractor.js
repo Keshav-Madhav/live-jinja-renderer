@@ -75,6 +75,79 @@ function extractVariablesFromTemplate(template) {
   }
   
   /**
+   * Infer variable type from template context
+   */
+  function inferVariableType(varName, template) {
+    // Escape special regex characters in variable name
+    const escapedVar = varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
+    // Check for string usage patterns (check this FIRST before boolean)
+    const stringPatterns = [
+      // Comparison with string literals
+      new RegExp(`${escapedVar}\\s*(?:==|!=|in)\\s*['"]`, 'g'),
+      new RegExp(`['"]\\s*(?:==|!=)\\s*${escapedVar}`, 'g'),
+      // String methods/filters
+      new RegExp(`${escapedVar}\\s*\\|\\s*(?:lower|upper|title|capitalize|strip|trim|replace|split|join)`, 'g'),
+      // in operator with list of strings
+      new RegExp(`${escapedVar}\\s+(?:not\\s+)?in\\s+\\[\\s*['"]`, 'g'),
+    ];
+    
+    for (const pattern of stringPatterns) {
+      if (pattern.test(template)) {
+        return ''; // string value
+      }
+    }
+    
+    // Check for numeric usage patterns
+    const numericPatterns = [
+      // Arithmetic operations
+      new RegExp(`${escapedVar}\\s*[+\\-*/%]\\s*\\d+`, 'g'),
+      new RegExp(`\\d+\\s*[+\\-*/%]\\s*${escapedVar}`, 'g'),
+      // Division operations (common for numbers)
+      new RegExp(`${escapedVar}\\s*/\\s*\\d+`, 'g'),
+      new RegExp(`\\(\\s*${escapedVar}\\s*[+\\-*/%]`, 'g'),
+      // Comparison with numbers
+      new RegExp(`${escapedVar}\\s*[<>]=?\\s*\\d+`, 'g'),
+      new RegExp(`\\d+\\s*[<>]=?\\s*${escapedVar}`, 'g'),
+      // Numeric filters
+      new RegExp(`${escapedVar}\\s*\\|\\s*(?:abs|round|int|float)`, 'g'),
+      // range() function
+      new RegExp(`range\\([^)]*${escapedVar}[^)]*\\)`, 'g'),
+      // length comparison (numeric result)
+      new RegExp(`${escapedVar}\\s*\\|\\s*length\\s*[<>=]`, 'g'),
+    ];
+    
+    for (const pattern of numericPatterns) {
+      if (pattern.test(template)) {
+        return 0; // default numeric value
+      }
+    }
+    
+    // Check for boolean usage patterns (check AFTER string patterns)
+    const booleanPatterns = [
+      // if variable (standalone boolean check) - but not with comparisons
+      new RegExp(`\\{%\\s*if\\s+${escapedVar}\\s*%\\}`, 'g'),
+      new RegExp(`\\{%\\s*if\\s+not\\s+${escapedVar}\\s*%\\}`, 'g'),
+      // ternary with boolean variable
+      new RegExp(`if\\s+${escapedVar}\\s+else`, 'g'),
+      new RegExp(`if\\s+not\\s+${escapedVar}\\s+else`, 'g'),
+    ];
+    
+    for (const pattern of booleanPatterns) {
+      if (pattern.test(template)) {
+        // Double check it's not a string comparison
+        const stringComparisonCheck = new RegExp(`${escapedVar}\\s*(?:==|!=|in|not\\s+in|<|>|<=|>=)`, 'g');
+        if (!stringComparisonCheck.test(template)) {
+          return false; // default boolean value
+        }
+      }
+    }
+    
+    // Default to string
+    return '';
+  }
+  
+  /**
    * Extracts variables from boolean/conditional expressions
    * Handles string literals, operators, function calls, and nested expressions
    */
@@ -269,7 +342,8 @@ function extractVariablesFromTemplate(template) {
           safeSetVariable(rootVar, {}, true);
           setNestedProperty(variableStructures, fullPath, '');
         } else {
-          safeSetVariable(rootVar, '');
+          const inferredType = inferVariableType(rootVar, template);
+          safeSetVariable(rootVar, inferredType);
         }
       }
     }
@@ -300,7 +374,8 @@ function extractVariablesFromTemplate(template) {
       safeSetVariable(rootVar, {}, true);
       setNestedProperty(variableStructures, fullPath, '');
     } else {
-      safeSetVariable(rootVar, '');
+      const inferredType = inferVariableType(rootVar, template);
+      safeSetVariable(rootVar, inferredType);
     }
     
     // Extract variables from filter arguments (e.g., {{ value | default(fallback) }})
@@ -318,7 +393,8 @@ function extractVariablesFromTemplate(template) {
             safeSetVariable(filterRoot, {}, true);
             setNestedProperty(variableStructures, filterVar, '');
           } else {
-            safeSetVariable(filterRoot, '');
+            const inferredType = inferVariableType(filterRoot, template);
+            safeSetVariable(filterRoot, inferredType);
           }
         }
       }
@@ -343,7 +419,8 @@ function extractVariablesFromTemplate(template) {
         safeSetVariable(rootVar, {}, true);
         setNestedProperty(variableStructures, fullPath, '');
       } else {
-        safeSetVariable(rootVar, '');
+        const inferredType = inferVariableType(rootVar, template);
+        safeSetVariable(rootVar, inferredType);
       }
     }
   }
@@ -376,7 +453,8 @@ function extractVariablesFromTemplate(template) {
         safeSetVariable(rootVar, {}, true);
         setNestedProperty(variableStructures, fullPath, '');
       } else {
-        safeSetVariable(rootVar, '');
+        const inferredType = inferVariableType(rootVar, template);
+        safeSetVariable(rootVar, inferredType);
       }
     }
   }
@@ -445,7 +523,8 @@ function extractVariablesFromTemplate(template) {
         setNestedProperty(variableStructures, fullPath, '');
       } else {
         if (!(rootVar in variableStructures)) {
-          safeSetVariable(rootVar, '');
+          const inferredType = inferVariableType(rootVar, template);
+          safeSetVariable(rootVar, inferredType);
         }
       }
     }
@@ -470,7 +549,8 @@ function extractVariablesFromTemplate(template) {
         setNestedProperty(variableStructures, fullPath, '');
       } else {
         if (!(rootVar in variableStructures)) {
-          safeSetVariable(rootVar, '');
+          const inferredType = inferVariableType(rootVar, template);
+          safeSetVariable(rootVar, inferredType);
         }
       }
     }
@@ -493,7 +573,8 @@ function extractVariablesFromTemplate(template) {
     if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(indexOrKey) && !isJinjaKeyword(indexOrKey)) {
       if (!assignedVariables.has(indexOrKey) && !loopVariables.has(indexOrKey)) {
         referencedVariables.add(indexOrKey);
-        safeSetVariable(indexOrKey, '');
+        const inferredType = inferVariableType(indexOrKey, template);
+        safeSetVariable(indexOrKey, inferredType);
       }
     }
     
