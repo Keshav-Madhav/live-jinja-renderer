@@ -15,7 +15,7 @@ function getCurrentPanel() {
 /**
  * Register the render panel command
  */
-function registerRenderCommand(context) {
+function registerRenderCommand(context, intelliSenseManager = null) {
   const renderPanelCommand = vscode.commands.registerCommand('live-jinja-tester.render', function () {
     console.log('✅ Render panel command triggered!');
     const editor = vscode.window.activeTextEditor;
@@ -72,7 +72,7 @@ function registerRenderCommand(context) {
     panel.webview.html = getWebviewContent(false); // false = panel mode
 
     // Set up the webview for the current editor (with selection range)
-    const subscription = setupWebviewForEditor(panel.webview, editor, context, selectionRange);
+    const subscription = setupWebviewForEditor(panel.webview, editor, context, selectionRange, intelliSenseManager);
     
     // Clean up the subscription when the panel is closed
     panel.onDidDispose(() => {

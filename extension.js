@@ -73,7 +73,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🎨 New: Syntax Highlighting\n• Real-time highlighting in the editor\n• Template preview with syntax colors\n• Works with .jinja, .j2, and .txt files`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🐛 IntelliSense Bug Fixes\n• Smart autocomplete filtering\n• Keywords only in correct context\n• Live variable updates`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
@@ -153,7 +153,7 @@ async function activate(context) {
     registerVariableCommands(context, sidebarProvider, getCurrentPanel);
     registerImportExportCommands(context, sidebarProvider, getCurrentPanel);
     registerActionCommands(context, sidebarProvider, getCurrentPanel);
-    registerRenderCommand(context);
+    registerRenderCommand(context, intelliSenseManager);
     
     // Register configuration listener
     registerConfigurationListener(context, sidebarProvider);

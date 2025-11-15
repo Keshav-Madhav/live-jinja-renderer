@@ -192,7 +192,8 @@ class JinjaRendererViewProvider {
         this._view.webview, 
         editor, 
         this._context, 
-        historyItem.selectionRange
+        historyItem.selectionRange,
+        this._intelliSenseManager
       );
       this._disposables.push(subscription);
       
@@ -303,7 +304,7 @@ class JinjaRendererViewProvider {
         // Add to history
         this._addToHistory(editor, selectionRange);
         
-        const subscription = setupWebviewForEditor(this._view.webview, editor, this._context, selectionRange);
+        const subscription = setupWebviewForEditor(this._view.webview, editor, this._context, selectionRange, this._intelliSenseManager);
         this._disposables.push(subscription);
       }
     };
@@ -466,7 +467,7 @@ class JinjaRendererViewProvider {
         
         // Set up new subscription for the current editor
         this._currentEditor = editor;
-        const subscription = setupWebviewForEditor(this._view.webview, editor, this._context, selectionRange);
+        const subscription = setupWebviewForEditor(this._view.webview, editor, this._context, selectionRange, this._intelliSenseManager);
         this._disposables.push(subscription);
         
         // Get the current template content (or selection)

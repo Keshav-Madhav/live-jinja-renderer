@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.7.2-blue)
+![Version](https://img.shields.io/badge/version-1.7.3-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,19 +10,18 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.7.2
+## 🚀 What's New in v1.7.3
 
-### Syntax Highlighting 🎨
+### IntelliSense Bug Fixes 🐛
 
-Enhanced developer experience with real-time Jinja2 syntax highlighting!
+Fixed critical autocomplete issues for a better developer experience:
 
-#### New Features:
-- ✨ **Editor Syntax Highlighting**: Automatic syntax highlighting in the editor for Jinja2 templates
-- ✨ **Template Display**: Syntax-highlighted template preview in the sidebar/panel
-- ✨ **Smart Colors**: Python-inspired color scheme that adapts to your VS Code theme
-- ✨ **File Type Support**: Works with `.jinja`, `.j2`, and `.txt` files (configurable for text files)
+- ✅ **Smart Filtering**: Autocomplete now filters by partial match (typing `{{ ad` only shows "address")
+- ✅ **Correct Context**: Keywords only appear in `{% %}` blocks, not in `{{ }}` expressions
+- ✅ **Live Updates**: Variable edits in webview immediately update autocomplete
+- ✅ **Better UX**: Case-insensitive filtering for all suggestions
 
-> 💡 **Also includes**: Full IntelliSense system with autocomplete, hover docs, and 20+ filter suggestions (added in v1.7.0)
+> 💡 **Previous updates**: Syntax highlighting (v1.7.2) and full IntelliSense system (v1.7.0)
 
 ---
 
@@ -333,6 +332,12 @@ All settings are now organized into clear categories for easier configuration:
 
 ## Recent Updates
 
+### 1.7.3 - IntelliSense Bug Fixes
+- **Smart Filtering**: Autocomplete now filters by partial match (typing `{{ ad` only shows "address")
+- **Correct Context**: Keywords only appear in `{% %}` blocks, not in `{{ }}` expressions  
+- **Live Updates**: Variable edits in webview immediately update autocomplete
+- **Better UX**: Case-insensitive filtering for all suggestions
+
 ### 1.7.2 - Syntax Highlighting 🎨
 - **Editor Highlighting**: Real-time Jinja2 syntax highlighting in the editor
 - **Template Preview**: Syntax-highlighted template display in sidebar/panel
@@ -356,43 +361,20 @@ This is a **transformative release** that adds a complete IDE experience for Jin
 - **Real-time Sync**: IntelliSense automatically updates with variable extraction and changes
 - **Smart Context Detection**: Only activates in Jinja template contexts, no interference elsewhere
 
-#### Technical Implementation:
-- New `JinjaCompletionProvider` for autocomplete functionality
-- New `JinjaHoverProvider` for hover documentation
-- New `JinjaIntelliSenseManager` coordinating all providers
-- Comprehensive documentation in `INTELLISENSE.md`
-- Demo template `test-intellisense.jinja` showcasing all features
-
 #### Bug Fixes:
 - Fixed variable extraction incorrectly identifying list methods like `append` as variables
 
 ### 1.6.3 - Smart Extension Detection & Performance
-- **Extension Auto-Detection**: Automatic detection of needed Jinja2 extensions from template syntax
-- **One-Click Enable**: Suggested extensions appear below output with instant enable buttons
-- **Performance Metrics**: Render time display with color-coded indicators (green/yellow/red)
-- **Configurable Display**: Toggle performance metrics and extension suggestions in settings
+- Automatic extension detection, one-click enable suggestions, color-coded render time metrics, toggle display in settings
 
 ### 1.6.2 - Extensions Support Fixes
-- **i18n Extension Fix**: Fixed `gettext` not found error by installing translation callbacks
-- **Enhanced Validation**: Improved custom extension validation and error handling
-- **Better Error Messages**: Clear error messages with specific guidance for extension loading failures
+- Fixed i18n/gettext issue, improved custom extension validation, clearer extension loading error messages
 
 ### 1.6.1 - UX Enhancements
-- **Clickable Extensions Indicator**: Click the extensions indicator above output to open settings
-- **Keyboard Shortcut**: Added `Ctrl+Alt+X` (Mac: `Cmd+Shift+X`) to quickly open extension settings
-- **Extension Tooltips**: Hover over extensions indicator to see descriptions of all active extensions
-- **Help Examples**: Added practical code examples to all extension settings descriptions
-- **Improved Placeholder Text**: Better custom extensions placeholder with realistic examples
-- **Code Cleanup**: Removed unused variables for cleaner codebase
+- Clickable extensions indicator, keyboard shortcut (Ctrl+Alt+X / Cmd+Shift+X), tooltips & help examples, better placeholders, minor code cleanup
 
 ### 1.6.0 - Jinja2 Extensions Support
-- **Built-in Extensions**: 6 standard Jinja2 extensions (i18n, do, loopcontrols, with, autoescape, debug)
-- **Single Settings Object**: Expandable checkbox list in settings (like ESLint rules)
-- **Quick Access**: "Configure Jinja2 Extensions" option in sidebar three-dot menu
-- **Custom Extensions**: Support for custom extension paths
-- **Instant Activation**: Extensions activate immediately with auto-rerender
-- **Visual Indicator**: Active extensions displayed above output
-- **Status Bar Integration**: Shows extension count with detailed tooltip
+- Built-in support for 6 extensions, single checkbox settings object, quick "Configure Jinja2 Extensions" action, custom extension paths, instant activation, visual/status indicators
 
 ### 1.5.4 - Quick Selection Actions
 - Lightbulb actions for selected text with one-click rendering

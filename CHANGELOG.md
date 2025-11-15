@@ -4,6 +4,17 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.7.3] - 2025-11-15
+
+### 🐛 IntelliSense Bug Fixes
+
+- **Smart Filtering**: Autocomplete now filters by partial match (typing `{{ ad` only shows "address")
+- **Correct Context**: Keywords only appear in `{% %}` blocks, not in `{{ }}` expressions  
+- **Live Updates**: Variable edits in webview immediately update autocomplete
+- **Better UX**: Case-insensitive filtering for all suggestions
+
+---
+
 ## [1.7.2] - 2025-11-15
 
 ### 🎨 Added - Syntax Highlighting

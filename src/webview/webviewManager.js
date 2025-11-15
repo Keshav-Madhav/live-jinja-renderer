@@ -8,9 +8,10 @@ const { handleExportVariables } = require('../commands/importExportCommands');
  * @param {vscode.TextEditor} editor - The active text editor
  * @param {vscode.ExtensionContext} context - Extension context
  * @param {Object} selectionRange - Optional selection range {startLine, endLine}
+ * @param {Object} intelliSenseManager - Optional IntelliSense manager to update with variables
  * @returns {vscode.Disposable} - The change document subscription
  */
-function setupWebviewForEditor(webview, editor, context, selectionRange = null) {
+function setupWebviewForEditor(webview, editor, context, selectionRange = null, intelliSenseManager = null) {
   // If selection range provided, extract only that portion
   let templateContent;
   
@@ -274,6 +275,11 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
           // Extract variables from the current template
           const reextractedVars = extractVariablesFromTemplate(lastTemplate);
           
+          // Update IntelliSense with newly extracted variables
+          if (intelliSenseManager && reextractedVars) {
+            intelliSenseManager.updateVariables(reextractedVars);
+          }
+          
           // Send fresh extraction (this will replace existing variables)
           webview.postMessage({
             type: 'replaceVariables',
@@ -360,6 +366,11 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null) 
             const fileUri = message.fileUri;
             const variables = message.variables;
             const msgSelectionRange = message.selectionRange;
+            
+            // Update IntelliSense with the edited variables
+            if (intelliSenseManager && variables) {
+              intelliSenseManager.updateVariables(variables);
+            }
             
             if (fileUri) {
               // Get existing ghost variables

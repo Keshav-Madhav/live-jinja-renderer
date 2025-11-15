@@ -1,6 +1,5 @@
 const vscode = require('vscode');
 const { JinjaCompletionProvider } = require('./jinjaCompletionProvider');
-const { JinjaHoverProvider } = require('./jinjaHoverProvider');
 
 /**
  * Manages IntelliSense providers for Jinja templates
@@ -9,14 +8,13 @@ class JinjaIntelliSenseManager {
   constructor(context) {
     this.context = context;
     this.completionProvider = new JinjaCompletionProvider();
-    this.hoverProvider = new JinjaHoverProvider();
     this.disposables = [];
     
     this.registerProviders();
   }
 
   /**
-   * Register completion and hover providers for Jinja files
+   * Register completion provider for Jinja files
    */
   registerProviders() {
     // File patterns that should have IntelliSense
@@ -29,33 +27,29 @@ class JinjaIntelliSenseManager {
       { language: 'plaintext', pattern: '**/*.txt' }
     ];
 
-    // Register completion provider
+    // Register completion provider with comprehensive trigger characters
     const completionDisposable = vscode.languages.registerCompletionItemProvider(
       jinjaDocumentSelector,
       this.completionProvider,
+      '{', // Trigger on opening brace
+      '%', // Trigger on percent (for {% %})
       '.', // Trigger on dot for nested properties
-      '|'  // Trigger on pipe for filters
-    );
-    
-    // Register hover provider
-    const hoverDisposable = vscode.languages.registerHoverProvider(
-      jinjaDocumentSelector,
-      this.hoverProvider
+      '|', // Trigger on pipe for filters
+      ' '  // Trigger on space for keywords after 'is', 'for', 'if', etc.
     );
 
-    this.disposables.push(completionDisposable, hoverDisposable);
-    this.context.subscriptions.push(completionDisposable, hoverDisposable);
+    this.disposables.push(completionDisposable);
+    this.context.subscriptions.push(completionDisposable);
     
-    console.log('✅ Jinja IntelliSense providers registered');
+    console.log('✅ Jinja IntelliSense completion provider registered with enhanced triggers');
   }
 
   /**
-   * Update variables for all providers
+   * Update variables for the completion provider
    * @param {Object} variables - Variables extracted from the template
    */
   updateVariables(variables) {
     this.completionProvider.updateVariables(variables);
-    this.hoverProvider.updateVariables(variables);
   }
 
   /**
