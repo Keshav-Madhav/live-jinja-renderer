@@ -1188,7 +1188,6 @@ window.addEventListener('message', async event => {
       currentSelectionRange = message.selectionRange || null;
       
       updateFileNameDisplay(currentFileUri, currentSelectionRange);
-      updateTemplateDisplay();
       
       if (message.extractedVariables) {
         showLoading('Extracting variables...');
