@@ -15,7 +15,9 @@ declare function acquireVsCodeApi(): {
 /**
  * Pyodide loader function
  */
-declare function loadPyodide(): Promise<{
+declare function loadPyodide(options?: {
+  indexURL?: string;
+}): Promise<{
   loadPackage(packageName: string): Promise<void>;
   runPython(code: string): any;
 }>;

@@ -4,6 +4,17 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.8.0] - 2025-11-16
+
+### 🌐 Offline Runtime & Startup Fixes
+
+- **Local Vendor Bundle**: Packaged Pyodide runtime, Jinja2/MarkupSafe wheels, Marked, Mermaid, and Codicons under `resources/vendor`, enabling fully offline rendering and satisfying Marketplace security guidance.
+- **Secure Webview Loading**: Both sidebar and panel webviews now declare `localResourceRoots` and generate URIs for every asset, eliminating CDN references and CSP warnings.
+- **Pyodide Initialization Guard**: The webview queues renders until Pyodide finishes loading and now passes the bundled `indexURL`, guaranteeing the initial render happens automatically without manual rerenders.
+- **Documentation Updates**: README highlights the offline bundle and render fix, and the package version is bumped to 1.8.0.
+
+---
+
 ## [1.7.3] - 2025-11-15
 
 ### 🐛 IntelliSense Bug Fixes

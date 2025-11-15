@@ -61,7 +61,11 @@ function registerRenderCommand(context, intelliSenseManager = null) {
       `Render: ${fileName}${titleSuffix}`, // Title with optional line range
       vscode.ViewColumn.Beside, // Open in a new tab to the side
       {
-        enableScripts: true // Allow JavaScript to run in the webview
+        enableScripts: true, // Allow JavaScript to run in the webview
+        localResourceRoots: [
+          vscode.Uri.joinPath(context.extensionUri, 'src', 'webview', 'assets'),
+          vscode.Uri.joinPath(context.extensionUri, 'resources', 'vendor')
+        ]
       }
     );
     
@@ -69,7 +73,7 @@ function registerRenderCommand(context, intelliSenseManager = null) {
     currentPanel = panel;
 
     // Set the webview's HTML content (panel mode)
-    panel.webview.html = getWebviewContent(false); // false = panel mode
+    panel.webview.html = getWebviewContent(panel.webview, context.extensionUri, false); // false = panel mode
 
     // Set up the webview for the current editor (with selection range)
     const subscription = setupWebviewForEditor(panel.webview, editor, context, selectionRange, intelliSenseManager);

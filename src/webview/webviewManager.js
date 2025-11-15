@@ -507,10 +507,12 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
             
             if (typeof lineNumber === 'number' && lineNumber > 0 && fileUri) {
               // Adjust line number if we're rendering a selection
-              const actualLineNumber = msgSelectionRange 
-                ? lineNumber + msgSelectionRange.startLine - 1 
-                : lineNumber;
-              
+              const selectionOffset = msgSelectionRange && typeof msgSelectionRange.startLine === 'number'
+                ? msgSelectionRange.startLine
+                : 0;
+              const zeroBasedLine = Math.max(0, lineNumber - 1);
+              const actualLineIndex = zeroBasedLine + selectionOffset;
+
               // Clear any existing highlight
               clearHighlight();
               
@@ -529,11 +531,10 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
               await new Promise(resolve => setTimeout(resolve, 50));
               
               // Create a position for the line (0-indexed)
-              const lineIndex = Math.max(0, actualLineNumber - 1);
-              const position = new vscode.Position(lineIndex, 0);
+              const position = new vscode.Position(actualLineIndex, 0);
               
               // Create a range for the entire line
-              const line = activeEditor.document.lineAt(lineIndex);
+              const line = activeEditor.document.lineAt(actualLineIndex);
               const range = line.range;
               
               // Move cursor to the beginning of the line
@@ -559,7 +560,7 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
                 if (e.textEditor === activeEditor) {
                   const cursorLine = e.selections[0].active.line;
                   // If cursor moves away from the highlighted line, clear the highlight
-                  if (cursorLine !== lineIndex) {
+                  if (cursorLine !== actualLineIndex) {
                     clearHighlight();
                   }
                 }

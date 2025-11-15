@@ -1,14 +1,20 @@
 const fs = require('fs');
 const path = require('path');
+const vscode = require('vscode');
 
 /**
  * Generates the webview HTML content by combining template, styles, and script
  * Version 1.4.5 - Refactored to use separate HTML, CSS, and JS files for better readability
  * 
+ * @param {vscode.Webview} webview - Target webview used for URI generation
+ * @param {vscode.Uri} extensionUri - Root URI of the extension
  * @param {boolean} isSidebar - Whether this is for sidebar or panel view
  * @returns {string} Complete HTML content for the webview
  */
-function getWebviewContent(isSidebar = false) {
+function getWebviewContent(webview, extensionUri, isSidebar = false) {
+    const ensureTrailingSlash = (uriString) => uriString.endsWith('/') ? uriString : `${uriString}/`;
+    const asWebviewUri = (...segments) => webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, ...segments)).toString();
+
   // Read the separate files
   const templatePath = path.join(__dirname, 'assets', 'template.html');
   const stylesPath = path.join(__dirname, 'assets', 'styles.css');
@@ -18,6 +24,13 @@ function getWebviewContent(isSidebar = false) {
   const styles = fs.readFileSync(stylesPath, 'utf8');
   const script = fs.readFileSync(scriptPath, 'utf8');
   
+    // Compute local asset URIs
+    const pyodideScriptUri = asWebviewUri('resources', 'vendor', 'pyodide', 'pyodide.js');
+    const pyodideBaseUrl = ensureTrailingSlash(pyodideScriptUri.slice(0, pyodideScriptUri.lastIndexOf('/') + 1));
+    const markedScriptUri = asWebviewUri('resources', 'vendor', 'marked', 'marked.min.js');
+    const mermaidScriptUri = asWebviewUri('resources', 'vendor', 'mermaid', 'mermaid.min.js');
+    const codiconsCssUri = asWebviewUri('resources', 'vendor', 'codicons', 'dist', 'codicon.css');
+
   // Prepare conditional UI elements based on sidebar/panel mode
   const fileHistoryDropdown = isSidebar ? `
     <div class="file-history-dropdown" id="file-history-dropdown" title="Recent files">
@@ -80,14 +93,20 @@ function getWebviewContent(isSidebar = false) {
   ` : '';
   
   // Replace placeholders in template
-  template = template.replace('{{STYLES}}', `<style>\n${styles}\n</style>`);
+    template = template.replace('{{STYLES}}', `<style>\n${styles}\n</style>`);
+    template = template.replace('{{PYODIDE_SCRIPT}}', `<script src="${pyodideScriptUri}"></script>`);
+    template = template.replace('{{MARKED_SCRIPT}}', `<script src="${markedScriptUri}"></script>`);
+    template = template.replace('{{MERMAID_SCRIPT}}', `<script src="${mermaidScriptUri}"></script>`);
+    template = template.replace('{{CODICONS_STYLESHEET}}', `<link rel="stylesheet" href="${codiconsCssUri}">`);
   template = template.replace('{{FILE_HISTORY_DROPDOWN}}', fileHistoryDropdown);
   template = template.replace('{{AUTO_RERENDER_TOGGLE}}', autoRerenderToggle);
   template = template.replace('{{PANEL_CONTROLS}}', panelControls);
   template = template.replace('{{OUTPUT_FOOTER}}', outputFooter);
   
   // Replace IS_SIDEBAR placeholder in script
-  const processedScript = script.replace('"__IS_SIDEBAR_PLACEHOLDER__"', isSidebar.toString());
+    const processedScript = script
+        .replace('"__IS_SIDEBAR_PLACEHOLDER__"', isSidebar.toString())
+        .replace('"__PYODIDE_INDEX_URL__"', JSON.stringify(pyodideBaseUrl));
   template = template.replace('{{SCRIPT}}', `<script>\n${processedScript}\n</script>`);
   
   return template;

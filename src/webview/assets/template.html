@@ -6,14 +6,14 @@
     <title>Live Jinja Renderer (Python/Pyodide)</title>
     
     <!-- Pyodide for Python Jinja2 -->
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+    {{PYODIDE_SCRIPT}}
     
     <!-- Markdown and Mermaid libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.0/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    {{MARKED_SCRIPT}}
+    {{MERMAID_SCRIPT}}
     
     <!-- VS Code Codicons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.35/dist/codicon.css">
+    {{CODICONS_STYLESHEET}}
     
     <!-- Main Stylesheet (will be injected) -->
     {{STYLES}}

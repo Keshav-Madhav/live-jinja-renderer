@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.7.3-blue)
+![Version](https://img.shields.io/badge/version-1.8.0-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,18 +10,15 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.7.3
+## 🚀 What's New in v1.8.0
 
-### IntelliSense Bug Fixes 🐛
+### Offline-Ready Rendering & Startup Fixes 🌐
 
-Fixed critical autocomplete issues for a better developer experience:
+- ✅ **Fully Bundled Runtime**: Pyodide, Jinja2 wheels, Marked, Mermaid, and Codicons now ship inside the extension so rendering works completely offline (and passes Marketplace CDN checks).
+- ✅ **Secure Resource Loading**: Webviews load every asset via `localResourceRoots`, eliminating external scripts and speeding up startup.
+- ✅ **Instant First Render**: Fixed a regression where opening the renderer required a manual rerender—the view now syncs template, variables, and output as soon as Pyodide finishes loading.
 
-- ✅ **Smart Filtering**: Autocomplete now filters by partial match (typing `{{ ad` only shows "address")
-- ✅ **Correct Context**: Keywords only appear in `{% %}` blocks, not in `{{ }}` expressions
-- ✅ **Live Updates**: Variable edits in webview immediately update autocomplete
-- ✅ **Better UX**: Case-insensitive filtering for all suggestions
-
-> 💡 **Previous updates**: Syntax highlighting (v1.7.2) and full IntelliSense system (v1.7.0)
+> 💡 **Previous updates**: IntelliSense bug fixes (v1.7.3) and syntax highlighting (v1.7.2)
 
 ---
 
@@ -331,6 +328,11 @@ All settings are now organized into clear categories for easier configuration:
 > **Note**: Old setting names (e.g., `liveJinjaRenderer.enableMarkdown`) still work for backwards compatibility.
 
 ## Recent Updates
+
+### 1.8.0 - Offline Runtime & Render Fixes
+- **Local Vendor Bundle**: All Pyodide runtime files, Jinja2/MarkupSafe wheels, Marked, Mermaid, and Codicons are now packaged in `resources/vendor` so previews work without internet access.
+- **Webview Hardening**: Both sidebar and panel webviews use `localResourceRoots` plus generated URIs, removing CDN dependencies and preventing CSP warnings.
+- **Auto Render Reliability**: Opening the renderer immediately syncs template, variables, and output even on cold starts thanks to queued renders during Pyodide initialization.
 
 ### 1.7.3 - IntelliSense Bug Fixes
 - **Smart Filtering**: Autocomplete now filters by partial match (typing `{{ ad` only shows "address")

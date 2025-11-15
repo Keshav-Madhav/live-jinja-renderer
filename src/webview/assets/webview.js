@@ -6,6 +6,7 @@
 // Global variables
 const vscode = acquireVsCodeApi();
 const isSidebarMode = "__IS_SIDEBAR_PLACEHOLDER__";
+const pyodideIndexURL = "__PYODIDE_INDEX_URL__";
 
 // DOM Elements
 const variablesEditor = /** @type {HTMLTextAreaElement} */ (document.getElementById('variables'));
@@ -55,6 +56,7 @@ let customExtensions = '';
 // Pyodide setup
 let pyodide = null;
 let isInitialized = false;
+let pendingRender = true;
 
 // Get controls based on mode
 let markdownToggle, mermaidToggle, showWhitespaceToggle, cullWhitespaceToggle;
@@ -424,9 +426,8 @@ function updateExtensionSuggestions() {
     });
     
     button.addEventListener('click', () => {
-      // Enable the extension via VS Code settings
       vscode.postMessage({
-        command: 'enableExtension',
+        type: 'enableExtension',
         extension: suggestion.key
       });
     });
@@ -541,7 +542,11 @@ async function setupPyodide() {
   try {
     showLoading('Loading Python environment...');
     
-    pyodide = await loadPyodide();
+    if (typeof loadPyodide === 'function') {
+      pyodide = await loadPyodide({ indexURL: pyodideIndexURL });
+    } else {
+      throw new Error('loadPyodide is not available in this environment');
+    }
     
     showLoading('Loading Jinja2...');
     await pyodide.loadPackage("jinja2");
@@ -550,8 +555,10 @@ async function setupPyodide() {
     
     vscode.postMessage({ type: 'ready' });
     
-    showLoading('Rendering template...');
-    await update();
+    if (pendingRender) {
+      showLoading('Rendering template...');
+      await update();
+    }
     hideLoading();
     
     autoResizeVariablesSection();
@@ -563,10 +570,12 @@ async function setupPyodide() {
 
 async function update() {
   if (!pyodide || !isInitialized) {
+    pendingRender = true;
     outputDisplay.textContent = 'Python environment is still loading...';
     outputDisplay.className = '';
     return;
   }
+  pendingRender = false;
 
   const template = currentTemplate;
   let context;
@@ -1359,6 +1368,22 @@ window.addEventListener('message', async event => {
         await update();
       }
       break;
+    case 'requestVariablesForExport':
+      try {
+        const currentVars = JSON.parse(variablesEditor.value || '{}');
+        vscode.postMessage({
+          type: 'requestVariablesForExport',
+          variables: currentVars,
+          exportType: message.exportType,
+          fileUri: currentFileUri
+        });
+      } catch {
+        vscode.postMessage({
+          type: 'showError',
+          message: 'Invalid JSON in variables'
+        });
+      }
+      break;
     
     case 'extensionEnabled':
       // Extension was enabled, update the UI
@@ -1374,6 +1399,9 @@ window.addEventListener('message', async event => {
         updateExtensionSuggestions();
         await update();
       }
+      break;
+    case 'forceRender':
+      await update();
       break;
     
     case 'execCommand':

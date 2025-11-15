@@ -253,10 +253,14 @@ class JinjaRendererViewProvider {
     this._view = webviewView;
     
     webviewView.webview.options = {
-      enableScripts: true
+      enableScripts: true,
+      localResourceRoots: [
+        vscode.Uri.joinPath(this._context.extensionUri, 'src', 'webview', 'assets'),
+        vscode.Uri.joinPath(this._context.extensionUri, 'resources', 'vendor')
+      ]
     };
     
-    webviewView.webview.html = getWebviewContent(true); // true = sidebar mode
+    webviewView.webview.html = getWebviewContent(webviewView.webview, this._context.extensionUri, true); // true = sidebar mode
     
     // Flag to prevent double-updating when switching history
     let isUpdatingFromHistory = false;
@@ -500,25 +504,10 @@ class JinjaRendererViewProvider {
               extractedVariables: extractedVars
             });
             
-            // Wait another 50ms then trigger re-render by simulating a document change
-            setTimeout(async () => {
-              if (editor && editor.document) {
-                const document = editor.document;
-                const position = document.positionAt(document.getText().length);
-                
-                // Add a space and remove it to trigger auto-render
-                await editor.edit(editBuilder => {
-                  editBuilder.insert(position, ' ');
-                });
-                
-                await editor.edit(editBuilder => {
-                  const endPosition = document.positionAt(document.getText().length);
-                  const rangeToDelete = new vscode.Range(
-                    new vscode.Position(endPosition.line, endPosition.character - 1),
-                    endPosition
-                  );
-                  editBuilder.delete(rangeToDelete);
-                });
+            // Ask webview to rerender without mutating the document
+            setTimeout(() => {
+              if (this._view && this._view.webview) {
+                this._view.webview.postMessage({ type: 'forceRender' });
               }
             }, 50);
           }
