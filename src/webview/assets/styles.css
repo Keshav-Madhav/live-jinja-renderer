@@ -672,3 +672,97 @@ textarea:focus {
   border: 3px solid transparent;
   background-clip: padding-box;
 }
+
+/* Template Section */
+.template-section {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+  background-color: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 3px;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.template-section .header-group {
+  padding: 8px 12px;
+  margin: 0;
+  background-color: var(--vscode-sideBarSectionHeader-background);
+  border-bottom: 1px solid var(--vscode-editorGroup-border);
+}
+
+.template-display {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0;
+  background-color: var(--vscode-editor-background);
+}
+
+.template-display pre {
+  margin: 0;
+  padding: 12px;
+  font-family: var(--vscode-editor-font-family);
+  font-size: var(--vscode-editor-font-size);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: var(--vscode-editor-foreground);
+}
+
+/* Jinja Syntax Highlighting - Python-inspired color scheme */
+.jinja-delimiter {
+  color: var(--vscode-debugTokenExpression-name);
+  font-weight: 600;
+}
+
+.jinja-statement {
+  color: var(--vscode-debugTokenExpression-string);
+}
+
+.jinja-keyword {
+  color: var(--vscode-debugTokenExpression-name);
+  font-weight: 600;
+}
+
+.jinja-variable {
+  color: var(--vscode-debugTokenExpression-value);
+}
+
+.jinja-string {
+  color: var(--vscode-debugTokenExpression-string);
+}
+
+.jinja-number {
+  color: var(--vscode-debugTokenExpression-number);
+}
+
+.jinja-operator {
+  color: var(--vscode-debugTokenExpression-name);
+}
+
+.jinja-function {
+  color: var(--vscode-debugTokenExpression-value);
+  font-style: italic;
+}
+
+.jinja-filter {
+  color: var(--vscode-debugTokenExpression-value);
+}
+
+.jinja-comment {
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.jinja-boolean {
+  color: var(--vscode-debugTokenExpression-boolean);
+  font-weight: 600;
+}
+
+.jinja-builtin {
+  color: var(--vscode-symbolIcon-classForeground);
+  font-weight: 500;
+}
+

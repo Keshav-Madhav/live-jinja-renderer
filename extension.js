@@ -2,6 +2,7 @@ const vscode = require('vscode');
 const { JinjaRendererViewProvider } = require('./src/providers/jinjaRendererViewProvider');
 const { registerSelectionActionsProvider } = require('./src/providers/selectionActionsProvider');
 const { JinjaIntelliSenseManager } = require('./src/providers/jinjaIntelliSenseManager');
+const { JinjaSyntaxDecorator } = require('./src/providers/jinjaSyntaxDecorator');
 const { registerSettingsCommands } = require('./src/commands/settingsCommands');
 const { registerVariableCommands } = require('./src/commands/variableCommands');
 const { registerImportExportCommands } = require('./src/commands/importExportCommands');
@@ -72,20 +73,16 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}! MAJOR UPDATE\n\n🚀 Complete IntelliSense System:\n• Variable autocomplete with type information\n• Dot notation IntelliSense for nested objects\n• Hover documentation showing values and properties\n• 20+ Jinja2 filters with complete documentation\n• Keyword completion for control structures\n• Real-time sync with variable extraction\n• Smart context detection\n\n✨ Try it now: Type "{{" in any .jinja file!\n\nThis is a MAJOR update that transforms Live Jinja Renderer into a complete IDE for Jinja2 templates.`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🎨 New: Syntax Highlighting\n• Real-time highlighting in the editor\n• Template preview with syntax colors\n• Works with .jinja, .j2, and .txt files`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
-          'Try Demo Template',
           'Dismiss'
         ).then(result => {
           if (result === 'View Release Notes') {
             vscode.env.openExternal(vscode.Uri.parse(
               'https://github.com/Keshav-Madhav/live-jinja-renderer/blob/main/CHANGELOG.md'
             ));
-          } else if (result === 'Try Demo Template') {
-            vscode.workspace.openTextDocument(vscode.Uri.joinPath(context.extensionUri, 'test-intellisense.jinja'))
-              .then(doc => vscode.window.showTextDocument(doc));
           }
         });
       }
@@ -99,6 +96,48 @@ async function activate(context) {
     
     // Initialize IntelliSense manager
     const intelliSenseManager = new JinjaIntelliSenseManager(context);
+    
+    // Initialize Jinja syntax decorator
+    const syntaxDecorator = new JinjaSyntaxDecorator();
+    context.subscriptions.push({
+      dispose: () => syntaxDecorator.dispose()
+    });
+
+    // Set up syntax highlighting for active editor
+    if (vscode.window.activeTextEditor) {
+      syntaxDecorator.activeEditor = vscode.window.activeTextEditor;
+      syntaxDecorator.updateDecorations();
+    }
+
+    // Listen for editor changes
+    context.subscriptions.push(
+      vscode.window.onDidChangeActiveTextEditor(editor => {
+        syntaxDecorator.activeEditor = editor;
+        if (editor) {
+          syntaxDecorator.updateDecorations();
+        }
+      })
+    );
+
+    // Listen for document changes
+    context.subscriptions.push(
+      vscode.workspace.onDidChangeTextDocument(event => {
+        if (syntaxDecorator.activeEditor && event.document === syntaxDecorator.activeEditor.document) {
+          syntaxDecorator.triggerUpdateDecorations();
+        }
+      })
+    );
+
+    // Listen for configuration changes to update highlighting
+    context.subscriptions.push(
+      vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration('liveJinjaRenderer.highlighting')) {
+          if (syntaxDecorator.activeEditor) {
+            syntaxDecorator.updateDecorations();
+          }
+        }
+      })
+    );
     
     // Register the sidebar webview view provider
     const sidebarProvider = new JinjaRendererViewProvider(context, intelliSenseManager);

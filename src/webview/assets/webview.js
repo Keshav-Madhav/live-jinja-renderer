@@ -1188,6 +1188,7 @@ window.addEventListener('message', async event => {
       currentSelectionRange = message.selectionRange || null;
       
       updateFileNameDisplay(currentFileUri, currentSelectionRange);
+      updateTemplateDisplay();
       
       if (message.extractedVariables) {
         showLoading('Extracting variables...');
@@ -1387,3 +1388,4 @@ window.addEventListener('message', async event => {
 
 // Start Pyodide and initial render
 setupPyodide();
+

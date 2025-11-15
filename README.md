@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.7.1-blue)
+![Version](https://img.shields.io/badge/version-1.7.2-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,35 +10,34 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.7.1
+## 🚀 What's New in v1.7.2
 
-### Improvements & Bug Fixes
+### Syntax Highlighting 🎨
 
-Continuing improvements to the IntelliSense system and overall stability.
+Enhanced developer experience with real-time Jinja2 syntax highlighting!
 
 #### New Features:
-- ✨ **Variable Autocomplete**: Press `Ctrl+Space` inside `{{ }}` to see all available variables with type information
-- ✨ **Dot Notation IntelliSense**: Type `.` after any variable to explore nested properties (e.g., `user.` → `name`, `email`, `address`)
-- ✨ **Hover Documentation**: Hover over variables to see types, current values, and available properties
-- ✨ **Filter Library**: Type `|` to see 20+ Jinja2 filters with complete documentation and examples
-- ✨ **Keyword Completion**: Autocomplete for `for`, `if`, `set`, `block`, `extends`, `include`, `macro`, and more
-- ✨ **Real-time Sync**: IntelliSense automatically updates as you extract and modify variables
-- ✨ **Smart Context Detection**: Only activates in Jinja template contexts (`.jinja`, `.jinja2`, `.j2`, `.txt` files)
+- ✨ **Editor Syntax Highlighting**: Automatic syntax highlighting in the editor for Jinja2 templates
+- ✨ **Template Display**: Syntax-highlighted template preview in the sidebar/panel
+- ✨ **Smart Colors**: Python-inspired color scheme that adapts to your VS Code theme
+- ✨ **File Type Support**: Works with `.jinja`, `.j2`, and `.txt` files (configurable for text files)
 
-#### Try It Now:
-1. Open any `.jinja` file (or create one with `test-intellisense.jinja` included)
-2. Type `{{` and press `Ctrl+Space` to see variable suggestions
-3. Type a variable name + `.` to see nested properties
-4. Hover over any variable to see documentation
-5. Type `|` after a variable to see filter suggestions
-
-📚 **Full Documentation**: See `INTELLISENSE.md` for comprehensive usage guide and examples.
+> 💡 **Also includes**: Full IntelliSense system with autocomplete, hover docs, and 20+ filter suggestions (added in v1.7.0)
 
 ---
 
 ## ✨ Key Features
 
-### � **Full IntelliSense System** ⭐ NEW!
+### 🎨 **Syntax Highlighting** ⭐ NEW!
+- **Editor Highlighting**: Real-time Jinja2 syntax highlighting in your text editor
+  - Highlights delimiters, keywords, variables, strings, numbers, filters, and comments
+  - Python-inspired color scheme using VS Code theme colors
+  - Works automatically with `.jinja`, `.j2`, and `.txt` files
+- **Template Preview**: Syntax-highlighted template display in sidebar/panel
+  - Consistent colors with editor highlighting
+  - Easy-to-read formatting for complex templates
+
+### 💡 **Full IntelliSense System**
 - **Variable Autocomplete**: Intelligent suggestions for all extracted variables
   - Triggers inside `{{ }}` and `{% %}` blocks
   - Shows type information and value previews
@@ -314,6 +313,11 @@ All settings are now organized into clear categories for easier configuration:
 - `liveJinjaRenderer.advanced.ghostSave`: Auto-save variables per file (default: `true`)
 - `liveJinjaRenderer.advanced.ghostSaveDelay`: Delay before ghost-save in ms (default: `1000`)
 - `liveJinjaRenderer.advanced.showLoadingIndicators`: Show loading messages (default: `true`)
+- `liveJinjaRenderer.advanced.showPerformanceMetrics`: Show performance metrics (default: `true`)
+- `liveJinjaRenderer.advanced.suggestExtensions`: Suggest Jinja2 extensions (default: `true`)
+
+### Highlighting
+- `liveJinjaRenderer.highlighting.enableForTextFiles`: Enable syntax highlighting for .txt files (default: `true`)
 
 ### Extensions
 - `liveJinjaRenderer.extensions`: Configure Jinja2 extensions via a single settings object with checkboxes:
@@ -328,6 +332,17 @@ All settings are now organized into clear categories for easier configuration:
 > **Note**: Old setting names (e.g., `liveJinjaRenderer.enableMarkdown`) still work for backwards compatibility.
 
 ## Recent Updates
+
+### 1.7.2 - Syntax Highlighting 🎨
+- **Editor Highlighting**: Real-time Jinja2 syntax highlighting in the editor
+- **Template Preview**: Syntax-highlighted template display in sidebar/panel
+- **Configurable**: Control highlighting for text files via settings
+- **Theme-Aware**: Colors adapt to your VS Code theme
+
+### 1.7.1 - IntelliSense Improvements
+- Enhanced type inference for variables
+- Improved hover provider reliability
+- Smart update behavior for current file
 
 ### 1.7.0 - Complete IntelliSense System 🎉 MAJOR UPDATE
 This is a **transformative release** that adds a complete IDE experience for Jinja2 templates!

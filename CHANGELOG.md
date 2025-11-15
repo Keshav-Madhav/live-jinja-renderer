@@ -4,6 +4,20 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.7.2] - 2025-11-15
+
+### 🎨 Added - Syntax Highlighting
+- **Editor Syntax Highlighting**: Real-time Jinja2 syntax highlighting in the editor for better readability
+  - Highlights delimiters (`{{`, `}}`, `{%`, `%}`), keywords (`if`, `for`, `set`), variables, strings, numbers, filters, and comments
+  - Python-inspired color scheme using VS Code theme colors
+  - Works with `.jinja`, `.j2`, and `.txt` files
+  - Configurable for text files via `liveJinjaRenderer.highlighting.enableForTextFiles` setting (default: `true`)
+- **Webview Template Display**: Enhanced template viewer in sidebar/panel with syntax highlighting
+  - Same color scheme as editor highlighting for consistency
+  - Collapsible template section showing your template with proper formatting
+
+---
+
 ## [1.7.1] - 2025-11-14
 
 ### 🔧 Improvements
