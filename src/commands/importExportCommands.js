@@ -80,7 +80,11 @@ function registerImportExportCommands(context, sidebarProvider, getCurrentPanel)
       try {
         variables = JSON.parse(jsonString);
       } catch (parseError) {
-        vscode.window.showErrorMessage(`Invalid JSON file: ${parseError.message}`);
+        vscode.window.showErrorMessage(
+          `Invalid JSON file: ${parseError.message}\n\n` +
+          `Please ensure the file contains valid JSON with a structure like:\n` +
+          `{ "variableName": "value", "anotherVar": "value" }`
+        );
         return;
       }
       

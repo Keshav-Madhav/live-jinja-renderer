@@ -56,7 +56,12 @@
         <div class="output-section" id="output-section">
             <div class="header-group">
                 <h2>Output</h2>
-                {{AUTO_RERENDER_TOGGLE}}
+                <div class="header-actions">
+                    <button id="error-goto-button" class="error-line-link" style="display: none;" title="Jump to error line in editor">
+                        <i class="codicon codicon-go-to-file"></i> View Error
+                    </button>
+                    {{AUTO_RERENDER_TOGGLE}}
+                </div>
             </div>
             <div class="extensions-indicator" id="extensions-indicator" style="display: none; font-size: 11px; padding: 4px 8px; margin: 0 0 8px 0; background: var(--vscode-editor-inactiveSelectionBackground); border-left: 2px solid var(--vscode-activityBarBadge-background); color: var(--vscode-descriptionForeground); cursor: pointer;" title="Click to configure extensions">
                 <i class="codicon codicon-extensions" style="font-size: 12px; margin-right: 4px;"></i>

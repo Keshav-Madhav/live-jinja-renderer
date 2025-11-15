@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.7.3-blue)
+![Version](https://img.shields.io/badge/version-1.7.4-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,18 +10,19 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.7.3
+## 🚀 What's New in v1.7.4
 
-### IntelliSense Bug Fixes 🐛
+### Bug Fixes 🐛
 
-Fixed critical autocomplete issues for a better developer experience:
+Comprehensive stability improvements and bug fixes:
 
-- ✅ **Smart Filtering**: Autocomplete now filters by partial match (typing `{{ ad` only shows "address")
-- ✅ **Correct Context**: Keywords only appear in `{% %}` blocks, not in `{{ }}` expressions
-- ✅ **Live Updates**: Variable edits in webview immediately update autocomplete
-- ✅ **Better UX**: Case-insensitive filtering for all suggestions
+- Fixed race conditions, memory leaks, and infinite loop risks
+- Extension suggestion buttons now work properly
+- Error button always visible regardless of rendering mode
+- New selections take priority when updating
+- Better error messages and validation throughout
 
-> 💡 **Previous updates**: Syntax highlighting (v1.7.2) and full IntelliSense system (v1.7.0)
+> 💡 **Previous updates**: IntelliSense fixes (v1.7.3), syntax highlighting (v1.7.2), and full IntelliSense system (v1.7.0)
 
 ---
 

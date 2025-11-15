@@ -4,6 +4,27 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.7.4] - 2025-11-16
+
+### 🐛 Bug Fixes
+
+- **Pyodide Race Condition**: Fixed messages arriving before initialization with message queue
+- **Regex Infinite Loop**: Added safety check to prevent stuck regex patterns in variable extraction
+- **Memory Leak**: Fixed provider disposables not being cleared on re-initialization
+- **Extension Suggestions**: Fixed "Enable Extension" button not activating extensions
+- **Error Button UX**: Moved "View Error" button outside render window for consistent visibility
+- **Selection Priority**: New selections now take priority over old selections when updating
+- **goToLine Validation**: Added parameter validation and better error messages
+- **Selection Range**: Fixed invalid ranges after document changes
+- **File History**: Added validation for invalid history indices
+- **JSON Parse Errors**: Improved error messages with example structure
+- **Settings Migration**: Fixed conflicts when both old and new settings exist
+- **DOM Safety**: Added null checks for all DOM element access
+- **Mermaid Errors**: Clear partial diagrams before showing error messages
+- **Document Listener**: Optimized to skip unrelated document changes
+
+---
+
 ## [1.7.3] - 2025-11-15
 
 ### 🐛 IntelliSense Bug Fixes

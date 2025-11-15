@@ -143,6 +143,11 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
   // Update template if the original file changes
   // The webview will decide whether to auto-render based on autoRerender setting
   const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
+    // Early return if not the active editor to avoid unnecessary processing
+    if (e.document.uri.toString() !== editor.document.uri.toString()) {
+      return;
+    }
+    
     if (e.document.uri.toString() === editor.document.uri.toString()) {
       // Adjust selection range dynamically if changes occur within the selected range
       if (lastSelectionRange && lastSelectionRange.startLine !== undefined && lastSelectionRange.endLine !== undefined) {
@@ -181,9 +186,17 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
         }
         
         // Ensure range is valid
-        lastSelectionRange.endLine = Math.min(lastSelectionRange.endLine, e.document.lineCount - 1);
+        lastSelectionRange.endLine = Math.max(
+          lastSelectionRange.startLine,
+          Math.min(lastSelectionRange.endLine, e.document.lineCount - 1)
+        );
         lastSelectionRange.startLine = Math.max(0, lastSelectionRange.startLine);
-        lastSelectionRange.startLine = Math.min(lastSelectionRange.startLine, lastSelectionRange.endLine);
+        
+        // Validate range is still meaningful
+        if (lastSelectionRange.startLine > lastSelectionRange.endLine) {
+          console.warn('Invalid selection range detected after document changes, resetting');
+          lastSelectionRange = null;
+        }
       }
       
       // Extract only the selected range if applicable
@@ -505,6 +518,14 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
             const fileUri = message.fileUri;
             const msgSelectionRange = message.selectionRange;
             
+            if (typeof lineNumber !== 'number' || lineNumber <= 0) {
+              throw new Error('Invalid line number');
+            }
+            
+            if (!fileUri) {
+              throw new Error('No file URI provided');
+            }
+            
             if (typeof lineNumber === 'number' && lineNumber > 0 && fileUri) {
               // Adjust line number if we're rendering a selection
               const actualLineNumber = msgSelectionRange 
@@ -569,7 +590,7 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
             }
           } catch (err) {
             console.error('Failed to navigate to line:', err);
-            vscode.window.showErrorMessage('Failed to navigate to error line');
+            vscode.window.showErrorMessage(`Failed to navigate to line ${message.line}: ${err.message}`);
           }
           return;
       }

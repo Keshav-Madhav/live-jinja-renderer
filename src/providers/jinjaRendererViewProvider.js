@@ -150,10 +150,16 @@ class JinjaRendererViewProvider {
    */
   async _switchToHistoryItem(index) {
     if (index < 0 || index >= this._fileHistory.length) {
+      console.warn('Invalid history index:', index);
+      vscode.window.showWarningMessage('Selected history item is no longer available');
       return;
     }
     
     const historyItem = this._fileHistory[index];
+    if (!historyItem) {
+      console.error('History item is undefined at index', index);
+      return;
+    }
     
     try {
       // Parse the URI and open the document
@@ -250,6 +256,10 @@ class JinjaRendererViewProvider {
   }
   
   resolveWebviewView(webviewView) {
+    // Clean up any existing disposables first to prevent memory leaks
+    this._disposables.forEach(d => d.dispose());
+    this._disposables = [];
+    
     this._view = webviewView;
     
     webviewView.webview.options = {
@@ -413,12 +423,33 @@ class JinjaRendererViewProvider {
         let selectionRange = null;
         const fileUri = editor.document.uri.toString();
         
-        // Get the current cursor position
-        const cursorLine = editor.selection.active.line;
+        // Get the current selection first - this takes priority
+        const selection = editor.selection;
         
-        // Check if there's an active history item for this file
-        if (this._currentHistoryIndex >= 0 && this._currentHistoryIndex < this._fileHistory.length) {
+        // Check for current selection FIRST (new selection takes priority)
+        if (!selection.isEmpty) {
+          const startLine = selection.start.line;
+          const endLine = selection.end.line;
+          const totalLines = editor.document.lineCount;
+          
+          // Check if the entire file is selected
+          const isEntireFile = (
+            startLine === 0 && 
+            endLine >= totalLines - 1
+          );
+          
+          if (!isEntireFile) {
+            selectionRange = {
+              startLine: startLine,
+              endLine: endLine
+            };
+          }
+          // If entire file is selected, leave selectionRange as null
+        }
+        // Only if there's NO current selection, check if cursor is in old selection range
+        else if (this._currentHistoryIndex >= 0 && this._currentHistoryIndex < this._fileHistory.length) {
           const currentHistory = this._fileHistory[this._currentHistoryIndex];
+          const cursorLine = editor.selection.active.line;
           
           // Only consider the history if it's for the same file
           if (currentHistory.fileUri === fileUri && currentHistory.selectionRange) {
@@ -430,35 +461,6 @@ class JinjaRendererViewProvider {
               selectionRange = historyRange;
             }
             // If cursor is outside the range, selectionRange stays null (whole file)
-          }
-        }
-        
-        // If no selection range determined yet, check for current selection
-        if (!selectionRange) {
-          const selection = editor.selection;
-          
-          if (!selection.isEmpty) {
-            const startLine = selection.start.line;
-            const endLine = selection.end.line;
-            const totalLines = editor.document.lineCount;
-            
-            // Check if the entire file is selected
-            // Consider it "entire file" if:
-            // 1. Selection starts at line 0
-            // 2. Selection ends at or includes the last line
-            // 3. Start is at beginning of first line and end is at end of last line
-            const isEntireFile = (
-              startLine === 0 && 
-              endLine >= totalLines - 1
-            );
-            
-            if (!isEntireFile) {
-              selectionRange = {
-                startLine: startLine,
-                endLine: endLine
-              };
-            }
-            // If entire file is selected, leave selectionRange as null
           }
         }
         

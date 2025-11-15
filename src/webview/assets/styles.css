@@ -39,8 +39,17 @@ body, html {
 
 .header-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
+}
+
+.header-actions .error-line-link {
+  padding: 3px 8px;
+  font-size: 11px;
+  height: auto;
+  gap: 4px;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
 }
 
 h2 {

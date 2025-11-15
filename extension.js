@@ -32,20 +32,31 @@ async function migrateSettings() {
     const oldInspect = inspect(old);
     const newInspect = inspect(newKey);
     
-    // Check if old setting exists in user settings and new one doesn't
+    // Check if old setting exists in user settings
     if (oldInspect && (oldInspect.globalValue !== undefined || oldInspect.workspaceValue !== undefined)) {
-      // Migrate global value
-      if (oldInspect.globalValue !== undefined && newInspect.globalValue === undefined) {
-        await config.update(newKey, oldInspect.globalValue, vscode.ConfigurationTarget.Global);
-        await config.update(old, undefined, vscode.ConfigurationTarget.Global); // Remove old setting
-        migrated = true;
-      }
-      
-      // Migrate workspace value
-      if (oldInspect.workspaceValue !== undefined && newInspect.workspaceValue === undefined) {
-        await config.update(newKey, oldInspect.workspaceValue, vscode.ConfigurationTarget.Workspace);
-        await config.update(old, undefined, vscode.ConfigurationTarget.Workspace); // Remove old setting
-        migrated = true;
+      // Only migrate if new setting doesn't exist yet
+      if (newInspect.globalValue === undefined && newInspect.workspaceValue === undefined) {
+        // Migrate global value
+        if (oldInspect.globalValue !== undefined) {
+          await config.update(newKey, oldInspect.globalValue, vscode.ConfigurationTarget.Global);
+          await config.update(old, undefined, vscode.ConfigurationTarget.Global); // Remove old setting
+          migrated = true;
+        }
+        
+        // Migrate workspace value
+        if (oldInspect.workspaceValue !== undefined) {
+          await config.update(newKey, oldInspect.workspaceValue, vscode.ConfigurationTarget.Workspace);
+          await config.update(old, undefined, vscode.ConfigurationTarget.Workspace); // Remove old setting
+          migrated = true;
+        }
+      } else {
+        // New settings exist - just remove old ones without migrating
+        if (oldInspect.globalValue !== undefined) {
+          await config.update(old, undefined, vscode.ConfigurationTarget.Global);
+        }
+        if (oldInspect.workspaceValue !== undefined) {
+          await config.update(old, undefined, vscode.ConfigurationTarget.Workspace);
+        }
       }
     }
   }
@@ -73,7 +84,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🐛 IntelliSense Bug Fixes\n• Smart autocomplete filtering\n• Keywords only in correct context\n• Live variable updates`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🐛 Stability & Bug Fixes\n• Fixed race conditions & memory leaks\n• Extension buttons now work\n• Better error handling throughout`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

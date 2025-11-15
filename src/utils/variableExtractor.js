@@ -360,6 +360,11 @@ function extractVariablesFromTemplate(template) {
   const variablePattern = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)(?:\s*\|[^}]+)?\s*\}\}/g;
   
   while ((match = variablePattern.exec(template)) !== null) {
+    const lastIndex = variablePattern.lastIndex;
+    if (lastIndex === 0 || (match.index === lastIndex - match[0].length && match[0].length === 0)) {
+      console.error('Regex stuck, breaking to prevent infinite loop');
+      break;
+    }
     const fullMatch = match[0];
     const fullPath = match[1];
     const rootVar = fullPath.split('.')[0];

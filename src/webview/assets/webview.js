@@ -55,6 +55,7 @@ let customExtensions = '';
 // Pyodide setup
 let pyodide = null;
 let isInitialized = false;
+let messageQueue = []; // Queue for messages received before initialization
 
 // Get controls based on mode
 let markdownToggle, mermaidToggle, showWhitespaceToggle, cullWhitespaceToggle;
@@ -165,6 +166,8 @@ async function renderPureMermaid(text) {
     });
   } catch (error) {
     console.error('Mermaid rendering error:', error);
+    // Clear any partially rendered mermaid diagrams
+    markdownOutput.querySelectorAll('.mermaid').forEach(el => el.remove());
     markdownOutput.innerHTML = `<div style="color: var(--vscode-errorForeground); padding: 20px;">
       <strong>⚠️ Mermaid Rendering Error</strong><br><br>
       ${error.message || 'Failed to render diagram'}<br><br>
@@ -173,7 +176,13 @@ async function renderPureMermaid(text) {
   }
 }
 
-function addErrorLineButtons(container) {
+function updateErrorButton(container) {
+  const errorButton = document.getElementById('error-goto-button');
+  if (!errorButton) {
+    console.warn('Error button not found');
+    return;
+  }
+  
   const text = container.textContent || container.innerText;
   
   const lineMatches = [
@@ -181,20 +190,18 @@ function addErrorLineButtons(container) {
     ...text.matchAll(/line (\d+)/gi)
   ];
   
-  if (lineMatches.length === 0) return;
+  if (lineMatches.length === 0) {
+    errorButton.style.display = 'none';
+    return;
+  }
   
   const lineNumbers = Array.from(new Set(lineMatches.map(match => parseInt(match[1]))));
   
   if (lineNumbers.length > 0) {
     const lineNumber = lineNumbers[0];
     
-    const buttonWrapper = document.createElement('div');
-    buttonWrapper.style.marginBottom = '12px';
-    
-    const button = document.createElement('button');
-    button.className = 'error-line-link';
-    button.textContent = 'View Error';
-    button.onclick = () => {
+    errorButton.style.display = 'flex';
+    errorButton.onclick = () => {
       vscode.postMessage({
         type: 'goToLine',
         line: lineNumber,
@@ -202,16 +209,8 @@ function addErrorLineButtons(container) {
         selectionRange: currentSelectionRange
       });
     };
-    
-    buttonWrapper.appendChild(button);
-    
-    const textWrapper = document.createElement('div');
-    textWrapper.textContent = text;
-    textWrapper.style.whiteSpace = 'pre-wrap';
-    
-    container.innerHTML = '';
-    container.appendChild(buttonWrapper);
-    container.appendChild(textWrapper);
+  } else {
+    errorButton.style.display = 'none';
   }
 }
 
@@ -385,7 +384,10 @@ function detectSuggestedExtensions(template) {
  * Update the extension suggestions UI
  */
 function updateExtensionSuggestions() {
-  if (!extensionSuggestions || !extensionSuggestionsList) return;
+  if (!extensionSuggestions || !extensionSuggestionsList) {
+    console.warn('Extension suggestions DOM elements not found');
+    return;
+  }
   
   const suggestions = detectSuggestedExtensions(currentTemplate);
   
@@ -426,7 +428,7 @@ function updateExtensionSuggestions() {
     button.addEventListener('click', () => {
       // Enable the extension via VS Code settings
       vscode.postMessage({
-        command: 'enableExtension',
+        type: 'enableExtension',
         extension: suggestion.key
       });
     });
@@ -549,6 +551,12 @@ async function setupPyodide() {
     isInitialized = true;
     
     vscode.postMessage({ type: 'ready' });
+    
+    // Process any queued messages
+    while (messageQueue.length > 0) {
+      const queuedMessage = messageQueue.shift();
+      handleMessage(queuedMessage);
+    }
     
     showLoading('Rendering template...');
     await update();
@@ -776,22 +784,32 @@ result
         outputDisplay.innerHTML = renderWhitespace(processedResult);
         if (isError) {
           outputDisplay.classList.add('error');
-          addErrorLineButtons(outputDisplay);
+          updateErrorButton(outputDisplay);
         } else {
           outputDisplay.classList.remove('error');
+          // Hide error button when there's no error
+          const errorButton = document.getElementById('error-goto-button');
+          if (errorButton) errorButton.style.display = 'none';
         }
       } else {
         outputDisplay.textContent = processedResult;
         if (isError) {
           outputDisplay.classList.add('error');
-          addErrorLineButtons(outputDisplay);
+          updateErrorButton(outputDisplay);
         } else {
           outputDisplay.classList.remove('error');
+          // Hide error button when there's no error
+          const errorButton = document.getElementById('error-goto-button');
+          if (errorButton) errorButton.style.display = 'none';
         }
       }
     }
   } catch (e) {
-    outputDisplay.textContent = `Python execution error: ${e.message}`;
+    const errorMsg = `Python execution error: ${e.message}\n\nThis usually means:\n` +
+                   `• Invalid Jinja2 syntax in your template\n` +
+                   `• Unsupported Python operations\n` +
+                   `• Extension compatibility issues`;
+    outputDisplay.textContent = errorMsg;
     outputDisplay.classList.add('error');
     outputDisplay.style.display = 'block';
     markdownOutput.style.display = 'none';
@@ -838,6 +856,11 @@ function ghostSaveVariables() {
 const debouncedGhostSave = debounce(ghostSaveVariables, 1000);
 
 function autoResizeVariablesSection() {
+  if (!variablesEditor) {
+    console.warn('Variables editor not found for resize');
+    return;
+  }
+  
   const text = variablesEditor.value;
   const lines = text.split('\n');
   const lineCount = lines.length;
@@ -851,6 +874,11 @@ function autoResizeVariablesSection() {
   
   const variablesSection = document.getElementById('variables-section');
   const outputSection = document.getElementById('output-section');
+  
+  if (!variablesSection || !outputSection) {
+    console.warn('Cannot auto-resize: required DOM elements not found');
+    return;
+  }
   
   variablesSection.style.height = calculatedHeight + 'px';
   variablesSection.style.flex = 'none';
@@ -1172,9 +1200,8 @@ document.addEventListener('mouseup', function() {
   }
 });
 
-// Listen for messages from the extension
-window.addEventListener('message', async event => {
-  const message = event.data;
+// Helper function to handle messages
+async function handleMessage(message) {
   switch (message.type) {
     case 'updateFileHistory':
       if (isSidebarMode) {
@@ -1383,6 +1410,19 @@ window.addEventListener('message', async event => {
       }
       break;
   }
+}
+
+// Listen for messages from the extension
+window.addEventListener('message', async event => {
+  const message = event.data;
+  
+  // Queue messages if Pyodide not initialized yet (except forceRender which needs initialized state)
+  if (!isInitialized && message.type !== 'forceRender') {
+    messageQueue.push(message);
+    return;
+  }
+  
+  await handleMessage(message);
 });
 
 // Start Pyodide and initial render
