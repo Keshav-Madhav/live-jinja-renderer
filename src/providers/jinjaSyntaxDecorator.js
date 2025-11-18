@@ -34,6 +34,9 @@ class JinjaSyntaxDecorator {
         color: new vscode.ThemeColor('debugTokenExpression.value'),
         fontStyle: 'italic'
       }),
+      method: vscode.window.createTextEditorDecorationType({
+        color: new vscode.ThemeColor('symbolIcon.methodForeground')
+      }),
       filter: vscode.window.createTextEditorDecorationType({
         color: new vscode.ThemeColor('debugTokenExpression.value')
       }),
@@ -86,7 +89,8 @@ class JinjaSyntaxDecorator {
       filter: [],
       comment: [],
       boolean: [],
-      builtin: []
+      builtin: [],
+      method: []
     };
 
     const keywords = new Set([
@@ -114,6 +118,18 @@ class JinjaSyntaxDecorator {
       'sort', 'string', 'striptags', 'sum', 'title', 'tojson', 'trim', 'truncate',
       'unique', 'upper', 'urlencode', 'urlize', 'wordcount', 'wordwrap', 'xmlattr',
       'range', 'lipsum', 'dict', 'cycler', 'joiner', 'namespace'
+    ]);
+
+    // Common Python/Jinja methods for lists, strings, dicts, etc.
+    const methods = new Set([
+      'append', 'extend', 'insert', 'remove', 'pop', 'clear', 'index', 'count',
+      'copy', 'split', 'rsplit', 'strip', 'lstrip', 'rstrip', 'startswith', 
+      'endswith', 'find', 'rfind', 'upper', 'lower', 'capitalize', 'title',
+      'swapcase', 'isdigit', 'isalpha', 'isalnum', 'isspace', 'isupper', 'islower',
+      'ljust', 'rjust', 'center', 'zfill', 'format', 'encode', 'decode',
+      'keys', 'values', 'items', 'get', 'update', 'setdefault', 'fromkeys',
+      'sort', 'sorted', 'reverse', 'reversed', 'min', 'max', 'sum', 'len',
+      'enumerate', 'zip', 'filter', 'map', 'reduce', 'any', 'all'
     ]);
 
     const booleans = new Set(['true', 'false', 'True', 'False', 'none', 'None']);
@@ -162,14 +178,15 @@ class JinjaSyntaxDecorator {
         decorations,
         keywords,
         builtins,
-        booleans
+        booleans,
+        methods
       );
     }
 
     return decorations;
   }
 
-  tokenizeContent(content, baseOffset, fullText, decorations, keywords, builtins, booleans) {
+  tokenizeContent(content, baseOffset, fullText, decorations, keywords, builtins, booleans, methods) {
     let i = 0;
 
     while (i < content.length) {
@@ -272,6 +289,8 @@ class JinjaSyntaxDecorator {
           decorations.boolean.push({ range });
         } else if (builtins.has(lowerIdent)) {
           decorations.builtin.push({ range });
+        } else if (methods.has(lowerIdent)) {
+          decorations.method.push({ range });
         } else if (isFunction) {
           decorations.function.push({ range });
         } else {

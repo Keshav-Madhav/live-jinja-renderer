@@ -1,12 +1,23 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.7.4-blue)
+![Version](https://img.shields.io/badge/version-1.7.5-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 A powerful VS Code extension for **real-time Jinja2 template preview** with authentic Python Jinja2 (via Pyodide). Edit templates and variables side-by-side with instant rendering, markdown support, mermaid diagrams, intelligent whitespace management, smart error navigation, and **full IntelliSense with autocomplete**.
 
 > 🎯 **Perfect for**: Python developers, DevOps engineers, Ansible users, configuration management, and anyone working with Jinja2 templates.
+
+---
+
+## 🚀 What's New in v1.7.5
+
+### Syntax Highlighting Improvements 🎨
+
+- **Array Methods Highlighting**: Array and string methods like `append()`, `split()`, `strip()`, etc. now display with proper method styling instead of gray italic function styling
+- **Mermaid Diagram Enhancements**: Improved node width constraints and text wrapping for better readability of complex diagrams
+
+> 💡 **Previous updates**: Stability fixes (v1.7.4), IntelliSense fixes (v1.7.3), syntax highlighting (v1.7.2), and full IntelliSense system (v1.7.0)
 
 ---
 

@@ -77,10 +77,16 @@ mermaid.initialize({
   theme: 'dark',
   securityLevel: 'loose',
   flowchart: {
-    useMaxWidth: true,
+    useMaxWidth: false,
     htmlLabels: true,
     curve: 'basis',
-    wrap: true
+    wrap: true,
+    nodeSpacing: 50,
+    rankSpacing: 50,
+    padding: 15
+  },
+  themeVariables: {
+    fontSize: '16px'
   }
 });
 
@@ -111,11 +117,28 @@ function renderWhitespace(text) {
                           .replace(/>/g, '&gt;')
                           .replace(/"/g, '&quot;')
                           .replace(/'/g, '&#039;');
-  
-  return escapedText
-    .replace(/ /g, '<span class="whitespace-char space"> </span>')
-    .replace(/\t/g, '<span class="whitespace-char tab">\t</span>')
-    .replace(/\n/g, '<span class="whitespace-char newline"></span>\n');
+
+  // Split into lines
+  const lines = escapedText.split('\n');
+  // Try to get template line numbers from global (set before render)
+  let templateLineNumbers = window._templateLineNumbers;
+  if (!Array.isArray(templateLineNumbers) || templateLineNumbers.length !== lines.length) {
+    // Fallback: just use 1..N
+    templateLineNumbers = Array.from({length: lines.length}, (_, i) => i + 1);
+  }
+
+  // Build HTML with gutter
+  let html = '<div class="output-gutter-container">';
+  html += '<div class="output-gutter">' + templateLineNumbers.map(n => `<span class="output-gutter-line">${n}</span>`).join('') + '</div>';
+  html += '<div class="output-lines">';
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i]
+      .replace(/ /g, '<span class="whitespace-char space"> </span>')
+      .replace(/\t/g, '<span class="whitespace-char tab">\t</span>');
+    html += `<div class="output-line"><span class="output-line-inner">${line}</span></div>`;
+  }
+  html += '</div></div>';
+  return html;
 }
 
 async function renderMarkdown(text) {
@@ -146,9 +169,94 @@ async function renderMarkdown(text) {
     await mermaid.run({
       querySelector: '#markdown-output .mermaid'
     });
+    makeMermaidInteractive();
   } catch (error) {
     console.error('Mermaid rendering error:', error);
   }
+}
+
+function makeMermaidInteractive() {
+  const mermaidDivs = document.querySelectorAll('#markdown-output .mermaid');
+  
+  mermaidDivs.forEach(mermaidDiv => {
+    const svg = mermaidDiv.querySelector('svg');
+    if (!svg) return;
+    
+    let scale = 1;
+    let translateX = 0;
+    let translateY = 0;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    
+    // Wrap SVG in a container if not already wrapped
+    if (!mermaidDiv.classList.contains('mermaid-interactive')) {
+      mermaidDiv.classList.add('mermaid-interactive');
+      svg.style.cursor = 'grab';
+    }
+    
+    // Apply transform
+    function applyTransform() {
+      svg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+      svg.style.transformOrigin = '0 0';
+    }
+    
+    // Mouse wheel zoom
+    mermaidDiv.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const wheelEvent = /** @type {WheelEvent} */ (e);
+      const delta = wheelEvent.deltaY > 0 ? 0.9 : 1.1;
+      const newScale = scale * delta;
+      
+      // Limit zoom range
+      if (newScale >= 0.3 && newScale <= 3) {
+        const rect = svg.getBoundingClientRect();
+        const offsetX = wheelEvent.clientX - rect.left;
+        const offsetY = wheelEvent.clientY - rect.top;
+        
+        // Zoom towards mouse position
+        translateX = offsetX - (offsetX - translateX) * delta;
+        translateY = offsetY - (offsetY - translateY) * delta;
+        scale = newScale;
+        
+        applyTransform();
+      }
+    }, { passive: false });
+    
+    // Mouse drag pan
+    svg.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startX = e.clientX - translateX;
+      startY = e.clientY - translateY;
+      svg.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      translateX = e.clientX - startX;
+      translateY = e.clientY - startY;
+      applyTransform();
+    });
+    
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        svg.style.cursor = 'grab';
+      }
+    });
+    
+    // Double-click to reset
+    svg.addEventListener('dblclick', () => {
+      scale = 1;
+      translateX = 0;
+      translateY = 0;
+      applyTransform();
+    });
+    
+    // Initial transform
+    applyTransform();
+  });
 }
 
 async function renderPureMermaid(text) {
@@ -164,6 +272,7 @@ async function renderPureMermaid(text) {
     await mermaid.run({
       querySelector: '#markdown-output .mermaid'
     });
+    makeMermaidInteractive();
   } catch (error) {
     console.error('Mermaid rendering error:', error);
     // Clear any partially rendered mermaid diagrams

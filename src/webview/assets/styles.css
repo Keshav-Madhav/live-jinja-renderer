@@ -394,13 +394,56 @@ textarea:focus {
 #output {
   flex: 1;
   margin: 0;
-  padding: 12px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
+  padding: 0;
   overflow: auto;
   font-family: var(--vscode-editor-font-family);
   font-size: var(--vscode-editor-font-size);
   line-height: 1.6;
+  background: transparent;
+}
+
+.output-gutter-container {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 100%;
+  background: transparent;
+}
+.output-gutter {
+  user-select: none;
+  background: var(--vscode-editorGutter-background, #23272e);
+  color: var(--vscode-editorLineNumber-foreground, #6a6a6a);
+  padding: 12px 8px 12px 0;
+  text-align: right;
+  font-size: 0.95em;
+  min-width: 36px;
+  border-right: 1px solid var(--vscode-editorWidget-border);
+  height: 100%;
+}
+.output-gutter-line {
+  display: block;
+  height: 1.6em;
+  line-height: 1.6em;
+  font-family: var(--vscode-editor-font-family);
+  opacity: 0.7;
+}
+.output-lines {
+  flex: 1;
+  padding: 12px;
+  min-width: 0;
+}
+.output-line {
+  display: flex;
+  align-items: flex-start;
+  min-height: 1.6em;
+  line-height: 1.6em;
+  font-family: var(--vscode-editor-font-family);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.output-line-inner {
+  display: inline-block;
+  width: 100%;
 }
 
 #markdown-output {
@@ -651,6 +694,48 @@ textarea:focus {
   padding: 12px;
   border-radius: 2px;
   border: 1px solid var(--vscode-editorWidget-border);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  min-height: 200px;
+}
+
+.mermaid.mermaid-interactive {
+  user-select: none;
+}
+
+.mermaid svg {
+  max-width: none;
+  height: auto;
+  transition: transform 0.05s ease-out;
+  will-change: transform;
+}
+
+/* Constrain Mermaid node widths */
+.mermaid .node rect,
+.mermaid .node circle,
+.mermaid .node ellipse,
+.mermaid .node polygon {
+  max-width: 400px !important;
+  min-width: 180px !important;
+}
+
+.mermaid .nodeLabel {
+  max-width: 380px !important;
+  min-width: 150px !important;
+  padding: 10px 15px !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  font-size: 14px !important;
+}
+
+.mermaid text {
+  font-size: 14px !important;
+}
+
+.mermaid .label {
+  font-size: 14px !important;
 }
 
 /* Scrollbar Styling */

@@ -4,6 +4,13 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.7.5] - 2025-11-18
+
+### 🎨 Syntax Highlighting Improvements
+
+- **Array Methods Styling**: Array and string methods now display with proper method highlighting instead of gray italic function styling
+- **Mermaid Diagram Layout**: Improved node width constraints and text wrapping for better readability of complex flowcharts and diagrams
+
 ## [1.7.4] - 2025-11-16
 
 ### 🐛 Bug Fixes
