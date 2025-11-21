@@ -416,6 +416,11 @@ textarea:focus {
   min-height: 1.6em;
   line-height: 1.6em;
   font-family: var(--vscode-editor-font-family);
+  transition: background-color 0.1s ease;
+}
+
+.output-row[data-line]:hover {
+  background-color: var(--vscode-list-hoverBackground);
 }
 
 .output-line-number {
@@ -431,6 +436,15 @@ textarea:focus {
   /* Center text vertically relative to line-height if needed, but flex does it well */
 }
 
+.output-row[data-line] .output-line-number {
+  cursor: pointer;
+}
+
+.output-row[data-line] .output-line-number:hover {
+  background-color: var(--vscode-editorGutter-modifiedBackground);
+  color: var(--vscode-editorLineNumber-activeForeground);
+}
+
 .output-line-content {
   flex: 1;
   padding: 0 12px;
@@ -438,6 +452,10 @@ textarea:focus {
   word-break: break-word;
   min-width: 0; /* Allow shrinking for wrapping */
   font-family: var(--vscode-editor-font-family);
+}
+
+.output-row[data-line] .output-line-content {
+  cursor: pointer;
 }
 
 .output-line-inner {
@@ -677,7 +695,7 @@ textarea:focus {
 .whitespace-char::before {
   position: absolute;
   color: var(--vscode-editorWhitespace-foreground);
-  opacity: 0.6;
+  opacity: 0.9;
   pointer-events: none;
 }
 
@@ -878,12 +896,6 @@ textarea:focus {
 .output-row.cycle-group-end.cycle-6 .output-line-number {
   border-bottom: 1px solid rgba(64, 224, 208, 0.35);
 }
-
-/* Ensure hover effects or selection still work if needed */
-.output-row {
-  transition: background-color 0.1s ease;
-}
-
 
 .jinja-statement {
   color: var(--vscode-debugTokenExpression-string);

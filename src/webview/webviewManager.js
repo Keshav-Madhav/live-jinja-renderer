@@ -517,6 +517,7 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
             const lineNumber = message.line;
             const fileUri = message.fileUri;
             const msgSelectionRange = message.selectionRange;
+            const selectWholeLine = message.selectWholeLine || false;
             
             if (typeof lineNumber !== 'number' || lineNumber <= 0) {
               throw new Error('Invalid line number');
@@ -527,10 +528,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
             }
             
             if (typeof lineNumber === 'number' && lineNumber > 0 && fileUri) {
-              // Adjust line number if we're rendering a selection
-              const actualLineNumber = msgSelectionRange 
-                ? lineNumber + msgSelectionRange.startLine - 1 
-                : lineNumber;
+              // Line numbers from webview are already adjusted for selection range
+              const actualLineNumber = lineNumber;
               
               // Clear any existing highlight
               clearHighlight();
@@ -557,36 +556,16 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
               const line = activeEditor.document.lineAt(lineIndex);
               const range = line.range;
               
-              // Move cursor to the beginning of the line
-              activeEditor.selection = new vscode.Selection(position, position);
+              if (selectWholeLine) {
+                // Select the entire line (from start to end of line)
+                activeEditor.selection = new vscode.Selection(range.start, range.end);
+              } else {
+                // Just move cursor to the beginning of the line
+                activeEditor.selection = new vscode.Selection(position, position);
+              }
               
               // Scroll to show the line in the center
               activeEditor.revealRange(range, vscode.TextEditorRevealType.InCenter);
-              
-              // Wait a bit for cursor movement to complete before adding highlight
-              await new Promise(resolve => setTimeout(resolve, 100));
-              
-              // Highlight the line with a more visible color
-              currentDecoration = vscode.window.createTextEditorDecorationType({
-                backgroundColor: 'rgba(255, 100, 100, 0.3)',
-                isWholeLine: true,
-                border: '2px solid rgba(255, 0, 0, 0.5)'
-              });
-              
-              activeEditor.setDecorations(currentDecoration, [range]);
-              
-              // Remove highlight when cursor moves AWAY from the highlighted line
-              const cursorChangeDisposable = vscode.window.onDidChangeTextEditorSelection(e => {
-                if (e.textEditor === activeEditor) {
-                  const cursorLine = e.selections[0].active.line;
-                  // If cursor moves away from the highlighted line, clear the highlight
-                  if (cursorLine !== lineIndex) {
-                    clearHighlight();
-                  }
-                }
-              });
-              
-              decorationDisposables.push(cursorChangeDisposable);
             }
           } catch (err) {
             console.error('Failed to navigate to line:', err);

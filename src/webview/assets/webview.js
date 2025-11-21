@@ -199,6 +199,11 @@ function renderWhitespace(text) {
     finalLines = cullWhitespaceLines(parsedLines);
   }
 
+  // Calculate line number offset if we're rendering a selection
+  const lineOffset = (currentSelectionRange && currentSelectionRange.startLine !== undefined) 
+    ? currentSelectionRange.startLine 
+    : 0;
+
   // Build HTML using a row-based layout to ensure perfect alignment with wrapping
   let html = '<div class="output-rows">';
   
@@ -214,8 +219,12 @@ function renderWhitespace(text) {
       
     // If line is empty, ensure it has height
     if (lineContent === '') lineContent = '<span class="whitespace-char space"> </span>';
-      
-    const lineNo = finalLines[i].lineNo !== null ? finalLines[i].lineNo : '&nbsp;';
+    
+    // Apply offset to line numbers for selection rendering
+    const rawLineNo = finalLines[i].lineNo;
+    const adjustedLineNo = rawLineNo !== null ? rawLineNo + lineOffset : null;
+    const displayLineNo = adjustedLineNo !== null ? adjustedLineNo : '&nbsp;';
+    
     // Use 6 distinct cycle colors, cycle-0 is default (no loop)
     // For loops, we want to start at cycle-1, so we use ((cycleId - 1) % 6) + 1
     const cycleClass = finalLines[i].cycleId > 0 ? `cycle-${((finalLines[i].cycleId - 1) % 6) + 1}` : 'cycle-0';
@@ -224,8 +233,12 @@ function renderWhitespace(text) {
     const isLastInGroup = (i === finalLines.length - 1) || (finalLines[i].cycleId !== finalLines[i + 1].cycleId);
     const groupEndClass = isLastInGroup && finalLines[i].cycleId > 0 ? 'cycle-group-end' : '';
     
-    html += `<div class="output-row ${cycleClass} ${groupEndClass}">
-              <div class="output-line-number">${lineNo}</div>
+    // Add data-line attribute for click handling (only if lineNo is valid)
+    // Use the adjusted line number for click handling
+    const lineAttr = adjustedLineNo !== null ? `data-line="${adjustedLineNo}"` : '';
+    
+    html += `<div class="output-row ${cycleClass} ${groupEndClass}" ${lineAttr}>
+              <div class="output-line-number">${displayLineNo}</div>
               <div class="output-line-content">${lineContent}</div>
             </div>`;
   }
@@ -1393,6 +1406,31 @@ variablesEditor.addEventListener('input', () => {
   }
   autoResizeVariablesSection();
   debouncedGhostSave();
+});
+
+// Add click handlers for output line navigation
+// Use event delegation on the output display
+outputDisplay.addEventListener('click', (e) => {
+  // Find the closest output-row
+  const row = e.target.closest('.output-row');
+  if (!row) return;
+  
+  const lineNumber = row.getAttribute('data-line');
+  if (!lineNumber || lineNumber === '') return;
+  
+  const line = parseInt(lineNumber, 10);
+  if (isNaN(line)) return;
+  
+  // Check if click was on line number area or line content
+  const isLineNumberClick = e.target.closest('.output-line-number') !== null;
+  
+  vscode.postMessage({
+    type: 'goToLine',
+    line: line,
+    fileUri: currentFileUri,
+    selectionRange: currentSelectionRange,
+    selectWholeLine: isLineNumberClick
+  });
 });
 
 // Panel mode: Toggle switches

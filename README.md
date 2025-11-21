@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.7.6-blue)
+![Version](https://img.shields.io/badge/version-1.7.7-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,16 +10,16 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.7.6
+## 🚀 What's New in v1.7.7
 
-### ✨ Accurate Line Number Gutter
-- **Source-Mapped Line Numbers**: Added precise line numbers to the default renderer output
-- **Smart Handling**: Correctly handles loops, includes, and whitespace culling
-- **Perfect Alignment**: Line numbers stay synchronized with wrapped content
-- **Dedicated Gutter**: Visual separation between line numbers and content
-- **Colored Loop Highlights**: Looped lines get highlighted to be distinguishable and see iterations.
+### ✨ Interactive Line Navigation
+- **Clickable Line Numbers**: Click any line in the output to navigate to that line in your template
+  - Click line number gutter: Selects the entire line
+  - Click line content: Moves cursor to that line
+  - Smart mapping for selection-based rendering
+- **Accurate Line Display**: Line numbers now correctly reflect actual file line numbers even when rendering selections
 
-> 💡 **Previous updates**: Mermaid Improvements (v1.7.5), stability fixes (v1.7.4), IntelliSense fixes (v1.7.3), and full IntelliSense system (v1.7.0)
+> 💡 **Previous updates**: Line Number Gutter (v1.7.6), Mermaid Improvements (v1.7.5), stability fixes (v1.7.4), and full IntelliSense system (v1.7.0)
 
 ---
 
@@ -329,6 +329,12 @@ All settings are now organized into clear categories for easier configuration:
 > **Note**: Old setting names (e.g., `liveJinjaRenderer.enableMarkdown`) still work for backwards compatibility.
 
 ## Recent Updates
+
+### 1.7.7 - Interactive Line Navigation 🖱️
+- **Clickable Line Numbers**: Click any line in output to navigate to your template
+- **Gutter Click**: Clicking line number gutter selects the entire line in editor
+- **Content Click**: Clicking line content moves cursor to that line
+- **Smart Line Mapping**: Line numbers now correctly reflect actual file line numbers even when rendering selections
 
 ### 1.7.6 - Accurate Line Number Gutter ✨
 - **Source-Mapped Line Numbers**: Added precise line numbers to the default renderer output

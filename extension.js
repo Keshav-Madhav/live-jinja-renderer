@@ -84,7 +84,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n✨ NEW: Accurate Line Number Gutter\n• Source-mapped line numbers\n• Works with loops & whitespace culling\n• Perfect alignment with wrapping`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n✨ NEW: Interactive Line Navigation\n• Click line numbers to select entire line\n• Click line content to move cursor\n• Accurate line numbers for selections`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

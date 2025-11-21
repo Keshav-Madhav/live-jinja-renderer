@@ -4,6 +4,19 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.7.7] - 2025-11-21
+
+### ✨ Added - Interactive Line Navigation
+- **Clickable Line Numbers**: Click on any line number in the output to navigate to that line in your template
+  - Click line number gutter: Selects the entire line in the editor
+  - Click line content: Moves cursor to that line
+  - Smart line number mapping for selection-based rendering
+  - Works seamlessly with loops and dynamic content
+- **Enhanced Line Display**: Line numbers now correctly reflect actual file line numbers even when rendering selections
+- **Improved Whitespace Visibility**: Increased whitespace symbol opacity for better visibility
+
+---
+
 ## [1.7.6] - 2025-11-21
 
 ### ✨ Added - Line Numbers
