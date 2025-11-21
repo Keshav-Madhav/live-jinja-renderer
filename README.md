@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.7.5-blue)
+![Version](https://img.shields.io/badge/version-1.7.6-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,30 +10,16 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.7.5
+## 🚀 What's New in v1.7.6
 
-### Syntax Highlighting Improvements 🎨
+### ✨ Accurate Line Number Gutter
+- **Source-Mapped Line Numbers**: Added precise line numbers to the default renderer output
+- **Smart Handling**: Correctly handles loops, includes, and whitespace culling
+- **Perfect Alignment**: Line numbers stay synchronized with wrapped content
+- **Dedicated Gutter**: Visual separation between line numbers and content
+- **Colored Loop Highlights**: Looped lines get highlighted to be distinguishable and see iterations.
 
-- **Array Methods Highlighting**: Array and string methods like `append()`, `split()`, `strip()`, etc. now display with proper method styling instead of gray italic function styling
-- **Mermaid Diagram Enhancements**: Improved node width constraints and text wrapping for better readability of complex diagrams
-
-> 💡 **Previous updates**: Stability fixes (v1.7.4), IntelliSense fixes (v1.7.3), syntax highlighting (v1.7.2), and full IntelliSense system (v1.7.0)
-
----
-
-## 🚀 What's New in v1.7.4
-
-### Bug Fixes 🐛
-
-Comprehensive stability improvements and bug fixes:
-
-- Fixed race conditions, memory leaks, and infinite loop risks
-- Extension suggestion buttons now work properly
-- Error button always visible regardless of rendering mode
-- New selections take priority when updating
-- Better error messages and validation throughout
-
-> 💡 **Previous updates**: IntelliSense fixes (v1.7.3), syntax highlighting (v1.7.2), and full IntelliSense system (v1.7.0)
+> 💡 **Previous updates**: Mermaid Improvements (v1.7.5), stability fixes (v1.7.4), IntelliSense fixes (v1.7.3), and full IntelliSense system (v1.7.0)
 
 ---
 
@@ -343,6 +329,24 @@ All settings are now organized into clear categories for easier configuration:
 > **Note**: Old setting names (e.g., `liveJinjaRenderer.enableMarkdown`) still work for backwards compatibility.
 
 ## Recent Updates
+
+### 1.7.6 - Accurate Line Number Gutter ✨
+- **Source-Mapped Line Numbers**: Added precise line numbers to the default renderer output
+- **Smart Handling**: Correctly handles loops, includes, and whitespace culling
+- **Perfect Alignment**: Line numbers stay synchronized with wrapped content
+- **Dedicated Gutter**: Visual separation between line numbers and content
+- **Colored Loop Highlights**: Looped lines get highlighted to be distinguishable and see iterations.
+
+### 1.7.5 - Mermaid Improvements 🎨
+- **Mermaid Diagram Enhancements**: Improved node width constraints and text wrapping for better readability
+- **Array Methods Styling**: Array and string methods like `append()`, `split()`, `strip()` now display with proper method styling
+
+### 1.7.4 - Stability & Bug Fixes 🐛
+- Fixed race conditions, memory leaks, and infinite loop risks
+- Extension suggestion buttons now work properly
+- Error button always visible regardless of rendering mode
+- New selections take priority when updating
+- Better error messages and validation throughout
 
 ### 1.7.3 - IntelliSense Bug Fixes
 - **Smart Filtering**: Autocomplete now filters by partial match (typing `{{ ad` only shows "address")

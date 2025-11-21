@@ -102,42 +102,134 @@ function hideLoading() {
   loadingIndicator.style.display = 'none';
 }
 
-function cullWhitespaceText(text) {
-  return text
-    .replace(/^[ \t]+$/gm, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/ {2,}/g, ' ')
-    .replace(/\t{2,}/g, '\t')
-    .replace(/\n[ \t]*\n[ \t]*\n/g, '\n\n');
+function parseOutputWithMarkers(text) {
+  const lines = text.split('\n');
+  const parsedLines = [];
+  let lastLineNo = null;
+  let cycleIndex = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    let lineContent = lines[i];
+    let lineNo = lastLineNo;
+
+    // Check for Cycle marker
+    if (lineContent.includes('\x00C\x00')) {
+      cycleIndex++;
+      lineContent = lineContent.replace(/\x00C\x00/g, '');
+    }
+
+    // Check for Reset marker
+    if (lineContent.includes('\x00R\x00')) {
+      cycleIndex = 0;
+      lineContent = lineContent.replace(/\x00R\x00/g, '');
+    }
+
+    // Extract all markers in the line
+    const markerRegex = /\x00L:(\d+)\x00/g;
+    let match;
+    while ((match = markerRegex.exec(lineContent)) !== null) {
+      lineNo = parseInt(match[1], 10);
+    }
+
+    // Remove markers from content
+    const cleanContent = lineContent.replace(/\x00L:\d+\x00/g, '');
+
+    // If this is a new line and we found a marker, update tracking
+    if (lineNo !== null) {
+      lastLineNo = lineNo;
+    }
+
+    parsedLines.push({
+      text: cleanContent,
+      lineNo: lineNo,
+      cycleId: cycleIndex
+    });
+  }
+
+  return parsedLines;
+}
+
+function stripMarkers(text) {
+  return text.replace(/\x00L:\d+\x00/g, '').replace(/\x00C\x00/g, '').replace(/\x00R\x00/g, '');
+}
+
+function cullWhitespaceLines(parsedLines) {
+  // 1. Trim individual lines (replace multiple spaces with single space, etc.)
+  // And mark empty lines
+  let processedLines = parsedLines.map(line => {
+    let newText = line.text
+      .replace(/ {2,}/g, ' ')
+      .replace(/\t{2,}/g, '\t');
+    
+    // Check if purely whitespace
+    if (/^[ \t]*$/.test(newText)) {
+      newText = ''; // Mark as empty
+    }
+    
+    return { ...line, text: newText };
+  });
+
+  // 2. Collapse multiple empty lines (max 2 newlines = 1 empty line between text)
+  const result = [];
+  let emptyCount = 0;
+
+  for (let i = 0; i < processedLines.length; i++) {
+    const line = processedLines[i];
+    
+    if (line.text === '') {
+      emptyCount++;
+      if (emptyCount <= 1) {
+        result.push(line);
+      }
+      // Else skip
+    } else {
+      emptyCount = 0;
+      result.push(line);
+    }
+  }
+
+  return result;
 }
 
 function renderWhitespace(text) {
-  const escapedText = text.replace(/&/g, '&amp;')
-                          .replace(/</g, '&lt;')
-                          .replace(/>/g, '&gt;')
-                          .replace(/"/g, '&quot;')
-                          .replace(/'/g, '&#039;');
-
-  // Split into lines
-  const lines = escapedText.split('\n');
-  // Try to get template line numbers from global (set before render)
-  let templateLineNumbers = window._templateLineNumbers;
-  if (!Array.isArray(templateLineNumbers) || templateLineNumbers.length !== lines.length) {
-    // Fallback: just use 1..N
-    templateLineNumbers = Array.from({length: lines.length}, (_, i) => i + 1);
+  const parsedLines = parseOutputWithMarkers(text);
+  
+  let finalLines = parsedLines;
+  if (cullWhitespace) {
+    finalLines = cullWhitespaceLines(parsedLines);
   }
 
-  // Build HTML with gutter
-  let html = '<div class="output-gutter-container">';
-  html += '<div class="output-gutter">' + templateLineNumbers.map(n => `<span class="output-gutter-line">${n}</span>`).join('') + '</div>';
-  html += '<div class="output-lines">';
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i]
+  // Build HTML using a row-based layout to ensure perfect alignment with wrapping
+  let html = '<div class="output-rows">';
+  
+  for (let i = 0; i < finalLines.length; i++) {
+    let lineContent = finalLines[i].text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
       .replace(/ /g, '<span class="whitespace-char space"> </span>')
       .replace(/\t/g, '<span class="whitespace-char tab">\t</span>');
-    html += `<div class="output-line"><span class="output-line-inner">${line}</span></div>`;
+      
+    // If line is empty, ensure it has height
+    if (lineContent === '') lineContent = '<span class="whitespace-char space"> </span>';
+      
+    const lineNo = finalLines[i].lineNo !== null ? finalLines[i].lineNo : '&nbsp;';
+    // Use 6 distinct cycle colors, cycle-0 is default (no loop)
+    // For loops, we want to start at cycle-1, so we use ((cycleId - 1) % 6) + 1
+    const cycleClass = finalLines[i].cycleId > 0 ? `cycle-${((finalLines[i].cycleId - 1) % 6) + 1}` : 'cycle-0';
+    
+    // Check if this is the last line in a cycle group (next line has different cycleId or is last line)
+    const isLastInGroup = (i === finalLines.length - 1) || (finalLines[i].cycleId !== finalLines[i + 1].cycleId);
+    const groupEndClass = isLastInGroup && finalLines[i].cycleId > 0 ? 'cycle-group-end' : '';
+    
+    html += `<div class="output-row ${cycleClass} ${groupEndClass}">
+              <div class="output-line-number">${lineNo}</div>
+              <div class="output-line-content">${lineContent}</div>
+            </div>`;
   }
-  html += '</div></div>';
+  html += '</div>';
   return html;
 }
 
@@ -729,6 +821,97 @@ import json
 import traceback
 import re
 
+# Custom AST Node Visitor to inject line number markers
+class LineNumberInjector:
+    def __init__(self):
+        self.parent_map = {}
+        
+    def build_parent_map(self, node, parent=None):
+        """Build a map of child -> parent relationships"""
+        self.parent_map[id(node)] = parent
+        for field, value in node.iter_fields():
+            if isinstance(value, list):
+                for item in value:
+                    if isinstance(item, jinja2.nodes.Node):
+                        self.build_parent_map(item, node)
+            elif isinstance(value, jinja2.nodes.Node):
+                self.build_parent_map(value, node)
+    
+    def visit(self, node):
+        # Check for specific node types to handle
+        if isinstance(node, jinja2.nodes.For):
+            self.visit_For(node)
+            
+        self.generic_visit(node)
+
+    def visit_For(self, node):
+        # Inject a special marker at start of loop body to track iterations
+        if hasattr(node, 'body') and isinstance(node.body, list):
+            marker = jinja2.nodes.TemplateData("\\x00C\\x00", lineno=node.lineno)
+            marker_node = jinja2.nodes.Output([marker], lineno=node.lineno)
+            node.body.insert(0, marker_node)
+        
+        # Find parent and insert reset marker after this For node
+        parent = self.parent_map.get(id(node))
+        if parent:
+            # Try to find this node in parent's body or nodes list
+            for field_name in ['body', 'nodes']:
+                if hasattr(parent, field_name):
+                    node_list = getattr(parent, field_name)
+                    if isinstance(node_list, list) and node in node_list:
+                        idx = node_list.index(node)
+                        reset_marker = jinja2.nodes.TemplateData("\\x00R\\x00", lineno=node.lineno)
+                        reset_marker_node = jinja2.nodes.Output([reset_marker], lineno=node.lineno)
+                        node_list.insert(idx + 1, reset_marker_node)
+                        break
+
+    def generic_visit(self, node):
+        # Process all list fields that might contain nodes
+        for field, value in node.iter_fields():
+            if isinstance(value, list):
+                for item in value:
+                    if isinstance(item, jinja2.nodes.Node):
+                        self.visit(item)
+            elif isinstance(value, jinja2.nodes.Node):
+                self.visit(value)
+                
+        # Special handling for Output nodes to inject markers
+        if isinstance(node, jinja2.nodes.Output):
+            new_nodes = []
+            for child in node.nodes:
+                # Handle TemplateData (static text)
+                if isinstance(child, jinja2.nodes.TemplateData):
+                    # Split by newline to handle multi-line static text
+                    # We need to be careful to preserve exact content while injecting markers
+                    lines = child.data.split('\\n')
+                    start_line = child.lineno
+                    
+                    for i, line in enumerate(lines):
+                        # Calculate current line number (approximate for multi-line strings)
+                        current_lineno = start_line + i
+                        
+                        # Add marker for this line
+                        marker = f"\\x00L:{current_lineno}\\x00"
+                        new_nodes.append(jinja2.nodes.TemplateData(marker, lineno=current_lineno))
+                        
+                        # Add the text content
+                        new_nodes.append(jinja2.nodes.TemplateData(line, lineno=current_lineno))
+                        
+                        # Add newline if it's not the last part
+                        if i < len(lines) - 1:
+                            new_nodes.append(jinja2.nodes.TemplateData('\\n', lineno=current_lineno))
+                            
+                # Handle other nodes (Variables, Expressions)
+                else:
+                    # Add marker before the node if it has a line number
+                    if hasattr(child, 'lineno'):
+                        marker = f"\\x00L:{child.lineno}\\x00"
+                        new_nodes.append(jinja2.nodes.TemplateData(marker, lineno=child.lineno))
+                    new_nodes.append(child)
+            
+            # Replace the nodes list
+            node.nodes = new_nodes
+
 try:
     template_str = """${escapedTemplate}"""
     context_str = """${escapedContext}"""
@@ -775,8 +958,18 @@ try:
     except Exception as ext_error:
         raise Exception(f"Failed to load extensions: {str(ext_error)}\\\\n\\\\nExtensions requested: {extensions}")
     
-    # Create template from string
-    template = env.from_string(template_str)
+    # Parse AST first
+    parsed_content = env.parse(template_str)
+    
+    # Inject line number markers
+    injector = LineNumberInjector()
+    injector.build_parent_map(parsed_content)
+    injector.visit(parsed_content)
+    
+    # Compile and render
+    code = env.compile(parsed_content, filename="<template>")
+    template = jinja2.Template.from_code(env, code, env.globals, None)
+    
     context = json.loads(context_str)
     result = template.render(context)
 except jinja2.exceptions.TemplateSyntaxError as e:
@@ -866,8 +1059,21 @@ result
     }
     
     let processedResult = result;
-    if (cullWhitespace) {
-      processedResult = cullWhitespaceText(result);
+    // If cullWhitespace is on, we handle it inside renderWhitespace for normal mode
+    // But for markdown/mermaid, we need to strip markers and maybe cull?
+    
+    if (isMermaidMode || isMarkdownMode) {
+        // Strip markers first
+        processedResult = stripMarkers(result);
+        if (cullWhitespace) {
+            // Use the old text-based culling for markdown/mermaid
+             processedResult = processedResult
+                .replace(/^[ \t]+$/gm, '')
+                .replace(/\n{3,}/g, '\n\n')
+                .replace(/ {2,}/g, ' ')
+                .replace(/\t{2,}/g, '\t')
+                .replace(/\n[ \t]*\n[ \t]*\n/g, '\n\n');
+        }
     }
     
     lastRenderedOutput = processedResult;
@@ -884,30 +1090,70 @@ result
       outputDisplay.style.display = 'block';
       markdownOutput.style.display = 'none';
       
-      const isError = processedResult.includes('❌') || 
-                     processedResult.includes('Error:') || 
-                     processedResult.includes('Error on') ||
-                     processedResult.includes('Error\n');
+      // Clean result for error checking
+      const cleanResult = stripMarkers(result);
+      const isError = cleanResult.includes('❌') || 
+                     cleanResult.includes('Error:') || 
+                     cleanResult.includes('Error on') ||
+                     cleanResult.includes('Error\n');
       
       if (showWhitespace) {
-        outputDisplay.innerHTML = renderWhitespace(processedResult);
+        // renderWhitespace now handles parsing markers and culling
+        outputDisplay.innerHTML = renderWhitespace(result);
         if (isError) {
           outputDisplay.classList.add('error');
           updateErrorButton(outputDisplay);
         } else {
           outputDisplay.classList.remove('error');
-          // Hide error button when there's no error
           const errorButton = document.getElementById('error-goto-button');
           if (errorButton) errorButton.style.display = 'none';
         }
       } else {
-        outputDisplay.textContent = processedResult;
+        // For no-whitespace mode, we still use renderWhitespace but maybe CSS hides symbols?
+        // Actually, existing logic used textContent.
+        // We should probably use renderWhitespace but hide the whitespace symbols via CSS or class?
+        // But the request is "show line numbers" which is part of renderWhitespace.
+        // The "Show Whitespace" toggle usually toggles the visible dots/arrows.
+        // So we should use renderWhitespace for both cases, but toggle a class on the container.
+        
+        // Wait, previous implementation:
+        /*
+        if (showWhitespace) {
+            outputDisplay.innerHTML = renderWhitespace(processedResult);
+        } else {
+            outputDisplay.textContent = processedResult;
+        }
+        */
+        // The user wants line numbers in "default renderer".
+        // So we should use the HTML structure with gutter even if showWhitespace is false.
+        // We just won't replace spaces with spans?
+        
+        // Let's modify renderWhitespace to take a flag? Or just update styles?
+        // The current renderWhitespace replaces spaces with spans.
+        // I'll use renderWhitespace for both, but passing a flag or relying on CSS.
+        // But renderWhitespace is hardcoded to inject spans.
+        
+        // I'll reuse renderWhitespace but if showWhitespace is false, I won't replace spaces with visible spans.
+        // Actually I can just let it render with spans, and CSS can hide the background/color of spans.
+        // But simpler to just use the same structure.
+        
+        outputDisplay.innerHTML = renderWhitespace(result);
+        
+        if (!showWhitespace) {
+             // Remove the visible whitespace styling
+             const spaces = outputDisplay.querySelectorAll('.whitespace-char');
+             spaces.forEach(s => {
+                 s.classList.remove('whitespace-char');
+                 if (s.classList.contains('space')) s.innerHTML = ' ';
+                 if (s.classList.contains('tab')) s.innerHTML = '\t';
+             });
+        }
+        
         if (isError) {
           outputDisplay.classList.add('error');
           updateErrorButton(outputDisplay);
         } else {
           outputDisplay.classList.remove('error');
-          // Hide error button when there's no error
           const errorButton = document.getElementById('error-goto-button');
           if (errorButton) errorButton.style.display = 'none';
         }

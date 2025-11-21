@@ -4,6 +4,19 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.7.6] - 2025-11-21
+
+### ✨ Added - Line Numbers
+- **Accurate Line Number Gutter**: Added source-mapped line numbers to the default renderer output
+  - Line numbers perfectly match the Jinja template source lines
+  - Handles loops correctly (repeats line numbers for repeated output)
+  - Skips culled whitespace lines in the numbering
+  - Works with includes, macros, and complex control structures
+  - Displays in a dedicated gutter on the left side of the output
+  - Visual separation between line numbers and content
+
+---
+
 ## [1.7.5] - 2025-11-18
 
 ### 🎨 Syntax Highlighting Improvements

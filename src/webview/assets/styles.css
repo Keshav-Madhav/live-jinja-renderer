@@ -402,45 +402,44 @@ textarea:focus {
   background: transparent;
 }
 
-.output-gutter-container {
+.output-rows {
   display: flex;
-  align-items: flex-start;
-  width: 100%;
+  flex-direction: column;
+  min-width: 100%;
   min-height: 100%;
-  background: transparent;
 }
-.output-gutter {
+
+.output-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch; /* Ensure both columns stretch to full height */
+  min-height: 1.6em;
+  line-height: 1.6em;
+  font-family: var(--vscode-editor-font-family);
+}
+
+.output-line-number {
   user-select: none;
   background: var(--vscode-editorGutter-background, #23272e);
   color: var(--vscode-editorLineNumber-foreground, #6a6a6a);
-  padding: 12px 8px 12px 0;
+  padding: 0 8px 0 0;
   text-align: right;
   font-size: 0.95em;
   min-width: 36px;
   border-right: 1px solid var(--vscode-editorWidget-border);
-  height: 100%;
+  flex-shrink: 0;
+  /* Center text vertically relative to line-height if needed, but flex does it well */
 }
-.output-gutter-line {
-  display: block;
-  height: 1.6em;
-  line-height: 1.6em;
-  font-family: var(--vscode-editor-font-family);
-  opacity: 0.7;
-}
-.output-lines {
+
+.output-line-content {
   flex: 1;
-  padding: 12px;
-  min-width: 0;
-}
-.output-line {
-  display: flex;
-  align-items: flex-start;
-  min-height: 1.6em;
-  line-height: 1.6em;
-  font-family: var(--vscode-editor-font-family);
+  padding: 0 12px;
   white-space: pre-wrap;
   word-break: break-word;
+  min-width: 0; /* Allow shrinking for wrapping */
+  font-family: var(--vscode-editor-font-family);
 }
+
 .output-line-inner {
   display: inline-block;
   width: 100%;
@@ -809,6 +808,82 @@ textarea:focus {
   color: var(--vscode-debugTokenExpression-name);
   font-weight: 600;
 }
+
+/* Loop Cycle Highlighting - Applied to line numbers only */
+/* cycle-0 is default (no extra styling for non-loop lines) */
+
+.output-row.cycle-1 .output-line-number {
+  background-color: rgba(100, 149, 237, 0.15); /* CornflowerBlue - more muted */
+  border-right-color: rgba(100, 149, 237, 0.4);
+  color: var(--vscode-editorLineNumber-activeForeground); /* Less muted text */
+  opacity: 1;
+}
+
+.output-row.cycle-2 .output-line-number {
+  background-color: rgba(60, 179, 113, 0.15); /* MediumSeaGreen - more muted */
+  border-right-color: rgba(60, 179, 113, 0.4);
+  color: var(--vscode-editorLineNumber-activeForeground);
+  opacity: 1;
+}
+
+.output-row.cycle-3 .output-line-number {
+  background-color: rgba(147, 112, 219, 0.15); /* MediumPurple - more muted */
+  border-right-color: rgba(147, 112, 219, 0.4);
+  color: var(--vscode-editorLineNumber-activeForeground);
+  opacity: 1;
+}
+
+.output-row.cycle-4 .output-line-number {
+  background-color: rgba(255, 165, 0, 0.15); /* Orange - more muted */
+  border-right-color: rgba(255, 165, 0, 0.4);
+  color: var(--vscode-editorLineNumber-activeForeground);
+  opacity: 1;
+}
+
+.output-row.cycle-5 .output-line-number {
+  background-color: rgba(220, 20, 60, 0.15); /* Crimson - more muted */
+  border-right-color: rgba(220, 20, 60, 0.4);
+  color: var(--vscode-editorLineNumber-activeForeground);
+  opacity: 1;
+}
+
+.output-row.cycle-6 .output-line-number {
+  background-color: rgba(64, 224, 208, 0.15); /* Turquoise - more muted */
+  border-right-color: rgba(64, 224, 208, 0.4);
+  color: var(--vscode-editorLineNumber-activeForeground);
+  opacity: 1;
+}
+
+/* Border at the end of each cycle group */
+.output-row.cycle-group-end.cycle-1 .output-line-number {
+  border-bottom: 1px solid rgba(100, 149, 237, 0.35);
+}
+
+.output-row.cycle-group-end.cycle-2 .output-line-number {
+  border-bottom: 1px solid rgba(60, 179, 113, 0.35);
+}
+
+.output-row.cycle-group-end.cycle-3 .output-line-number {
+  border-bottom: 1px solid rgba(147, 112, 219, 0.35);
+}
+
+.output-row.cycle-group-end.cycle-4 .output-line-number {
+  border-bottom: 1px solid rgba(255, 165, 0, 0.35);
+}
+
+.output-row.cycle-group-end.cycle-5 .output-line-number {
+  border-bottom: 1px solid rgba(220, 20, 60, 0.35);
+}
+
+.output-row.cycle-group-end.cycle-6 .output-line-number {
+  border-bottom: 1px solid rgba(64, 224, 208, 0.35);
+}
+
+/* Ensure hover effects or selection still work if needed */
+.output-row {
+  transition: background-color 0.1s ease;
+}
+
 
 .jinja-statement {
   color: var(--vscode-debugTokenExpression-string);

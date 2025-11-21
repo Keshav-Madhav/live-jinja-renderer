@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.7.5",
+  "version": "1.7.6",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
