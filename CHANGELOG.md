@@ -4,6 +4,20 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.7.8] - 2025-11-23
+
+### 🎨 UI Improvements - Space Optimization
+- **Reduced Spacing**: Optimized padding, margins, and gaps throughout the interface for a more compact layout
+  - Tightened container, header, control, and content spacing
+  - Reduced textarea, output, footer, and template section padding
+  - Minimized margins in markdown content, lists, tables, and diagrams
+  - Result: ~25-40% reduction in whitespace while maintaining readability
+- **Removed Header Borders**: Cleaner look by removing dividing lines between section headers and content
+- **Sidebar Background**: Sidebar now uses the appropriate darker VS Code sidebar background color
+- **Panel Optimization**: File name display hidden in panel mode to save space
+
+---
+
 ## [1.7.7] - 2025-11-21
 
 ### ✨ Added - Interactive Line Navigation

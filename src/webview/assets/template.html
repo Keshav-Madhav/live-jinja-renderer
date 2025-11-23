@@ -19,7 +19,7 @@
     {{STYLES}}
 </head>
 <body>
-    <div id="loading-indicator" style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: var(--vscode-notifications-background); color: var(--vscode-notifications-foreground); padding: 6px 12px; border: 1px solid var(--vscode-notifications-border); border-radius: 2px; z-index: 1000; font-size: 11px; display: none;">Loading...</div>
+    <div id="loading-indicator" style="position: absolute; top: 8px; left: 50%; transform: translateX(-50%); background: var(--vscode-notifications-background); color: var(--vscode-notifications-foreground); padding: 4px 8px; border: 1px solid var(--vscode-notifications-border); border-radius: 2px; z-index: 1000; font-size: 11px; display: none;">Loading...</div>
     
     <div class="container">
         <div class="file-name-display" id="file-name-display">
@@ -63,7 +63,7 @@
                     {{AUTO_RERENDER_TOGGLE}}
                 </div>
             </div>
-            <div class="extensions-indicator" id="extensions-indicator" style="display: none; font-size: 11px; padding: 4px 8px; margin: 0 0 8px 0; background: var(--vscode-editor-inactiveSelectionBackground); border-left: 2px solid var(--vscode-activityBarBadge-background); color: var(--vscode-descriptionForeground); cursor: pointer;" title="Click to configure extensions">
+            <div class="extensions-indicator" id="extensions-indicator" style="display: none; font-size: 11px; padding: 3px 6px; margin: 0 0 4px 0; background: var(--vscode-editor-inactiveSelectionBackground); border-left: 2px solid var(--vscode-activityBarBadge-background); color: var(--vscode-descriptionForeground); cursor: pointer;" title="Click to configure extensions">
                 <i class="codicon codicon-extensions" style="font-size: 12px; margin-right: 4px;"></i>
                 <span id="extensions-list"></span>
             </div>
@@ -72,16 +72,16 @@
                 <pre id="output"></pre>
                 <div id="markdown-output" style="display: none;"></div>
             </div>
-            <div class="performance-metrics" id="performance-metrics" style="display: none; font-size: 11px; padding: 6px 10px; margin: 8px 0 0 0; background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border); border-radius: 3px; color: var(--vscode-descriptionForeground);">
+            <div class="performance-metrics" id="performance-metrics" style="display: none; font-size: 11px; padding: 4px 8px; margin: 4px 0 0 0; background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border); border-radius: 3px; color: var(--vscode-descriptionForeground);">
                 <i class="codicon codicon-pulse" style="font-size: 12px; margin-right: 4px;"></i>
                 <span id="performance-text">Render time: 0ms</span>
             </div>
-            <div class="extension-suggestions" id="extension-suggestions" style="display: none; font-size: 11px; padding: 8px 10px; margin: 8px 0 0 0; background: var(--vscode-inputValidation-infoBackground); border-left: 3px solid var(--vscode-inputValidation-infoBorder); border-radius: 2px;">
-                <div style="margin-bottom: 6px; color: var(--vscode-inputValidation-infoForeground); font-weight: 500;">
+            <div class="extension-suggestions" id="extension-suggestions" style="display: none; font-size: 11px; padding: 6px 8px; margin: 4px 0 0 0; background: var(--vscode-inputValidation-infoBackground); border-left: 3px solid var(--vscode-inputValidation-infoBorder); border-radius: 2px;">
+                <div style="margin-bottom: 4px; color: var(--vscode-inputValidation-infoForeground); font-weight: 500;">
                     <i class="codicon codicon-lightbulb" style="font-size: 12px; margin-right: 4px;"></i>
                     Suggested Extensions:
                 </div>
-                <div id="extension-suggestions-list" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+                <div id="extension-suggestions-list" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
             </div>
             {{OUTPUT_FOOTER}}
         </div>

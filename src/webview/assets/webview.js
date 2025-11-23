@@ -57,6 +57,13 @@ let pyodide = null;
 let isInitialized = false;
 let messageQueue = []; // Queue for messages received before initialization
 
+// Set body class based on mode for styling
+if (isSidebarMode) {
+  document.body.classList.add('sidebar-mode');
+} else {
+  document.body.classList.add('panel-mode');
+}
+
 // Get controls based on mode
 let markdownToggle, mermaidToggle, showWhitespaceToggle, cullWhitespaceToggle;
 let copyOutputBtn, rerenderBtnPanel, reextractVariablesBtn;
