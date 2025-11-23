@@ -1,0 +1,45 @@
+{
+  "page_title": "My Dashboard",
+  "user": {
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "is_premium": true
+  },
+  "orders": [
+    {
+      "id": 1001,
+      "status": "Delivered",
+      "items": [
+        {
+          "name": "Widget A",
+          "price": 29.99,
+          "quantity": 2
+        },
+        {
+          "name": "Widget B",
+          "price": 19.99,
+          "quantity": 1
+        }
+      ],
+      "total": 79.97
+    },
+    {
+      "id": 1002,
+      "status": "Processing",
+      "items": [
+        {
+          "name": "Gadget X",
+          "price": 49.99,
+          "quantity": 1
+        }
+      ],
+      "total": 49.99
+    }
+  ],
+  "current_year": 2025,
+  "company": {
+    "name": "Example Corp",
+    "email": "support@example.com"
+  }
+}
+

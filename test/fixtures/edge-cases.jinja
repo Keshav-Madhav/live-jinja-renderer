@@ -1,0 +1,146 @@
+{# Edge Cases Template for Testing #}
+
+{# Unicode Variables #}
+{{ 名前 }} {{ émoji }} {{ пример }}
+
+{# Very Long Variable Names #}
+{{ this_is_an_extremely_long_variable_name_that_might_cause_issues_if_not_handled_properly }}
+
+{# Deeply Nested Objects #}
+{{ level1.level2.level3.level4.level5.level6.level7.level8.value }}
+
+{# Complex Filters #}
+{{ text | upper | truncate(50) | replace('old', 'new') | trim }}
+
+{# Multiple Loop Levels #}
+{% for category in categories %}
+    {% for product in category.products %}
+        {% for variant in product.variants %}
+            {{ category.name }} > {{ product.name }} > {{ variant.sku }}
+        {% endfor %}
+    {% endfor %}
+{% endfor %}
+
+{# Conditional Chains #}
+{% if condition1 %}
+    {% if condition2 %}
+        {% if condition3 %}
+            {{ deeply_nested_value }}
+        {% endif %}
+    {% endif %}
+{% endif %}
+
+{# Mixed Quotation Marks #}
+{{ name | replace('old"value', "new'value") }}
+
+{# Array Slicing #}
+{{ items[0] }}
+{{ items[1:5] }}
+{{ items[:-1] }}
+{{ items[::2] }}
+
+{# Dictionary Methods #}
+{% for key, value in config.items() %}
+    {{ key }}: {{ value }}
+{% endfor %}
+
+{# Macro Definition #}
+{% macro render_user(user) %}
+    <div class="user">
+        <h3>{{ user.name }}</h3>
+        <p>{{ user.email }}</p>
+    </div>
+{% endmacro %}
+
+{{ render_user(current_user) }}
+
+{# Template Inheritance #}
+{% extends "base.html" %}
+
+{% block title %}
+    {{ page_title }} - {{ site_name }}
+{% endblock %}
+
+{% block content %}
+    {{ content | safe }}
+{% endblock %}
+
+{# Include Statement #}
+{% include "header.html" %}
+
+{# With Block #}
+{% with total = items | length %}
+    Total items: {{ total }}
+{% endwith %}
+
+{# Loop Controls (if extension enabled) #}
+{% for item in items %}
+    {% if item.skip %}
+        {% continue %}
+    {% endif %}
+    {% if item.stop %}
+        {% break %}
+    {% endif %}
+    {{ item.name }}
+{% endfor %}
+
+{# Do Statement (if extension enabled) #}
+{% do navigation.append('Home') %}
+
+{# Trans Block (if i18n extension enabled) #}
+{% trans %}Hello {{ user.name }}!{% endtrans %}
+
+{# Debug Statement (if debug extension enabled) #}
+{% debug %}
+
+{# Whitespace Control #}
+{{- variable -}}
+{%- if condition -%}
+    trimmed
+{%- endif -%}
+
+{# Raw Blocks #}
+{% raw %}
+    {{ this_is_not_processed }}
+{% endraw %}
+
+{# Set Variables #}
+{% set calculated = value * 2 + 10 %}
+{{ calculated }}
+
+{# Filter Block #}
+{% filter upper %}
+    This text will be uppercase
+{% endfilter %}
+
+{# Call Block #}
+{% call(item) render_list(items) %}
+    {{ item }}
+{% endcall %}
+
+{# Recursive Macro #}
+{% macro render_tree(node) %}
+    <li>{{ node.name }}
+        {% if node.children %}
+            <ul>
+            {% for child in node.children %}
+                {{ render_tree(child) }}
+            {% endfor %}
+            </ul>
+        {% endif %}
+    </li>
+{% endmacro %}
+
+{# Complex Expression #}
+{{ (value1 + value2) * value3 if condition else default_value | int }}
+
+{# Ternary in Filter #}
+{{ value | default(fallback if has_fallback else default_fallback) }}
+
+{# Namespace #}
+{% set ns = namespace(counter=0) %}
+{% for item in items %}
+    {% set ns.counter = ns.counter + 1 %}
+{% endfor %}
+Total: {{ ns.counter }}
+

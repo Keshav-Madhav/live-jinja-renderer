@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ page_title }}</title>
+</head>
+<body>
+    <header>
+        <h1>Welcome, {{ user.name }}!</h1>
+        <p>Email: {{ user.email }}</p>
+    </header>
+
+    <main>
+        {% if user.is_premium %}
+            <div class="premium-badge">Premium Member</div>
+        {% endif %}
+
+        <h2>Your Orders</h2>
+        <ul>
+        {% for order in orders %}
+            <li>
+                Order #{{ order.id }} - {{ order.status }}
+                <ul>
+                {% for item in order.items %}
+                    <li>{{ item.name }} - ${{ item.price }} x {{ item.quantity }}</li>
+                {% endfor %}
+                </ul>
+                Total: ${{ order.total }}
+            </li>
+        {% endfor %}
+        </ul>
+
+        {% if orders | length == 0 %}
+            <p>No orders yet.</p>
+        {% endif %}
+    </main>
+
+    <footer>
+        <p>&copy; {{ current_year }} {{ company.name }}</p>
+        <p>Contact: {{ company.email }}</p>
+    </footer>
+</body>
+</html>
+

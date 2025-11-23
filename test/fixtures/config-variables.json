@@ -1,0 +1,46 @@
+{
+  "db": {
+    "host": "localhost",
+    "port": 5432,
+    "username": "admin",
+    "name": "production_db"
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "workers": 4,
+    "debug": false
+  },
+  "features": [
+    {
+      "name": "authentication",
+      "enabled": true
+    },
+    {
+      "name": "analytics",
+      "enabled": true
+    },
+    {
+      "name": "beta_features",
+      "enabled": false
+    }
+  ],
+  "api_endpoints": [
+    {
+      "name": "users",
+      "url": "/api/v1/users"
+    },
+    {
+      "name": "products",
+      "url": "/api/v1/products"
+    },
+    {
+      "name": "orders",
+      "url": "/api/v1/orders"
+    }
+  ],
+  "environment": "production",
+  "version": "1.0.0",
+  "timestamp": "2025-11-23T10:30:00Z"
+}
+
