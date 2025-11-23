@@ -385,6 +385,11 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
               intelliSenseManager.updateVariables(variables);
             }
             
+            // Notify detached panels about variable updates
+            if (fileUri) {
+                vscode.commands.executeCommand('live-jinja-tester.notifyDetached', fileUri, variables);
+            }
+            
             if (fileUri) {
               // Get existing ghost variables
               const ghostVariables = context.workspaceState.get('jinjaGhostVariables', {});
@@ -405,6 +410,21 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
           }
           return;
         
+        case 'detachOutput':
+          // Open a detached output window
+          try {
+            const fileUri = message.fileUri;
+            const variables = message.variables;
+            
+            if (fileUri) {
+                vscode.commands.executeCommand('live-jinja-tester.openDetached', fileUri, variables);
+            }
+          } catch (err) {
+            vscode.window.showErrorMessage('Failed to detach output window');
+            console.error('Detach failed:', err);
+          }
+          return;
+
         case 'requestVariablesForExport':
           // Handle export request from webview
           try {

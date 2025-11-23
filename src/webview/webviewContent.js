@@ -6,9 +6,10 @@ const path = require('path');
  * Version 1.4.5 - Refactored to use separate HTML, CSS, and JS files for better readability
  * 
  * @param {boolean} isSidebar - Whether this is for sidebar or panel view
+ * @param {boolean} isDetached - Whether this is a detached output window
  * @returns {string} Complete HTML content for the webview
  */
-function getWebviewContent(isSidebar = false) {
+function getWebviewContent(isSidebar = false, isDetached = false) {
   // Read the separate files
   const templatePath = path.join(__dirname, 'assets', 'template.html');
   const stylesPath = path.join(__dirname, 'assets', 'styles.css');
@@ -87,7 +88,9 @@ function getWebviewContent(isSidebar = false) {
   template = template.replace('{{OUTPUT_FOOTER}}', outputFooter);
   
   // Replace IS_SIDEBAR placeholder in script
-  const processedScript = script.replace('"__IS_SIDEBAR_PLACEHOLDER__"', isSidebar.toString());
+  let processedScript = script.replace('"__IS_SIDEBAR_PLACEHOLDER__"', isSidebar.toString());
+  processedScript = processedScript.replace('"__IS_DETACHED_PLACEHOLDER__"', isDetached.toString());
+  
   template = template.replace('{{SCRIPT}}', `<script>\n${processedScript}\n</script>`);
   
   return template;

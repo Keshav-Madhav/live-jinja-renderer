@@ -4,6 +4,27 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.8.0] - 2025-11-24
+
+### 🚀 Major New Feature - Detached Output Window
+- **Detached Output Mode**: Click the detach button (next to rerender) to open output in a separate editor pane
+  - Clean, isolated output window without UI clutter (no headers, controls, or footer)
+  - Perfect for dual-monitor setups or side-by-side viewing
+  - Live updates from both template and variable changes (300ms debounce for responsiveness)
+  - Main window automatically hides output section when detached, expanding variables to full height
+  - Output section restores when detached window is closed
+  - Automatically closes detached windows when main renderer (sidebar/panel) is closed
+- **Synchronized Rendering**: Both main and detached windows update in real-time
+  - Template changes trigger instant updates in detached output
+  - Variable edits sync to detached window with minimal delay
+  - Multiple detached windows supported (one per file)
+
+### 🎯 Performance Improvements
+- **Faster Variable Sync**: Reduced ghost save debounce from 1000ms to 300ms for near-instant detached updates
+- **Efficient Communication**: Smart message routing between main and detached windows
+
+---
+
 ## [1.7.8] - 2025-11-23
 
 ### 🎨 UI Improvements - Space Optimization

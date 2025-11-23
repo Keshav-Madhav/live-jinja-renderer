@@ -6,6 +6,7 @@
 // Global variables
 const vscode = acquireVsCodeApi();
 const isSidebarMode = "__IS_SIDEBAR_PLACEHOLDER__";
+const isDetachedMode = "__IS_DETACHED_PLACEHOLDER__";
 
 // DOM Elements
 const variablesEditor = /** @type {HTMLTextAreaElement} */ (document.getElementById('variables'));
@@ -62,6 +63,10 @@ if (isSidebarMode) {
   document.body.classList.add('sidebar-mode');
 } else {
   document.body.classList.add('panel-mode');
+}
+
+if (isDetachedMode) {
+    document.body.classList.add('detached-mode');
 }
 
 // Get controls based on mode
@@ -800,13 +805,16 @@ async function update() {
   const template = currentTemplate;
   let context;
 
+  // In detached mode, variablesEditor might be hidden but still exists
   try {
     context = JSON.parse(variablesEditor.value || '{}');
   } catch (e) {
-    outputDisplay.textContent = `Error in variables:\n${e.message}`;
-    outputDisplay.classList.add('error');
-    outputDisplay.style.display = 'block';
-    markdownOutput.style.display = 'none';
+    if (!isDetachedMode) {
+      outputDisplay.textContent = `Error in variables:\n${e.message}`;
+      outputDisplay.classList.add('error');
+      outputDisplay.style.display = 'block';
+      markdownOutput.style.display = 'none';
+    }
     return;
   }
 
@@ -1228,7 +1236,7 @@ function ghostSaveVariables() {
   }
 }
 
-const debouncedGhostSave = debounce(ghostSaveVariables, 1000);
+const debouncedGhostSave = debounce(ghostSaveVariables, 300);
 
 function autoResizeVariablesSection() {
   if (!variablesEditor) {
@@ -1556,6 +1564,20 @@ if (!isSidebarMode) {
   });
 }
 
+const detachOutputBtn = document.getElementById('detach-output-btn');
+if (detachOutputBtn) {
+    detachOutputBtn.addEventListener('click', () => {
+        // Gather current state
+        const variables = JSON.parse(variablesEditor.value || '{}');
+        
+        vscode.postMessage({
+            type: 'detachOutput',
+            variables: variables,
+            fileUri: currentFileUri
+        });
+    });
+}
+
 // Resize functionality
 const resizeHandle = document.getElementById('resize-handle');
 const variablesSection = document.getElementById('variables-section');
@@ -1663,7 +1685,8 @@ async function handleMessage(message) {
     
     case 'replaceVariables':
       if (message.extractedVariables) {
-        showLoading('Extracting variables...');
+        console.log('[Webview] Received replaceVariables:', { isDetachedMode, variables: message.extractedVariables });
+        showLoading('Updating variables...');
         
         let currentVars = {};
         try {
@@ -1675,27 +1698,37 @@ async function handleMessage(message) {
         const mergedVars = {};
         const extractedVarNames = Object.keys(message.extractedVariables);
         
-        for (const varName of extractedVarNames) {
-          if (varName in currentVars) {
-            const extractedValue = message.extractedVariables[varName];
-            const currentValue = currentVars[varName];
-            
-            const hasCustomValue = !isDefaultValue(currentValue, extractedValue);
-            
-            if (hasCustomValue) {
-              mergedVars[varName] = currentValue;
+        // In detached mode, just use the variables directly without merging logic
+        if (isDetachedMode) {
+          console.log('[Webview] Detached mode: Using variables directly');
+          variablesEditor.value = JSON.stringify(message.extractedVariables, null, 2);
+        } else {
+          // Normal mode: merge with existing
+          for (const varName of extractedVarNames) {
+            if (varName in currentVars) {
+              const extractedValue = message.extractedVariables[varName];
+              const currentValue = currentVars[varName];
+              
+              const hasCustomValue = !isDefaultValue(currentValue, extractedValue);
+              
+              if (hasCustomValue) {
+                mergedVars[varName] = currentValue;
+              } else {
+                mergedVars[varName] = extractedValue;
+              }
             } else {
-              mergedVars[varName] = extractedValue;
+              mergedVars[varName] = message.extractedVariables[varName];
             }
-          } else {
-            mergedVars[varName] = message.extractedVariables[varName];
           }
+          
+          variablesEditor.value = JSON.stringify(mergedVars, null, 2);
         }
         
-        variablesEditor.value = JSON.stringify(mergedVars, null, 2);
         autoResizeVariablesSection();
         hideLoading();
+        console.log('[Webview] About to call update()');
         await update();
+        console.log('[Webview] Update complete');
       }
       break;
     
@@ -1807,6 +1840,22 @@ async function handleMessage(message) {
       if (message.command) {
         variablesEditor.focus();
         document.execCommand(message.command);
+      }
+      break;
+    
+    case 'hideOutput':
+      // Hide output section when detached panel is opened
+      if (!isDetachedMode && message.fileUri === currentFileUri) {
+        console.log('[Webview] Hiding output - detached panel opened');
+        document.body.classList.add('detached-active');
+      }
+      break;
+    
+    case 'showOutput':
+      // Show output section when detached panel is closed
+      if (!isDetachedMode && message.fileUri === currentFileUri) {
+        console.log('[Webview] Showing output - detached panel closed');
+        document.body.classList.remove('detached-active');
       }
       break;
   }

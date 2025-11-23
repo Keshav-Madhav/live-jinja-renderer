@@ -765,7 +765,43 @@ textarea:focus {
   font-size: 14px !important;
 }
 
-/* Scrollbar Styling */
+/* Detached Mode */
+body.detached-mode .variables-section,
+body.detached-mode .file-name-display,
+body.detached-mode .resize-handle,
+body.detached-mode #detach-output-btn,
+body.detached-mode .output-section .header-group,
+body.detached-mode .controls,
+body.detached-mode .output-footer {
+    display: none !important;
+}
+
+body.detached-mode .output-section {
+    flex: 1 !important;
+    height: 100vh !important;
+    width: 100vw !important;
+    border: none !important;
+    padding: 0 !important;
+}
+
+body.detached-mode .container {
+    padding: 0 !important;
+}
+
+/* Detached Active Mode (Main Window) - Hide output when detached window is open */
+body.detached-active .output-section {
+    display: none !important;
+}
+
+body.detached-active .variables-section {
+    height: 100% !important;
+    flex: 1 !important;
+}
+
+body.detached-active .resize-handle {
+    display: none !important;
+}
+
 ::-webkit-scrollbar {
   width: 14px;
   height: 10px;

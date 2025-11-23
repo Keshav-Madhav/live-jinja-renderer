@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.7.8-blue)
+![Version](https://img.shields.io/badge/version-1.8.0-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,18 +10,20 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.7.8
+## 🚀 What's New in v1.8.0
 
-### 🎨 UI Space Optimization
-- **Compact Layout**: Significantly reduced spacing throughout the interface (~25-40% reduction in whitespace)
-  - Tightened padding, margins, and gaps across all UI elements
-  - Removed unnecessary border lines between headers and content
-  - Optimized spacing in markdown, tables, lists, and diagrams
-- **Smart Background**: Sidebar now uses the proper darker VS Code background color
-- **More Content Space**: Interface feels less congested while maintaining excellent readability
-- **Panel Cleanup**: File name display hidden in panel mode for extra space
+### 🖥️ Detached Output Window - NEW!
+- **Separate Output View**: Click the detach button to open output in an isolated editor pane
+  - Clean, distraction-free output window without UI elements
+  - Perfect for dual-monitor setups or side-by-side viewing
+  - Live updates from both template and variable changes
+  - Automatic synchronization with 300ms responsiveness
+- **Smart UI Adaptation**: Main window automatically hides output section when detached
+  - Variables section expands to full height for easier editing
+  - Output section restores when detached window is closed
+- **Intelligent Lifecycle**: Detached windows automatically close when main renderer closes
 
-> 💡 **Previous updates**: Interactive Line Navigation (v1.7.7), Line Number Gutter (v1.7.6), Mermaid Improvements (v1.7.5), and full IntelliSense system (v1.7.0)
+> 💡 **Previous updates**: UI Space Optimization (v1.7.8), Interactive Line Navigation (v1.7.7), Line Number Gutter (v1.7.6), and full IntelliSense system (v1.7.0)
 
 ---
 
