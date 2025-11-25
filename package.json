@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -453,6 +453,20 @@
         "command": "live-jinja-tester.openExtensionSettings",
         "key": "ctrl+alt+x",
         "mac": "cmd+shift+x"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "jinja",
+        "path": "./snippets/jinja.json"
+      },
+      {
+        "language": "jinja-html",
+        "path": "./snippets/jinja.json"
+      },
+      {
+        "language": "plaintext",
+        "path": "./snippets/jinja.json"
       }
     ],
     "configuration": {

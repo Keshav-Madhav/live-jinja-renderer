@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.8.0-blue)
+![Version](https://img.shields.io/badge/version-1.8.1-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,9 +10,16 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.8.0
+## 🚀 What's New in v1.8.1
 
-### 🖥️ Detached Output Window - NEW!
+### 🐛 Bug Fix - Snippet Completions
+- **Fixed Code Snippets**: Restored broken Jinja2 snippet completions (if, for, block, etc.)
+  - Added missing snippets contribution configuration
+  - Updated all snippet prefixes to use `j` prefix (jif, jfor, jvar, etc.)
+  - Eliminated bracket/percentage duplication issues
+  - 30 working snippets for all Jinja2 constructs
+
+### 🖥️ Previous: Detached Output Window (v1.8.0)
 - **Separate Output View**: Click the detach button to open output in an isolated editor pane
   - Clean, distraction-free output window without UI elements
   - Perfect for dual-monitor setups or side-by-side viewing
@@ -23,7 +30,7 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
   - Output section restores when detached window is closed
 - **Intelligent Lifecycle**: Detached windows automatically close when main renderer closes
 
-> 💡 **Previous updates**: UI Space Optimization (v1.7.8), Interactive Line Navigation (v1.7.7), Line Number Gutter (v1.7.6), and full IntelliSense system (v1.7.0)
+> 💡 **Previous updates**: Detached Output Window (v1.8.0), UI Space Optimization (v1.7.8), Interactive Line Navigation (v1.7.7), Line Number Gutter (v1.7.6)
 
 ---
 

@@ -4,6 +4,27 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.8.1] - 2025-11-25
+
+### 🐛 Bug Fixes - Snippet Completions
+- **Fixed Broken Code Snippets**: Restored non-working Jinja2 snippet completions
+  - Added missing `snippets` contribution section for VS Code
+  - Configured snippets for `jinja`, `jinja-html`, and `plaintext` languages
+- **Updated Snippet Prefixes**: Eliminated bracket/percentage duplication
+  - Changed all snippet prefixes to use `j` prefix: `jif`, `jfor`, `jvar`, `jset`, `jblock`, etc.
+  - Removed conflicting bare keywords (`if`, `for`, `var`, etc.)
+  - Alternative full prefixes available: `jinja-if`, `jinja-for`, etc.
+  - All 30 snippets now work correctly without delimiter duplication
+
+### 📝 Available Snippets
+- Control structures: `jif`, `jifelse`, `jifelif`, `jfor`, `jforelse`, `jforif`
+- Variables: `jvar`, `jvarf`, `jset`, `jsetblock`
+- Template structure: `jblock`, `jextends`, `jinclude`, `jimport`, `jfrom`
+- Advanced: `jmacro`, `jcall`, `jfilter`, `jwith`, `jraw`, `jautoescape`
+- Comments & control: `jcomment`, `jdo`, `jbreak`, `jcontinue`
+
+---
+
 ## [1.8.0] - 2025-11-24
 
 ### 🚀 Major New Feature - Detached Output Window

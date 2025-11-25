@@ -84,7 +84,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🚀 NEW: Detached Output Window\n• Click detach button for isolated output view\n• Perfect for dual-monitor setups\n• Live updates from template & variable changes\n• Auto-close when main renderer closes`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🐛 FIXED: Snippet Completions\n• Restored broken code snippets (jif, jfor, jvar, etc.)\n• Fixed corrupted package.json (was 0 bytes)\n• All 30 Jinja2 snippets now working\n• No more bracket/percentage duplication`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

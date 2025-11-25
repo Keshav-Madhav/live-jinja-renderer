@@ -1,0 +1,256 @@
+{
+  "Jinja If Statement": {
+    "prefix": ["jif", "jinja-if"],
+    "body": [
+      "{% if ${1:condition} %}",
+      "\t$0",
+      "{% endif %}"
+    ],
+    "description": "Jinja if statement"
+  },
+  "Jinja If-Else Statement": {
+    "prefix": ["jifelse", "jinja-ifelse"],
+    "body": [
+      "{% if ${1:condition} %}",
+      "\t${2:# if block}",
+      "{% else %}",
+      "\t${0:# else block}",
+      "{% endif %}"
+    ],
+    "description": "Jinja if-else statement"
+  },
+  "Jinja If-Elif-Else Statement": {
+    "prefix": ["jifelif", "jinja-ifelif"],
+    "body": [
+      "{% if ${1:condition} %}",
+      "\t${2:# if block}",
+      "{% elif ${3:condition} %}",
+      "\t${4:# elif block}",
+      "{% else %}",
+      "\t${0:# else block}",
+      "{% endif %}"
+    ],
+    "description": "Jinja if-elif-else statement"
+  },
+  "Jinja For Loop": {
+    "prefix": ["jfor", "jinja-for"],
+    "body": [
+      "{% for ${1:item} in ${2:items} %}",
+      "\t$0",
+      "{% endfor %}"
+    ],
+    "description": "Jinja for loop"
+  },
+  "Jinja For Loop with Else": {
+    "prefix": ["jforelse", "jinja-forelse"],
+    "body": [
+      "{% for ${1:item} in ${2:items} %}",
+      "\t${3:# loop content}",
+      "{% else %}",
+      "\t${0:# empty sequence}",
+      "{% endfor %}"
+    ],
+    "description": "Jinja for loop with else clause"
+  },
+  "Jinja For Loop with If": {
+    "prefix": ["jforif", "jinja-forif"],
+    "body": [
+      "{% for ${1:item} in ${2:items} if ${3:condition} %}",
+      "\t$0",
+      "{% endfor %}"
+    ],
+    "description": "Jinja for loop with inline if condition"
+  },
+  "Jinja Variable": {
+    "prefix": ["jvar", "jinja-var"],
+    "body": [
+      "{{ ${1:variable} }}"
+    ],
+    "description": "Jinja variable expression"
+  },
+  "Jinja Variable with Filter": {
+    "prefix": ["jvarf", "jinja-varf"],
+    "body": [
+      "{{ ${1:variable} | ${2:filter} }}"
+    ],
+    "description": "Jinja variable with filter"
+  },
+  "Jinja Set Statement": {
+    "prefix": ["jset", "jinja-set"],
+    "body": [
+      "{% set ${1:variable} = ${2:value} %}"
+    ],
+    "description": "Jinja set variable"
+  },
+  "Jinja Set Block": {
+    "prefix": ["jsetblock", "jinja-setblock"],
+    "body": [
+      "{% set ${1:variable} %}",
+      "\t$0",
+      "{% endset %}"
+    ],
+    "description": "Jinja set block"
+  },
+  "Jinja Block": {
+    "prefix": ["jblock", "jinja-block"],
+    "body": [
+      "{% block ${1:name} %}",
+      "\t$0",
+      "{% endblock %}"
+    ],
+    "description": "Jinja template block"
+  },
+  "Jinja Block with Parent": {
+    "prefix": ["jblocksuper", "jinja-blocksuper"],
+    "body": [
+      "{% block ${1:name} %}",
+      "\t{{ super() }}",
+      "\t$0",
+      "{% endblock %}"
+    ],
+    "description": "Jinja block with super() call"
+  },
+  "Jinja Extends": {
+    "prefix": ["jextends", "jinja-extends"],
+    "body": [
+      "{% extends \"${1:base.html}\" %}"
+    ],
+    "description": "Jinja template inheritance"
+  },
+  "Jinja Include": {
+    "prefix": ["jinclude", "jinja-include"],
+    "body": [
+      "{% include \"${1:template.html}\" %}"
+    ],
+    "description": "Jinja include template"
+  },
+  "Jinja Include with Context": {
+    "prefix": ["jincludewith", "jinja-includewith"],
+    "body": [
+      "{% include \"${1:template.html}\" with ${2:context} %}"
+    ],
+    "description": "Jinja include template with context"
+  },
+  "Jinja Import": {
+    "prefix": ["jimport", "jinja-import"],
+    "body": [
+      "{% import \"${1:macros.html}\" as ${2:macros} %}"
+    ],
+    "description": "Jinja import template"
+  },
+  "Jinja From Import": {
+    "prefix": ["jfrom", "jinja-from"],
+    "body": [
+      "{% from \"${1:macros.html}\" import ${2:macro} %}"
+    ],
+    "description": "Jinja from import"
+  },
+  "Jinja Macro": {
+    "prefix": ["jmacro", "jinja-macro"],
+    "body": [
+      "{% macro ${1:name}(${2:args}) %}",
+      "\t$0",
+      "{% endmacro %}"
+    ],
+    "description": "Jinja macro definition"
+  },
+  "Jinja Call": {
+    "prefix": ["jcall", "jinja-call"],
+    "body": [
+      "{% call ${1:macro}(${2:args}) %}",
+      "\t$0",
+      "{% endcall %}"
+    ],
+    "description": "Jinja call block"
+  },
+  "Jinja Filter Block": {
+    "prefix": ["jfilter", "jinja-filter"],
+    "body": [
+      "{% filter ${1:filter} %}",
+      "\t$0",
+      "{% endfilter %}"
+    ],
+    "description": "Jinja filter block"
+  },
+  "Jinja With Statement": {
+    "prefix": ["jwith", "jinja-with"],
+    "body": [
+      "{% with ${1:variable} = ${2:value} %}",
+      "\t$0",
+      "{% endwith %}"
+    ],
+    "description": "Jinja with statement"
+  },
+  "Jinja Do Statement": {
+    "prefix": ["jdo", "jinja-do"],
+    "body": [
+      "{% do ${1:expression} %}"
+    ],
+    "description": "Jinja do statement (requires 'do' extension)"
+  },
+  "Jinja Comment": {
+    "prefix": ["jcomment", "jinja-comment"],
+    "body": [
+      "{# ${1:comment} #}"
+    ],
+    "description": "Jinja comment"
+  },
+  "Jinja Comment Block": {
+    "prefix": ["jcommentblock", "jinja-commentblock"],
+    "body": [
+      "{#",
+      "\t${1:comment}",
+      "#}"
+    ],
+    "description": "Jinja multi-line comment"
+  },
+  "Jinja Raw Block": {
+    "prefix": ["jraw", "jinja-raw"],
+    "body": [
+      "{% raw %}",
+      "\t$0",
+      "{% endraw %}"
+    ],
+    "description": "Jinja raw block (no template processing)"
+  },
+  "Jinja Autoescape Block": {
+    "prefix": ["jautoescape", "jinja-autoescape"],
+    "body": [
+      "{% autoescape ${1|true,false|} %}",
+      "\t$0",
+      "{% endautoescape %}"
+    ],
+    "description": "Jinja autoescape block"
+  },
+  "Jinja Trans Block": {
+    "prefix": ["jtrans", "jinja-trans"],
+    "body": [
+      "{% trans %}${1:text}{% endtrans %}"
+    ],
+    "description": "Jinja translation block (requires 'i18n' extension)"
+  },
+  "Jinja Trans Block with Variables": {
+    "prefix": ["jtransvar", "jinja-transvar"],
+    "body": [
+      "{% trans ${1:variable} %}",
+      "\t${2:text with {{ ${1:variable} \\}}",
+      "{% endtrans %}"
+    ],
+    "description": "Jinja translation with variables"
+  },
+  "Jinja Break": {
+    "prefix": ["jbreak", "jinja-break"],
+    "body": [
+      "{% break %}"
+    ],
+    "description": "Jinja break statement (requires 'loopcontrols' extension)"
+  },
+  "Jinja Continue": {
+    "prefix": ["jcontinue", "jinja-continue"],
+    "body": [
+      "{% continue %}"
+    ],
+    "description": "Jinja continue statement (requires 'loopcontrols' extension)"
+  }
+}
+
