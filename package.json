@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -483,6 +483,14 @@
           "default": false,
           "description": "Enable mermaid diagram rendering",
           "order": 2
+        },
+        "liveJinjaRenderer.rendering.mermaidZoomSensitivity": {
+          "type": "number",
+          "default": 0.05,
+          "minimum": 0.01,
+          "maximum": 0.2,
+          "description": "Zoom sensitivity for Mermaid diagrams when scrolling (0.01 = 1%, 0.2 = 20% per scroll). Lower values = less sensitive",
+          "order": 2.5
         },
         "liveJinjaRenderer.rendering.showWhitespace": {
           "type": "boolean",

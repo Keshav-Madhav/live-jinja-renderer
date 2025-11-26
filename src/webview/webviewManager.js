@@ -99,6 +99,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
   let enableMermaid = config.get('rendering.enableMermaid');
   if (enableMermaid === undefined) enableMermaid = config.get('enableMermaid', false);
   
+  const mermaidZoomSensitivity = config.get('rendering.mermaidZoomSensitivity', 0.05);
+  
   let showWhitespace = config.get('rendering.showWhitespace');
   if (showWhitespace === undefined) showWhitespace = config.get('showWhitespace', true);
   
@@ -111,6 +113,7 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
   const settings = {
     enableMarkdown,
     enableMermaid,
+    mermaidZoomSensitivity,
     showWhitespace,
     cullWhitespace,
     autoRerender,
@@ -417,7 +420,7 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
             const variables = message.variables;
             
             if (fileUri) {
-                vscode.commands.executeCommand('live-jinja-tester.openDetached', fileUri, variables);
+                vscode.commands.executeCommand('live-jinja-tester.openDetached', fileUri, variables, lastSelectionRange);
             }
           } catch (err) {
             vscode.window.showErrorMessage('Failed to detach output window');

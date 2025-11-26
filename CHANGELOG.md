@@ -4,6 +4,17 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.8.2] - 2025-11-26
+
+### 🐛 Bug Fixes
+- **Detached Window Selection**: Fixed detached output window not respecting selection range
+  - When detaching a selection-based render, the detached window now correctly shows only the selected portion
+
+### 🎨 Improvements
+- **Mermaid Zoom Sensitivity**: Reduced default zoom sensitivity from 10% to 5% per scroll
+  - New setting: `liveJinjaRenderer.rendering.mermaidZoomSensitivity` (range: 0.01-0.2, default: 0.05)
+---
+
 ## [1.8.1] - 2025-11-25
 
 ### 🐛 Bug Fixes - Snippet Completions

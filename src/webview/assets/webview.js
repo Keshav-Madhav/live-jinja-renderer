@@ -38,6 +38,7 @@ let autoRerender = true;
 let ghostSaveEnabled = true;
 let showPerformanceMetrics = true;
 let suggestExtensions = true;
+let mermaidZoomSensitivity = 0.05; // Default zoom sensitivity for mermaid diagrams
 let currentTemplate = '';
 let currentFileUri = '';
 let currentSelectionRange = null;
@@ -322,7 +323,8 @@ function makeMermaidInteractive() {
     mermaidDiv.addEventListener('wheel', (e) => {
       e.preventDefault();
       const wheelEvent = /** @type {WheelEvent} */ (e);
-      const delta = wheelEvent.deltaY > 0 ? 0.9 : 1.1;
+      // Use configurable sensitivity (default 0.05 = 5% zoom per scroll)
+      const delta = wheelEvent.deltaY > 0 ? (1 - mermaidZoomSensitivity) : (1 + mermaidZoomSensitivity);
       const newScale = scale * delta;
       
       // Limit zoom range
@@ -1736,6 +1738,7 @@ async function handleMessage(message) {
       if (message.settings) {
         isMarkdownMode = message.settings.enableMarkdown;
         isMermaidMode = message.settings.enableMermaid;
+        mermaidZoomSensitivity = message.settings.mermaidZoomSensitivity !== undefined ? message.settings.mermaidZoomSensitivity : 0.05;
         showWhitespace = message.settings.showWhitespace;
         cullWhitespace = message.settings.cullWhitespace;
         autoRerender = message.settings.autoRerender !== undefined ? message.settings.autoRerender : true;

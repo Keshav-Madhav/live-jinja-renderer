@@ -84,7 +84,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🐛 FIXED: Snippet Completions\n• Restored broken code snippets (jif, jfor, jvar, etc.)\n• Fixed corrupted package.json (was 0 bytes)\n• All 30 Jinja2 snippets now working\n• No more bracket/percentage duplication`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🐛 Bug Fixes:\n• Detached window now respects selection range\n• Reduced mermaid zoom sensitivity (configurable)\n\n🎨 Improvements:\n• Better mermaid diagram styling`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

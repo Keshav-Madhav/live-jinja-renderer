@@ -87,7 +87,7 @@ function registerRenderCommand(context, intelliSenseManager = null, sidebarProvi
   }));
 
   // Command to open detached output
-  context.subscriptions.push(vscode.commands.registerCommand('live-jinja-tester.openDetached', async (fileUri, variables) => {
+  context.subscriptions.push(vscode.commands.registerCommand('live-jinja-tester.openDetached', async (fileUri, variables, selectionRange) => {
       if (!fileUri) return;
       
       const documentUri = vscode.Uri.parse(fileUri);
@@ -99,10 +99,16 @@ function registerRenderCommand(context, intelliSenseManager = null, sidebarProvi
       } catch (e) {
           fileName = fileUri.split('/').pop();
       }
+      
+      // Add line range to title if selection range is present
+      let titleSuffix = '';
+      if (selectionRange && selectionRange.startLine !== undefined && selectionRange.endLine !== undefined) {
+          titleSuffix = ` (Lines ${selectionRange.startLine + 1}-${selectionRange.endLine + 1})`;
+      }
 
       const panel = vscode.window.createWebviewPanel(
           'jinjaRendererDetached',
-          `Output: ${fileName}`,
+          `Output: ${fileName}${titleSuffix}`,
           vscode.ViewColumn.Beside,
           {
               enableScripts: true,
@@ -131,7 +137,8 @@ function registerRenderCommand(context, intelliSenseManager = null, sidebarProvi
       let subscription;
       
       if (editor) {
-          subscription = setupWebviewForEditor(panel.webview, editor, context, null, intelliSenseManager);
+          // Pass the selectionRange to setupWebviewForEditor so detached panel tracks the selection
+          subscription = setupWebviewForEditor(panel.webview, editor, context, selectionRange, intelliSenseManager);
           
           // Initial variable load
           if (variables) {
@@ -261,6 +268,8 @@ function registerConfigurationListener(context, sidebarProvider) {
         let enableMermaid = config.get('rendering.enableMermaid');
         if (enableMermaid === undefined) enableMermaid = config.get('enableMermaid', false);
         
+        const mermaidZoomSensitivity = config.get('rendering.mermaidZoomSensitivity', 0.05);
+        
         let showWhitespace = config.get('rendering.showWhitespace');
         if (showWhitespace === undefined) showWhitespace = config.get('showWhitespace', true);
         
@@ -273,6 +282,7 @@ function registerConfigurationListener(context, sidebarProvider) {
         const settings = {
           enableMarkdown,
           enableMermaid,
+          mermaidZoomSensitivity,
           showWhitespace,
           cullWhitespace,
           autoRerender,
