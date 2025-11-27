@@ -67,6 +67,35 @@ async function migrateSettings() {
 }
 
 /**
+ * Check if a file is a Jinja-related file (respects enableForTextFiles setting)
+ * @param {vscode.TextDocument | undefined} document
+ * @returns {boolean}
+ */
+function isJinjaRelatedFile(document) {
+  if (!document) return false;
+  
+  const fileName = document.fileName.toLowerCase();
+  const langId = document.languageId;
+  
+  // Always consider .jinja and .j2 files as Jinja files
+  if (fileName.endsWith('.jinja') || fileName.endsWith('.j2') || fileName.endsWith('.jinja2')) {
+    return true;
+  }
+  
+  if (langId === 'jinja' || langId === 'jinja-html') {
+    return true;
+  }
+  
+  // For text files, check the setting
+  if (fileName.endsWith('.txt') || langId === 'plaintext') {
+    const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+    return config.get('general.enableForTextFiles', true);
+  }
+  
+  return false;
+}
+
+/**
  * This method is called when your extension is activated
  */
 async function activate(context) {
@@ -84,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🐛 Bug Fixes:\n• Detached window now respects selection range\n• Reduced mermaid zoom sensitivity (configurable)\n\n🎨 Improvements:\n• Better mermaid diagram styling`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🎨 Improvements:\n• Mermaid diagrams: fixed node width & crisp zoom\n• Smarter activation (no notification on non-Jinja files)\n\n⚙️ New Setting:\n• general.enableForTextFiles - toggle extension for .txt files`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
@@ -99,8 +128,11 @@ async function activate(context) {
       }
     }
 
-    // Show a notification to confirm activation
-    vscode.window.showInformationMessage('✅ Live Jinja Renderer is now active!');
+    // Only show activation notification if user is on a Jinja-related file
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor && isJinjaRelatedFile(activeEditor.document)) {
+      vscode.window.showInformationMessage('✅ Live Jinja Renderer is now active!');
+    }
     
     // Create status bar item
     createStatusBarItem(context);

@@ -6,6 +6,32 @@ const vscode = require('vscode');
  */
 class SelectionActionsProvider {
   /**
+   * Check if actions should be provided for this document
+   * @param {vscode.TextDocument} document 
+   * @returns {boolean}
+   */
+  shouldProvideActions(document) {
+    const fileName = document.fileName.toLowerCase();
+    const langId = document.languageId;
+    
+    // Always provide for Jinja files
+    if (fileName.endsWith('.jinja') || fileName.endsWith('.j2') || fileName.endsWith('.jinja2')) {
+      return true;
+    }
+    if (langId === 'jinja' || langId === 'jinja-html' || langId === 'jinja2') {
+      return true;
+    }
+    
+    // For text files, check the setting
+    if (fileName.endsWith('.txt') || langId === 'plaintext') {
+      const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+      return config.get('general.enableForTextFiles', true);
+    }
+    
+    return false;
+  }
+
+  /**
    * @param {vscode.TextDocument} document 
    * @param {vscode.Range | vscode.Selection} range 
    * @param {vscode.CodeActionContext} _context 
@@ -15,6 +41,11 @@ class SelectionActionsProvider {
   provideCodeActions(document, range, _context, _token) {
     // Only show actions when there's an actual selection (not just cursor position)
     if (range.isEmpty) {
+      return undefined;
+    }
+    
+    // Check if we should provide actions for this document type
+    if (!this.shouldProvideActions(document)) {
       return undefined;
     }
 

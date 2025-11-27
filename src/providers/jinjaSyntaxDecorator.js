@@ -62,12 +62,17 @@ class JinjaSyntaxDecorator {
     const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
     
     // Always highlight .jinja and .j2 files
-    if (document.fileName.endsWith('.jinja') || document.fileName.endsWith('.j2')) {
+    if (document.fileName.endsWith('.jinja') || document.fileName.endsWith('.j2') || document.fileName.endsWith('.jinja2')) {
       return true;
     }
 
-    // For .txt files, check the setting (default true)
+    // For .txt files, check both general and highlighting settings
     if (document.fileName.endsWith('.txt') || document.languageId === 'plaintext') {
+      // First check if extension is enabled for text files at all
+      if (!config.get('general.enableForTextFiles', true)) {
+        return false;
+      }
+      // Then check if highlighting specifically is enabled
       return config.get('highlighting.enableForTextFiles', true);
     }
 

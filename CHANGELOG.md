@@ -4,6 +4,22 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.8.3] - 2025-11-27
+
+### 🎨 Improvements
+- **Mermaid Diagram Styling**: Fixed node width and text wrapping in Mermaid diagrams
+  - Nodes now have consistent 180px width with proper text wrapping
+  - Improved zoom quality - diagrams stay crisp at any zoom level (no more pixelation)
+- **Smarter Activation**: Startup notification only shows when on Jinja/text files
+  - No more "extension is active" message when working on Python, JS, HTML, etc.
+
+### ⚙️ New Setting
+- **`liveJinjaRenderer.general.enableForTextFiles`**: Toggle extension features for .txt files (default: true)
+  - Disable if you use text files for non-Jinja purposes
+  - Controls syntax highlighting, IntelliSense, and selection actions for text files
+
+---
+
 ## [1.8.2] - 2025-11-26
 
 ### 🐛 Bug Fixes

@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.8.2-blue)
+![Version](https://img.shields.io/badge/version-1.8.3-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,15 +10,12 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.8.2
-
-### 🐛 Bug Fixes
-- **Detached Window Selection**: Fixed detached output window not respecting selection range
-  - When detaching a selection-based render, the detached window now correctly shows only the selected portion
+## 🚀 What's New in v1.8.3
 
 ### 🎨 Improvements
-- **Mermaid Zoom Sensitivity**: Reduced default zoom sensitivity from 10% to 5% per scroll
-  - New setting: `liveJinjaRenderer.rendering.mermaidZoomSensitivity` (0.01-0.2, default: 0.05)
+- **Mermaid Diagrams**: Fixed node sizing with consistent 180px width and crisp zoom quality
+- **Smarter Activation**: Notification only shows on Jinja/text files, not on Python/JS/HTML
+- **New Setting**: `general.enableForTextFiles` - disable extension for .txt files if needed
 
 ### 🖥️ Previous: Detached Output Window (v1.8.0)
 - **Separate Output View**: Click the detach button to open output in an isolated editor pane

@@ -99,7 +99,7 @@ mermaid.initialize({
     padding: 15
   },
   themeVariables: {
-    fontSize: '16px'
+    fontSize: '14px'
   }
 });
 

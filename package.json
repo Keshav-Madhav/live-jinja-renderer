@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -588,10 +588,16 @@
           "description": "Automatically suggest Jinja2 extensions based on template syntax",
           "order": 34
         },
+        "liveJinjaRenderer.general.enableForTextFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Live Jinja Renderer for .txt and plain text files. Disable this if you use text files for non-Jinja purposes and find the extension intrusive.",
+          "order": 0
+        },
         "liveJinjaRenderer.highlighting.enableForTextFiles": {
           "type": "boolean",
           "default": true,
-          "description": "Enable Jinja syntax highlighting for .txt and plain text files",
+          "description": "Enable Jinja syntax highlighting for .txt and plain text files (only applies when general.enableForTextFiles is also enabled)",
           "order": 35
         },
         "liveJinjaRenderer.extensions": {

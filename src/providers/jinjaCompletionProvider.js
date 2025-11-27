@@ -108,12 +108,43 @@ class JinjaCompletionProvider {
   }
 
   /**
+   * Check if completions should be provided for this document
+   * @param {vscode.TextDocument} document 
+   * @returns {boolean}
+   */
+  shouldProvideCompletions(document) {
+    const fileName = document.fileName.toLowerCase();
+    const langId = document.languageId;
+    
+    // Always provide for Jinja files
+    if (fileName.endsWith('.jinja') || fileName.endsWith('.j2') || fileName.endsWith('.jinja2')) {
+      return true;
+    }
+    if (langId === 'jinja' || langId === 'jinja-html' || langId === 'jinja2') {
+      return true;
+    }
+    
+    // For text files, check the setting
+    if (fileName.endsWith('.txt') || langId === 'plaintext') {
+      const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+      return config.get('general.enableForTextFiles', true);
+    }
+    
+    return false;
+  }
+
+  /**
    * Get completion items based on the current context
    * @param {vscode.TextDocument} document
    * @param {vscode.Position} position
    * @returns {vscode.CompletionItem[]}
    */
   provideCompletionItems(document, position) {
+    // Check if we should provide completions for this document type
+    if (!this.shouldProvideCompletions(document)) {
+      return [];
+    }
+    
     const line = document.lineAt(position).text;
     const textBeforeCursor = line.substring(0, position.character);
     

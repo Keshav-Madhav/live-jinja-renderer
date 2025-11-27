@@ -735,34 +735,56 @@ textarea:focus {
 .mermaid svg {
   max-width: none;
   height: auto;
-  transition: transform 0.05s ease-out;
-  will-change: transform;
+  /* Preserve vector quality when zooming - avoid rasterization */
+  transform-origin: 0 0;
+  image-rendering: optimizeQuality;
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
 }
 
-/* Constrain Mermaid node widths */
-.mermaid .node rect,
-.mermaid .node circle,
-.mermaid .node ellipse,
-.mermaid .node polygon {
-  max-width: 400px !important;
-  min-width: 180px !important;
-}
-
-.mermaid .nodeLabel {
-  max-width: 380px !important;
-  min-width: 150px !important;
-  padding: 10px 15px !important;
-  white-space: normal !important;
-  word-wrap: break-word !important;
-  font-size: 14px !important;
-}
-
+/* Mermaid text styling and node width control */
 .mermaid text {
-  font-size: 14px !important;
+  font-size: 12px !important;
 }
 
 .mermaid .label {
-  font-size: 14px !important;
+  font-size: 12px !important;
+}
+
+/* Control node text wrapping via foreignObject contents */
+.mermaid .node foreignObject {
+  overflow: visible !important;
+  width: 180px !important;
+  height: auto !important;
+}
+
+.mermaid .node foreignObject > div {
+  display: block !important;
+  width: 180px !important;
+  min-width: 180px !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  text-align: center !important;
+  line-height: 1.4 !important;
+}
+
+.mermaid .nodeLabel,
+.mermaid .node foreignObject span {
+  display: inline !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+}
+
+.mermaid .edgeLabel foreignObject {
+  width: 140px !important;
+}
+
+.mermaid .edgeLabel foreignObject > div {
+  display: block !important;
+  width: 140px !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  text-align: center !important;
 }
 
 /* Detached Mode */
