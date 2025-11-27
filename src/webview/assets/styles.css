@@ -595,6 +595,29 @@ textarea:focus {
   color: var(--vscode-descriptionForeground);
 }
 
+/* Sidebar Template Status (shown when output is detached) */
+.sidebar-template-status {
+  padding: 4px 8px;
+  margin-top: 4px;
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-left: 2px solid var(--vscode-charts-green);
+  border-radius: 3px;
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+}
+
+.sidebar-template-status:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.template-status-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .whitespace-status-sidebar {
   display: flex;
   flex-wrap: wrap;
@@ -886,7 +909,10 @@ body.detached-mode .resize-handle,
 body.detached-mode #detach-output-btn,
 body.detached-mode .output-section .header-group,
 body.detached-mode .controls,
-body.detached-mode .output-footer {
+body.detached-mode .output-footer,
+body.detached-mode .extensions-indicator,
+body.detached-mode .extension-suggestions,
+body.detached-mode .template-indicator {
     display: none !important;
 }
 
@@ -921,6 +947,10 @@ body.detached-active .sidebar-render-time {
 }
 
 body.detached-active .sidebar-whitespace-status {
+    display: block !important;
+}
+
+body.detached-active .sidebar-template-status {
     display: block !important;
 }
 
@@ -1091,12 +1121,13 @@ body.detached-active .sidebar-whitespace-status {
 }
 
 .jinja-function {
-  color: var(--vscode-debugTokenExpression-value);
-  font-style: italic;
+  color: var(--vscode-symbolIcon-methodForeground, #dcdcaa);
+  font-weight: 500;
 }
 
 .jinja-filter {
-  color: var(--vscode-debugTokenExpression-value);
+  color: var(--vscode-symbolIcon-functionForeground, #c586c0);
+  font-weight: 500;
 }
 
 .jinja-comment {
@@ -1113,5 +1144,134 @@ body.detached-active .sidebar-whitespace-status {
 .jinja-builtin {
   color: var(--vscode-symbolIcon-classForeground);
   font-weight: 500;
+}
+
+/* Template Indicator - Footer Style */
+.template-indicator {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 4px 8px;
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-left: 2px solid var(--vscode-charts-green);
+  border-radius: 3px;
+  margin: 4px 0 0 0;
+  cursor: pointer;
+  transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+
+.template-indicator:hover {
+  background: var(--vscode-list-hoverBackground);
+  border-left-color: var(--vscode-focusBorder);
+}
+
+.template-indicator .codicon {
+  font-size: 12px;
+}
+
+/* Template indicator in error state */
+.template-indicator.error {
+  border-left-color: var(--vscode-inputValidation-warningBorder);
+}
+
+.template-indicator.error:hover {
+  border-left-color: var(--vscode-inputValidation-errorBorder);
+}
+
+/* Template expand icon */
+.template-expand-icon {
+  margin-left: auto;
+  font-size: 12px;
+  opacity: 0.7;
+  transition: transform 0.2s ease;
+}
+
+.template-indicator.expanded .template-expand-icon {
+  transform: rotate(180deg);
+}
+
+/* Template dropdown */
+.template-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--vscode-menu-background);
+  border: 1px solid var(--vscode-menu-border);
+  border-radius: 3px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+  margin-bottom: 4px;
+  z-index: 100;
+}
+
+.template-dropdown-item {
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--vscode-menu-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid var(--vscode-menu-separatorBackground);
+}
+
+.template-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.template-dropdown-item.template-file {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.template-dropdown-item.template-file::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%236a9955' d='M13.85 4.44l-3.28-3.3A.5.5 0 0 0 10.21 1H3.5A1.5 1.5 0 0 0 2 2.5v11A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V4.8a.5.5 0 0 0-.15-.36zM10 2l3 3h-3V2z'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  flex-shrink: 0;
+}
+
+.template-dropdown-item.template-file:hover {
+  background: var(--vscode-menu-selectionBackground);
+  color: var(--vscode-menu-selectionForeground);
+}
+
+.template-dropdown-item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.template-dropdown-header {
+  padding: 6px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-menu-separatorBackground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.template-dropdown-reload {
+  padding: 6px 8px;
+  font-size: 11px;
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-top: 1px solid var(--vscode-menu-separatorBackground);
+}
+
+.template-dropdown-reload:hover {
+  background: var(--vscode-menu-selectionBackground);
 }
 

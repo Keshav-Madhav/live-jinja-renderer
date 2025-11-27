@@ -301,7 +301,13 @@ function registerConfigurationListener(context, sidebarProvider) {
             autoescape: false,
             debug: false,
             custom: ''
-          })
+          }),
+          templates: {
+            enableIncludes: config.get('templates.enableIncludes', true),
+            searchPaths: config.get('templates.searchPaths', []),
+            filePatterns: config.get('templates.filePatterns', ['**/*.jinja', '**/*.jinja2', '**/*.j2', '**/*.html', '**/*.txt']),
+            maxFiles: config.get('templates.maxFiles', 100)
+          }
         };
         
         // Update sidebar webview if active

@@ -1,6 +1,7 @@
 const vscode = require('vscode');
 const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
 const { handleExportVariables } = require('../commands/importExportCommands');
+const { loadTemplates, getTemplateSummary, watchTemplateChanges } = require('../utils/templateLoader');
 
 /**
  * Sets up webview with template rendering capabilities
@@ -33,6 +34,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
   let currentDecoration = null; // Track active highlight decoration
   let decorationDisposables = []; // Track event listeners for decoration removal
   let selectionRangeDecoration = null; // Track selection range highlight
+  let loadedTemplates = {}; // Track loaded templates for includes/extends
+  let templateWatcher = null; // File watcher for template changes
   
   // Create subtle decoration for selection range highlighting
   const selectionRangeDecorationType = vscode.window.createTextEditorDecorationType({
@@ -133,16 +136,45 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
       autoescape: false,
       debug: false,
       custom: ''
-    })
+    }),
+    templates: {
+      enableIncludes: config.get('templates.enableIncludes', true),
+      searchPaths: config.get('templates.searchPaths', []),
+      filePatterns: config.get('templates.filePatterns', ['**/*.jinja', '**/*.jinja2', '**/*.j2', '**/*.html', '**/*.txt']),
+      maxFiles: config.get('templates.maxFiles', 100)
+    }
   };
   
+  // Load templates for includes/extends support
+  async function loadAndSendTemplates() {
+    const filePath = editor.document.uri.fsPath;
+    const result = await loadTemplates(filePath);
+    loadedTemplates = result.templates;
+    const summary = getTemplateSummary(result);
+    
+    webview.postMessage({
+      type: 'updateTemplates',
+      templates: loadedTemplates,
+      summary: summary
+    });
+  }
+  
   // Send initial settings to webview
-  setTimeout(() => {
+  setTimeout(async () => {
     webview.postMessage({
       type: 'updateSettings',
       settings: settings
     });
+    
+    // Load templates after settings
+    await loadAndSendTemplates();
   }, 100);
+  
+  // Watch for template file changes
+  templateWatcher = watchTemplateChanges(async () => {
+    // Reload templates when any template file changes
+    await loadAndSendTemplates();
+  });
   
   // Update template if the original file changes
   // The webview will decide whether to auto-render based on autoRerender setting
@@ -535,12 +567,59 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
           }
           return;
         
+        case 'reloadTemplates':
+          // Reload templates for includes/extends
+          try {
+            await loadAndSendTemplates();
+          } catch (err) {
+            console.error('Failed to reload templates:', err);
+          }
+          return;
+        
+        case 'openTemplateFile':
+          // Open a template file in the editor
+          try {
+            const templatePath = message.templatePath;
+            if (templatePath) {
+              // Get workspace root
+              const workspaceFolders = vscode.workspace.workspaceFolders;
+              if (workspaceFolders && workspaceFolders.length > 0) {
+                const workspaceRoot = workspaceFolders[0].uri.fsPath;
+                const path = require('path');
+                const fullPath = path.join(workspaceRoot, templatePath);
+                const fileUri = vscode.Uri.file(fullPath);
+                
+                try {
+                  const doc = await vscode.workspace.openTextDocument(fileUri);
+                  await vscode.window.showTextDocument(doc, {
+                    viewColumn: vscode.ViewColumn.One,
+                    preserveFocus: false
+                  });
+                } catch (fileErr) {
+                  // Try without workspace root (might be absolute or different structure)
+                  console.warn('Failed to open with workspace root, trying current file directory');
+                  const currentDir = require('path').dirname(editor.document.uri.fsPath);
+                  const altPath = path.join(currentDir, templatePath);
+                  const altUri = vscode.Uri.file(altPath);
+                  const doc = await vscode.workspace.openTextDocument(altUri);
+                  await vscode.window.showTextDocument(doc, {
+                    viewColumn: vscode.ViewColumn.One,
+                    preserveFocus: false
+                  });
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Failed to open template file:', err);
+            vscode.window.showErrorMessage(`Could not open template: ${message.templatePath}`);
+          }
+          return;
+        
         case 'goToLine':
           // Navigate to specific line in the editor
           try {
             const lineNumber = message.line;
             const fileUri = message.fileUri;
-            const msgSelectionRange = message.selectionRange;
             const selectWholeLine = message.selectWholeLine || false;
             
             if (typeof lineNumber !== 'number' || lineNumber <= 0) {
@@ -610,6 +689,9 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
       changeDocumentSubscription.dispose();
       messageSubscription.dispose();
       activeEditorChangeSubscription.dispose(); // Dispose editor change listener
+      if (templateWatcher) {
+        templateWatcher.dispose(); // Dispose template file watcher
+      }
     }
   };
 }

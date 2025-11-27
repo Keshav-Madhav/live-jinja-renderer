@@ -1,8 +1,8 @@
 {
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
-  "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.8.4",
+  "description": "Real-time Jinja2 template preview with include/extends support, markdown, mermaid diagrams, and IntelliSense",
+  "version": "1.9.0",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -28,7 +28,10 @@
     "markdown",
     "mermaid",
     "python",
-    "live-preview"
+    "live-preview",
+    "include",
+    "extends",
+    "inheritance"
   ],
   "repository": {
     "type": "git",
@@ -629,6 +632,38 @@
           "default": true,
           "description": "Strip whitespace around block tags ({% if %}, {% for %}, etc.). Enables both trim_blocks and lstrip_blocks for clean output without extra blank lines or indentation from template logic.",
           "order": 38
+        },
+        "liveJinjaRenderer.templates.enableIncludes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable support for {% include %} and {% extends %} tags by loading templates from configured paths.",
+          "order": 39
+        },
+        "liveJinjaRenderer.templates.searchPaths": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Directories to search for templates when using {% include %} or {% extends %}. Paths are relative to the workspace root. If empty, uses the directory of the current template file.",
+          "order": 40
+        },
+        "liveJinjaRenderer.templates.filePatterns": {
+          "type": "array",
+          "default": ["**/*.jinja", "**/*.jinja2", "**/*.j2", "**/*.html", "**/*.txt"],
+          "items": {
+            "type": "string"
+          },
+          "description": "Glob patterns for files to load as templates. These files will be available for {% include %} and {% extends %}.",
+          "order": 41
+        },
+        "liveJinjaRenderer.templates.maxFiles": {
+          "type": "number",
+          "default": 100,
+          "minimum": 10,
+          "maximum": 500,
+          "description": "Maximum number of template files to load for includes. Higher values may impact performance.",
+          "order": 42
         },
         "liveJinjaRenderer.extensions": {
           "type": "object",

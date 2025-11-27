@@ -4,6 +4,52 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.9.0] - 2025-11-27 — Major Update
+
+### ✨ Template Includes & Extends
+
+Use `{% include %}`, `{% extends %}`, and `{% import %}` just like in real Python Jinja2!
+
+- **Include templates**: `{% include "header.jinja" %}`
+- **Template inheritance**: `{% extends "base.jinja" %}` with `{% block %}`
+- **Import macros**: `{% from "macros.jinja" import button, card %}`
+- **Templates auto-loaded** from your workspace
+
+### 🎨 Template Browser
+
+Click the **"X templates loaded"** indicator in the footer to:
+- **View all available templates** in a dropdown
+- **Click any template to open it** in the editor
+- **Reload templates** after adding new files
+
+### ⚙️ New Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `templates.enableIncludes` | `true` | Enable include/extends support |
+| `templates.searchPaths` | `[]` | Directories to search (relative to workspace) |
+| `templates.filePatterns` | `["**/*.jinja", ...]` | File patterns to load |
+| `templates.maxFiles` | `100` | Maximum templates to load |
+
+### 🎯 Quick Setup
+
+By default, templates are loaded from:
+1. The directory of your current file
+2. Your workspace root
+
+To match your Python setup, configure search paths:
+```json
+"liveJinjaRenderer.templates.searchPaths": ["templates", "prompts"]
+```
+
+### 🐛 Improvements
+
+- **Helpful error messages** when templates aren't found (with suggestions)
+- **Improved syntax highlighting** for macros (yellow-gold) and filters (purple)
+- **Works with detached windows** - template count shows in sidebar when detached
+
+---
+
 ## [1.8.4] - 2025-11-27
 
 ### 🐛 Bug Fixes

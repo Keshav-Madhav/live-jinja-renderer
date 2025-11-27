@@ -1,31 +1,31 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.8.4-blue)
+![Version](https://img.shields.io/badge/version-1.9.0-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A powerful VS Code extension for **real-time Jinja2 template preview** with authentic Python Jinja2 (via Pyodide). Edit templates and variables side-by-side with instant rendering, markdown support, mermaid diagrams, intelligent whitespace management, smart error navigation, and **full IntelliSense with autocomplete**.
+A powerful VS Code extension for **real-time Jinja2 template preview** with authentic Python Jinja2 (via Pyodide). Edit templates and variables side-by-side with instant rendering, **template includes/extends**, markdown support, mermaid diagrams, intelligent whitespace management, smart error navigation, and **full IntelliSense with autocomplete**.
 
 > 🎯 **Perfect for**: Python developers, DevOps engineers, Ansible users, prompt engineering, configuration management, and anyone working with Jinja2 templates.
 
 ---
 
-## 🚀 What's New in v1.8.4
+## 🚀 What's New in v1.9.0 (Major Update)
 
-### ⚙️ Strip Block Whitespace
-- **New Setting**: `environment.stripBlockWhitespace` (default: **true**)
-  - Combines Jinja2's `trim_blocks` + `lstrip_blocks` for clean output
+### ✨ Template Includes & Extends
+Full support for Jinja2's template composition features:
+- **`{% include "header.jinja" %}`** - Include other templates
+- **`{% extends "base.jinja" %}`** - Template inheritance with blocks
+- **`{% from "macros.jinja" import button %}`** - Import macros
 
-### 🎨 UI Improvements
-- **Settings Indicator Footer**: Shows all enabled settings at a glance
-  - Displays: Markdown, Mermaid, Auto-rerender, Show/Cull Whitespace, Strip Blocks
-  - **Click any setting to disable it** - quick toggles right from the footer
-- **Compact Render Time**: Now inline in output header
+Templates are automatically loaded from your workspace. Click the **"X templates loaded"** indicator to browse and open any template file.
 
-### 🐛 Bug Fix
-- Fixed `jinja2.ext.with_` error - `with` is built-in since Jinja2 2.9
+### 🎯 Quick Setup
+```json
+"liveJinjaRenderer.templates.searchPaths": ["templates"]
+```
 
-> 💡 **Previous updates**: Detached Output Window (v1.8.0), Snippet Fix (v1.8.1), UI Space Optimization (v1.7.8), Interactive Line Navigation (v1.7.7)
+> 💡 **Previous updates**: Strip Block Whitespace (v1.8.4), Detached Output Window (v1.8.0), IntelliSense (v1.7.x)
 
 ---
 
@@ -48,6 +48,7 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 ### 🐍 **Authentic Python Jinja2**
 - Uses **real Python Jinja2** engine via Pyodide (not a JavaScript port)
 - 100% compatible with Python Jinja2 behavior
+- **Full template composition**: `{% include %}`, `{% extends %}`, `{% import %}`
 
 ### 🎨 **Flexible UI Options**
 - **Sidebar View**: Persistent panel in Activity Bar
@@ -200,6 +201,96 @@ Full support for Jinja2 extensions with instant activation:
 
 ---
 
+## Template Includes & Extends
+
+Use Jinja2's powerful template composition features just like in Python.
+
+### Basic Include
+Include another template file:
+```jinja
+<header>
+  {% include "partials/nav.jinja" %}
+</header>
+
+<main>
+  {{ content }}
+</main>
+
+{% include "partials/footer.jinja" %}
+```
+
+### Template Inheritance
+Create a base template with blocks:
+```jinja
+{# base.jinja #}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{% block title %}My Site{% endblock %}</title>
+</head>
+<body>
+  {% block content %}{% endblock %}
+</body>
+</html>
+```
+
+Extend it in child templates:
+```jinja
+{# page.jinja #}
+{% extends "base.jinja" %}
+
+{% block title %}Home - {{ super() }}{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ user.name }}!</h1>
+{% endblock %}
+```
+
+### Import Macros
+Create reusable macros:
+```jinja
+{# macros.jinja #}
+{% macro button(text, type="primary") %}
+<button class="btn btn-{{ type }}">{{ text }}</button>
+{% endmacro %}
+```
+
+Import and use them:
+```jinja
+{% from "macros.jinja" import button %}
+
+{{ button("Click Me") }}
+{{ button("Delete", "danger") }}
+```
+
+### Template Browser
+
+The **"X templates loaded"** indicator in the footer shows all available templates:
+
+1. **Click** to open a dropdown with all templates
+2. **Click any template** to open it in the editor
+3. **Click "Reload Templates"** after adding new files
+
+### Configuration
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `templates.enableIncludes` | `true` | Enable/disable template loading |
+| `templates.searchPaths` | `[]` | Directories to search (relative to workspace) |
+| `templates.filePatterns` | `["**/*.jinja", "**/*.j2", "**/*.html", "**/*.txt"]` | File patterns to load |
+| `templates.maxFiles` | `100` | Maximum templates to load |
+
+**Example**: To match a Python project structure:
+```json
+{
+  "liveJinjaRenderer.templates.searchPaths": ["templates", "src/templates"]
+}
+```
+
+Now you can use short paths like `{% include "partials/header.jinja" %}` instead of full paths.
+
+---
+
 ## Examples
 
 ### Basic Template
@@ -238,6 +329,14 @@ All settings are organized into clear categories:
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `environment.stripBlockWhitespace` | `true` | Strip whitespace around block tags |
+
+### Templates
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `templates.enableIncludes` | `true` | Enable include/extends support |
+| `templates.searchPaths` | `[]` | Directories to search for templates |
+| `templates.filePatterns` | `["**/*.jinja", ...]` | Glob patterns for template files |
+| `templates.maxFiles` | `100` | Maximum templates to load |
 
 ### Editor
 | Setting | Default | Description |
@@ -278,13 +377,17 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 
 ## Recent Updates
 
+### 1.9.0 - Template Includes & Extends (Major Update)
+- **`{% include %}` and `{% extends %}` support** - Full template composition
+- **Template Browser** - Click indicator to view/open all templates
+- **Macro imports** - `{% from "macros.jinja" import button %}`
+- Improved syntax highlighting for functions and filters
+
 ### 1.8.x - Environment Settings & UI Polish
 - **Strip Block Whitespace** setting (default: ON)
 - **Settings Footer** with click-to-disable
 - **Detached Output Window** for dual-monitor setups
 - Fixed `jinja2.ext.with_` compatibility
-- Mermaid diagram improvements
-- Snippet completions restored
 
 ### 1.7.x - IntelliSense & Line Navigation
 - **Complete IntelliSense System** with variable autocomplete, filters, hover docs

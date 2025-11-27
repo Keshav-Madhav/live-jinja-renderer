@@ -24,6 +24,8 @@ const sidebarRenderTime = /** @type {HTMLDivElement | null} */ (document.getElem
 const renderTimeSidebar = /** @type {HTMLSpanElement | null} */ (document.getElementById('render-time-sidebar'));
 const sidebarWhitespaceStatus = /** @type {HTMLDivElement | null} */ (document.getElementById('sidebar-whitespace-status'));
 const whitespaceSidebar = /** @type {HTMLSpanElement | null} */ (document.getElementById('whitespace-status-sidebar'));
+const sidebarTemplateStatus = /** @type {HTMLDivElement | null} */ (document.getElementById('sidebar-template-status'));
+const templateSidebar = /** @type {HTMLSpanElement | null} */ (document.getElementById('template-status-sidebar'));
 const whitespaceIndicators = /** @type {HTMLDivElement | null} */ (document.getElementById('whitespace-indicators'));
 const extensionSuggestions = /** @type {HTMLDivElement | null} */ (document.getElementById('extension-suggestions'));
 const extensionSuggestionsList = /** @type {HTMLDivElement | null} */ (document.getElementById('extension-suggestions-list'));
@@ -60,6 +62,10 @@ let customExtensions = '';
 
 // Jinja2 Environment Settings
 let stripBlockWhitespace = true;
+
+// Template includes/extends support
+let loadedTemplates = {};
+let templateSummary = { enabled: false, count: 0, paths: [], error: null };
 
 // Last render time for UI updates
 let lastRenderTime = 0;
@@ -668,6 +674,75 @@ function updateExtensionsIndicator() {
 }
 
 /**
+ * Update template loader indicator UI
+ */
+function updateTemplateIndicator() {
+  const templateIndicator = document.getElementById('template-indicator');
+  const templateList = document.getElementById('template-list');
+  const isOutputDetached = document.body.classList.contains('detached-active');
+  
+  // Ensure templateSummary has default values
+  const summary = templateSummary || { enabled: false, count: 0, paths: [], error: null };
+  
+  // Build tooltip with ALL template names
+  const allPaths = summary.paths || [];
+  let tooltip = `Templates available for {% include %} and {% extends %}:\n\n`;
+  tooltip += allPaths.map(p => `• ${p}`).join('\n');
+  if (summary.searchDirs && summary.searchDirs.length > 0) {
+    tooltip += `\n\nSearch directories:\n`;
+    tooltip += summary.searchDirs.map(d => `• ${d}`).join('\n');
+  }
+  tooltip += '\n\nClick to reload templates';
+  
+  const contentHtml = summary.error
+    ? `<i class="codicon codicon-warning" style="color: var(--vscode-inputValidation-warningBorder);"></i> Error: ${summary.error}`
+    : `<i class="codicon codicon-file-symlink-directory" style="margin-right: 4px;"></i> ${summary.count} template${summary.count !== 1 ? 's' : ''} loaded`;
+  
+  const errorTooltip = summary.error ? `Template loading error: ${summary.error}` : tooltip;
+  
+  if (isOutputDetached && !isDetachedMode) {
+    // Show in sidebar when output is detached (main window)
+    if (templateIndicator) templateIndicator.style.display = 'none';
+    
+    if (summary.enabled && summary.count > 0 || summary.error) {
+      if (templateSidebar) {
+        templateSidebar.innerHTML = contentHtml;
+      }
+      if (sidebarTemplateStatus) {
+        sidebarTemplateStatus.style.display = 'block';
+        sidebarTemplateStatus.title = errorTooltip;
+        if (summary.error) {
+          sidebarTemplateStatus.classList.add('error');
+        } else {
+          sidebarTemplateStatus.classList.remove('error');
+        }
+      }
+    } else {
+      if (sidebarTemplateStatus) sidebarTemplateStatus.style.display = 'none';
+    }
+  } else if (!isDetachedMode) {
+    // Show in footer when not detached (normal mode)
+    if (sidebarTemplateStatus) sidebarTemplateStatus.style.display = 'none';
+    
+    if (!templateIndicator || !templateList) return;
+    
+    if (summary.error) {
+      templateList.innerHTML = contentHtml;
+      templateIndicator.style.display = 'block';
+      templateIndicator.classList.add('error');
+      templateIndicator.title = errorTooltip;
+    } else if (summary.enabled && summary.count > 0) {
+      templateList.innerHTML = contentHtml;
+      templateIndicator.style.display = 'block';
+      templateIndicator.classList.remove('error');
+      templateIndicator.title = tooltip;
+    } else {
+      templateIndicator.style.display = 'none';
+    }
+  }
+}
+
+/**
  * Detect which extensions might be needed based on template syntax
  */
 function detectSuggestedExtensions(template) {
@@ -736,6 +811,24 @@ function detectSuggestedExtensions(template) {
   }
   
   return suggestions;
+}
+
+/**
+ * Check if template uses include/extends and suggest loading templates
+ */
+function detectIncludeExtendsUsage(template) {
+  const hasInclude = /\{%\s*include\s+['"][^'"]+['"]/i.test(template);
+  const hasExtends = /\{%\s*extends\s+['"][^'"]+['"]/i.test(template);
+  const hasBlock = /\{%\s*block\s+\w+/i.test(template);
+  const hasImport = /\{%\s*(import|from)\s+['"][^'"]+['"]/i.test(template);
+  
+  return {
+    usesIncludes: hasInclude || hasExtends || hasImport,
+    hasInclude,
+    hasExtends,
+    hasBlock,
+    hasImport
+  };
 }
 
 /**
@@ -976,6 +1069,12 @@ async function update() {
     const extensionsStr = extensionsList.join(', ');
     const stripBlockWhitespaceStr = stripBlockWhitespace ? 'True' : 'False';
     
+    // Prepare templates for DictLoader (escape for Python string)
+    // Use base64 encoding to avoid escaping issues with special characters
+    const templatesJsonRaw = JSON.stringify(loadedTemplates);
+    const templatesBase64 = btoa(unescape(encodeURIComponent(templatesJsonRaw)));
+    const hasTemplates = Object.keys(loadedTemplates).length > 0;
+    
     const result = pyodide.runPython(`
 import jinja2
 import json
@@ -1076,9 +1175,22 @@ class LineNumberInjector:
 try:
     template_str = """${escapedTemplate}"""
     context_str = """${escapedContext}"""
+    templates_base64 = "${templatesBase64}"
+    has_templates = ${hasTemplates ? 'True' : 'False'}
     
     # Environment options (stripBlockWhitespace enables both trim_blocks and lstrip_blocks)
     strip_block_whitespace = ${stripBlockWhitespaceStr}
+    
+    # Parse loaded templates for DictLoader (decode from base64)
+    loaded_templates = {}
+    if has_templates and templates_base64:
+        try:
+            import base64
+            templates_json_bytes = base64.b64decode(templates_base64)
+            templates_json_str = templates_json_bytes.decode('utf-8')
+            loaded_templates = json.loads(templates_json_str)
+        except Exception as te:
+            pass  # Ignore template parsing errors, will render without includes
     
     # Create environment with extensions
     extensions = [${extensionsStr}]
@@ -1105,8 +1217,14 @@ try:
                 except Exception as ce:
                     raise Exception(f"Error loading custom extension '{ext}': {str(ce)}")
         
-        # Create environment with validated extensions and options
+        # Create loader - use DictLoader if we have templates for includes/extends
+        loader = None
+        if loaded_templates:
+            loader = jinja2.DictLoader(loaded_templates)
+        
+        # Create environment with validated extensions, options, and loader
         env = jinja2.Environment(
+            loader=loader,
             extensions=validated_extensions,
             trim_blocks=strip_block_whitespace,
             lstrip_blocks=strip_block_whitespace
@@ -1176,6 +1294,36 @@ except jinja2.exceptions.TemplateAssertionError as e:
     if line_match:
         error_msg += "📍 Line " + line_match.group(1) + ":\\\\n"
     error_msg += "  " + str(e)
+    result = error_msg
+except jinja2.exceptions.TemplatesNotFound as e:
+    error_msg = "❌ Jinja2 Template Not Found Error\\\\n\\\\n"
+    error_msg += "The following template(s) could not be found:\\\\n"
+    for name in e.names:
+        error_msg += f"  • {name}\\\\n"
+    error_msg += "\\\\n💡 Tips:\\\\n"
+    error_msg += "  • Make sure the template file exists in your workspace\\\\n"
+    error_msg += "  • Configure search paths in Settings → Live Jinja Renderer → Templates\\\\n"
+    error_msg += "  • Check the template indicator below the output for loaded templates\\\\n"
+    if not loaded_templates:
+        error_msg += "  • No templates are currently loaded for includes\\\\n"
+    else:
+        error_msg += f"  • {len(loaded_templates)} templates currently loaded\\\\n"
+    result = error_msg
+except jinja2.exceptions.TemplateNotFound as e:
+    error_msg = "❌ Jinja2 Template Not Found Error\\\\n\\\\n"
+    error_msg += f"Template '{e.name}' could not be found.\\\\n\\\\n"
+    error_msg += "💡 Tips:\\\\n"
+    error_msg += "  • Make sure the template file exists in your workspace\\\\n"
+    error_msg += "  • Configure search paths in Settings → Live Jinja Renderer → Templates\\\\n"
+    error_msg += "  • Check the template indicator below the output for loaded templates\\\\n"
+    if not loaded_templates:
+        error_msg += "  • No templates are currently loaded for includes\\\\n"
+    else:
+        error_msg += f"  • {len(loaded_templates)} templates currently loaded\\\\n"
+        # Show available templates that might be similar
+        similar = [t for t in loaded_templates.keys() if e.name.lower() in t.lower() or t.lower() in e.name.lower()]
+        if similar:
+            error_msg += f"  • Did you mean: {', '.join(similar[:3])}?\\\\n"
     result = error_msg
 except jinja2.exceptions.TemplateError as e:
     error_msg = "❌ Jinja2 Template Error\\\\n\\\\n"
@@ -1659,6 +1807,92 @@ if (extensionsIndicator) {
   });
 }
 
+// Template indicator click handler - toggle dropdown
+const templateIndicatorEl = document.getElementById('template-indicator');
+const templateDropdown = document.getElementById('template-dropdown');
+
+if (templateIndicatorEl && templateDropdown) {
+  templateIndicatorEl.addEventListener('click', (e) => {
+    // Don't toggle if clicking on reload button inside dropdown
+    if (e.target.closest('.template-dropdown-reload')) {
+      return;
+    }
+    
+    const isExpanded = templateIndicatorEl.classList.toggle('expanded');
+    templateDropdown.style.display = isExpanded ? 'block' : 'none';
+    
+    if (isExpanded) {
+      // Populate dropdown with templates
+      const summary = templateSummary || { paths: [], searchDirs: [] };
+      const allPaths = summary.paths || [];
+      
+      let html = '<div class="template-dropdown-header">Available Templates</div>';
+      
+      if (allPaths.length === 0) {
+        html += '<div class="template-dropdown-item" style="opacity: 0.6; cursor: default;">No templates loaded</div>';
+      } else {
+        allPaths.forEach(p => {
+          html += `<div class="template-dropdown-item template-file" data-path="${p}" title="Click to open: ${p}">${p}</div>`;
+        });
+      }
+      
+      if (summary.searchDirs && summary.searchDirs.length > 0) {
+        html += '<div class="template-dropdown-header">Search Directories</div>';
+        summary.searchDirs.forEach(d => {
+          html += `<div class="template-dropdown-item" style="opacity: 0.7;" title="${d}">${d}</div>`;
+        });
+      }
+      
+      html += '<div class="template-dropdown-reload"><i class="codicon codicon-refresh"></i> Reload Templates</div>';
+      
+      templateDropdown.innerHTML = html;
+      
+      // Add click handler for reload button
+      const reloadBtn = templateDropdown.querySelector('.template-dropdown-reload');
+      if (reloadBtn) {
+        reloadBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          vscode.postMessage({ type: 'reloadTemplates' });
+          templateIndicatorEl.classList.remove('expanded');
+          templateDropdown.style.display = 'none';
+        });
+      }
+      
+      // Add click handlers for template files
+      const templateFiles = templateDropdown.querySelectorAll('.template-file');
+      templateFiles.forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const templatePath = item.getAttribute('data-path');
+          if (templatePath) {
+            vscode.postMessage({ 
+              type: 'openTemplateFile', 
+              templatePath: templatePath 
+            });
+            templateIndicatorEl.classList.remove('expanded');
+            templateDropdown.style.display = 'none';
+          }
+        });
+      });
+    }
+  });
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!templateIndicatorEl.contains(e.target)) {
+      templateIndicatorEl.classList.remove('expanded');
+      templateDropdown.style.display = 'none';
+    }
+  });
+}
+
+// Sidebar template status click handler - reload templates
+if (sidebarTemplateStatus) {
+  sidebarTemplateStatus.addEventListener('click', () => {
+    vscode.postMessage({ type: 'reloadTemplates' });
+  });
+}
+
 // Panel mode: Action button listeners
 if (!isSidebarMode) {
   copyOutputBtn.addEventListener('click', async function() {
@@ -1892,6 +2126,12 @@ async function handleMessage(message) {
           updateExtensionsIndicator();
         }
         
+        // Check if template settings changed - if so, request template reload
+        if (message.settings.templates) {
+          // Request template reload from extension
+          vscode.postMessage({ type: 'reloadTemplates' });
+        }
+        
         if (message.settings.selectionRange !== undefined) {
           currentSelectionRange = message.settings.selectionRange;
           updateFileNameDisplay(currentFileUri, currentSelectionRange);
@@ -1972,6 +2212,17 @@ async function handleMessage(message) {
       }
       break;
     
+    case 'updateTemplates':
+      // Update loaded templates for includes/extends
+      loadedTemplates = message.templates || {};
+      templateSummary = message.summary || { enabled: false, count: 0, paths: [], error: null };
+      updateTemplateIndicator();
+      // Re-render with new templates if we have a template and auto-rerender is on
+      if (autoRerender && currentTemplate) {
+        await update();
+      }
+      break;
+    
     case 'execCommand':
       if (message.command) {
         variablesEditor.focus();
@@ -1987,6 +2238,7 @@ async function handleMessage(message) {
         // Update indicators to show in sidebar
         updateRenderTimeDisplay();
         updateWhitespaceIndicators();
+        updateTemplateIndicator();
       }
       break;
     
@@ -1998,6 +2250,7 @@ async function handleMessage(message) {
         // Update indicators to show in footer
         updateRenderTimeDisplay();
         updateWhitespaceIndicators();
+        updateTemplateIndicator();
       }
       break;
   }

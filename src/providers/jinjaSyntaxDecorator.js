@@ -31,14 +31,16 @@ class JinjaSyntaxDecorator {
         color: new vscode.ThemeColor('debugTokenExpression.name')
       }),
       function: vscode.window.createTextEditorDecorationType({
-        color: new vscode.ThemeColor('debugTokenExpression.value'),
-        fontStyle: 'italic'
+        color: '#DCDCAA',  // Yellow-gold like VS Code function calls
+        fontWeight: '500'
       }),
       method: vscode.window.createTextEditorDecorationType({
-        color: new vscode.ThemeColor('symbolIcon.methodForeground')
+        color: '#DCDCAA',  // Same as functions for consistency
+        fontWeight: '500'
       }),
       filter: vscode.window.createTextEditorDecorationType({
-        color: new vscode.ThemeColor('debugTokenExpression.value')
+        color: '#C586C0',  // Purple like VS Code keywords/special functions
+        fontWeight: '500'
       }),
       comment: vscode.window.createTextEditorDecorationType({
         color: new vscode.ThemeColor('descriptionForeground'),

@@ -52,6 +52,9 @@
             <div class="sidebar-render-time" id="sidebar-render-time" style="display: none;">
                 <span id="render-time-sidebar" class="render-time-sidebar"></span>
             </div>
+            <div class="sidebar-template-status" id="sidebar-template-status" style="display: none;">
+                <span id="template-status-sidebar" class="template-status-sidebar"></span>
+            </div>
             <div class="sidebar-whitespace-status" id="sidebar-whitespace-status" style="display: none;">
                 <span id="whitespace-status-sidebar" class="whitespace-status-sidebar"></span>
             </div>
@@ -87,6 +90,11 @@
                     Suggested Extensions:
                 </div>
                 <div id="extension-suggestions-list" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
+            </div>
+            <div class="template-indicator" id="template-indicator" style="display: none;">
+                <span id="template-list"></span>
+                <i class="codicon codicon-chevron-down template-expand-icon" id="template-expand-icon"></i>
+                <div class="template-dropdown" id="template-dropdown" style="display: none;"></div>
             </div>
             <div class="whitespace-indicators" id="whitespace-indicators" style="display: none;"></div>
             {{OUTPUT_FOOTER}}
