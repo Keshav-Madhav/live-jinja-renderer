@@ -4,6 +4,27 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.8.4] - 2025-11-27
+
+### 🐛 Bug Fixes
+- **Jinja2 Extension Compatibility**: Fixed `jinja2.ext.with_` error
+  - The `with` statement is built-in since Jinja2 2.9, no extension needed
+  - Removed deprecated extension loading that caused errors with `{% trans %}` and `{% with %}` together
+
+### ⚙️ New Setting
+- **`liveJinjaRenderer.environment.stripBlockWhitespace`**: Strip whitespace around block tags (default: **true**)
+  - Enables both `trim_blocks` and `lstrip_blocks` for clean output
+
+### 🎨 UI Improvements
+- **Compact Render Time Display**: Moved from separate box to inline in output header
+  - Shows as `Output Render time: 123ms` - minimal and unobtrusive
+- **Settings Indicator Footer**: New footer showing all enabled settings
+  - Displays: Markdown, Mermaid, Auto-rerender, Show Whitespace, Cull Whitespace, Strip Blocks
+  - **Click to disable** - hover shows strikethrough, click turns off that setting
+  - Truncates with ellipsis on small windows, hover to see full list
+
+---
+
 ## [1.8.3] - 2025-11-27
 
 ### 🎨 Improvements

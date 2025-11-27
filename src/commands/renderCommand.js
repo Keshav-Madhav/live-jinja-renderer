@@ -292,6 +292,7 @@ function registerConfigurationListener(context, sidebarProvider) {
           historySize: config.get('history.size', 5),
           showPerformanceMetrics: config.get('advanced.showPerformanceMetrics', true),
           suggestExtensions: config.get('advanced.suggestExtensions', true),
+          stripBlockWhitespace: config.get('environment.stripBlockWhitespace', false),
           extensions: config.get('extensions', {
             i18n: false,
             do: false,

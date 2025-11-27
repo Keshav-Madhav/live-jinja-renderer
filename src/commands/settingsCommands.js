@@ -114,6 +114,14 @@ function registerSettingsCommands(context) {
   });
   context.subscriptions.push(toggleCullWhitespaceCommand);
   
+  // Toggle Strip Block Whitespace (enables both trim_blocks and lstrip_blocks)
+  const toggleStripBlockWhitespaceCommand = vscode.commands.registerCommand('live-jinja-tester.toggleStripBlockWhitespace', async () => {
+    const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+    const currentValue = config.get('environment.stripBlockWhitespace', false);
+    await config.update('environment.stripBlockWhitespace', !currentValue, vscode.ConfigurationTarget.Global);
+  });
+  context.subscriptions.push(toggleStripBlockWhitespaceCommand);
+  
   // Open Extension Settings
   const openExtensionSettingsCommand = vscode.commands.registerCommand('live-jinja-tester.openExtensionSettings', async () => {
     // Open VS Code settings UI directly to the extensions section

@@ -42,6 +42,9 @@ function updateStatusBar() {
   const historySize = config.get('history.size', 5);
   const ghostSave = config.get('advanced.ghostSave', true);
   
+  // Environment options
+  const stripBlockWhitespace = config.get('environment.stripBlockWhitespace', false);
+  
   // Extensions
   const extensions = config.get('extensions', {
     i18n: false,
@@ -53,8 +56,8 @@ function updateStatusBar() {
     custom: ''
   });
   
-  // Count enabled extensions
-  const enabledExtCount = [extensions.i18n, extensions.do, extensions.loopcontrols, extensions.with, extensions.autoescape, extensions.debug].filter(Boolean).length;
+  // Count enabled extensions (with is built-in since Jinja2 2.9, not counted)
+  const enabledExtCount = [extensions.i18n, extensions.do, extensions.loopcontrols, extensions.autoescape, extensions.debug].filter(Boolean).length;
   const customExtCount = extensions.custom ? extensions.custom.split(',').filter(e => e.trim()).length : 0;
   const totalExtCount = enabledExtCount + customExtCount;
   
@@ -76,11 +79,13 @@ function updateStatusBar() {
   tooltip.appendMarkdown(`${historyEnabled ? '✓' : '○'} History Enabled${historyEnabled ? ` (${historySize} files)` : ''}\n\n`);
   tooltip.appendMarkdown('**Advanced**\n\n');
   tooltip.appendMarkdown(`${ghostSave ? '✓' : '○'} Ghost Save Variables\n\n`);
+  tooltip.appendMarkdown('**Environment**\n\n');
+  tooltip.appendMarkdown(`${stripBlockWhitespace ? '✓' : '○'} Strip Block Whitespace\n\n`);
   tooltip.appendMarkdown('**Extensions**\n\n');
   tooltip.appendMarkdown(`${extensions.i18n ? '✓' : '○'} i18n (Internationalization)\n\n`);
   tooltip.appendMarkdown(`${extensions.do ? '✓' : '○'} do (Statements)\n\n`);
   tooltip.appendMarkdown(`${extensions.loopcontrols ? '✓' : '○'} loopcontrols (break/continue)\n\n`);
-  tooltip.appendMarkdown(`${extensions.with ? '✓' : '○'} with (Context)\n\n`);
+  tooltip.appendMarkdown(`✓ with (built-in since Jinja2 2.9)\n\n`);
   tooltip.appendMarkdown(`${extensions.autoescape ? '✓' : '○'} autoescape (HTML Escaping)\n\n`);
   tooltip.appendMarkdown(`${extensions.debug ? '✓' : '○'} debug (Debug Tag)\n\n`);
   if (extensions.custom) {

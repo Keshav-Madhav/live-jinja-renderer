@@ -19,8 +19,12 @@ const fileHistoryDropdown = isSidebarMode ? /** @type {HTMLButtonElement | null}
 const fileHistoryMenu = isSidebarMode ? /** @type {HTMLDivElement | null} */ (document.getElementById('file-history-menu')) : null;
 const extensionsIndicator = /** @type {HTMLDivElement | null} */ (document.getElementById('extensions-indicator'));
 const extensionsList = /** @type {HTMLSpanElement | null} */ (document.getElementById('extensions-list'));
-const performanceMetrics = /** @type {HTMLDivElement | null} */ (document.getElementById('performance-metrics'));
-const performanceText = /** @type {HTMLSpanElement | null} */ (document.getElementById('performance-text'));
+const renderTimeHeader = /** @type {HTMLSpanElement | null} */ (document.getElementById('render-time-header'));
+const sidebarRenderTime = /** @type {HTMLDivElement | null} */ (document.getElementById('sidebar-render-time'));
+const renderTimeSidebar = /** @type {HTMLSpanElement | null} */ (document.getElementById('render-time-sidebar'));
+const sidebarWhitespaceStatus = /** @type {HTMLDivElement | null} */ (document.getElementById('sidebar-whitespace-status'));
+const whitespaceSidebar = /** @type {HTMLSpanElement | null} */ (document.getElementById('whitespace-status-sidebar'));
+const whitespaceIndicators = /** @type {HTMLDivElement | null} */ (document.getElementById('whitespace-indicators'));
 const extensionSuggestions = /** @type {HTMLDivElement | null} */ (document.getElementById('extension-suggestions'));
 const extensionSuggestionsList = /** @type {HTMLDivElement | null} */ (document.getElementById('extension-suggestions-list'));
 
@@ -53,6 +57,15 @@ let enabledExtensions = {
   debug: false
 };
 let customExtensions = '';
+
+// Jinja2 Environment Settings
+let stripBlockWhitespace = true;
+
+// Last render time for UI updates
+let lastRenderTime = 0;
+
+// Track order of enabled settings (most recent first)
+let settingsEnableOrder = [];
 
 // Pyodide setup
 let pyodide = null;
@@ -468,6 +481,133 @@ function isDefaultValue(userValue, extractedValue) {
 }
 
 /**
+ * Track when a setting is enabled/disabled
+ * Maintains order of enabled settings (most recent first)
+ */
+function trackSettingChange(key, isEnabled) {
+  // Remove from current position if exists
+  settingsEnableOrder = settingsEnableOrder.filter(k => k !== key);
+  
+  // Add to front if enabled
+  if (isEnabled) {
+    settingsEnableOrder.unshift(key);
+  }
+}
+
+/**
+ * Update render time display
+ * - In normal mode: shows in output header
+ * - When output is detached: shows in sidebar status
+ */
+function updateRenderTimeDisplay(renderTime) {
+  // Store the render time for later updates (e.g., when detach state changes)
+  if (renderTime !== undefined) {
+    lastRenderTime = renderTime;
+  }
+  
+  if (!showPerformanceMetrics || lastRenderTime === 0) {
+    if (renderTimeHeader) renderTimeHeader.style.display = 'none';
+    if (sidebarRenderTime) sidebarRenderTime.style.display = 'none';
+    return;
+  }
+  
+  const timeText = `${lastRenderTime}ms`;
+  const isOutputDetached = document.body.classList.contains('detached-active');
+  
+  // Determine color class based on performance
+  let colorClass = '';
+  if (lastRenderTime > 1000) {
+    colorClass = 'very-slow';
+  } else if (lastRenderTime > 500) {
+    colorClass = 'slow';
+  }
+  
+  if (isOutputDetached && !isDetachedMode) {
+    // Output is detached - show in sidebar
+    if (renderTimeHeader) renderTimeHeader.style.display = 'none';
+    if (sidebarRenderTime) sidebarRenderTime.style.display = 'block';
+    if (renderTimeSidebar) {
+      renderTimeSidebar.innerHTML = `<i class="codicon codicon-pulse"></i> Render time: ${timeText}`;
+      renderTimeSidebar.className = 'render-time-sidebar' + (colorClass ? ' ' + colorClass : '');
+    }
+  } else if (!isDetachedMode) {
+    // Normal mode - show in output header
+    if (renderTimeHeader) {
+      renderTimeHeader.textContent = `Render time: ${timeText}`;
+      renderTimeHeader.className = 'render-time-header' + (colorClass ? ' ' + colorClass : '');
+      renderTimeHeader.style.display = 'inline';
+    }
+    if (sidebarRenderTime) sidebarRenderTime.style.display = 'none';
+  }
+}
+
+/**
+ * Update settings indicators
+ * Shows enabled settings in footer (or sidebar when detached)
+ * Ordered by most recently enabled
+ */
+function updateWhitespaceIndicators() {
+  const isOutputDetached = document.body.classList.contains('detached-active');
+  
+  // All possible settings with their current values
+  const allSettings = {
+    'Markdown': isMarkdownMode,
+    'Mermaid': isMermaidMode,
+    'Auto-rerender': autoRerender,
+    'Show Whitespace': showWhitespace,
+    'Cull Whitespace': cullWhitespace,
+    'Strip Blocks': stripBlockWhitespace
+  };
+  
+  // Build list of active settings, sorted by enable order
+  const activeSettings = [];
+  
+  // First add settings in their enable order
+  for (const key of settingsEnableOrder) {
+    if (allSettings[key]) {
+      activeSettings.push(key);
+    }
+  }
+  
+  // Then add any enabled settings not yet in the order list
+  for (const [key, value] of Object.entries(allSettings)) {
+    if (value && !activeSettings.includes(key)) {
+      activeSettings.push(key);
+    }
+  }
+  
+  if (isOutputDetached && !isDetachedMode) {
+    // Show in sidebar when output is detached
+    if (whitespaceIndicators) whitespaceIndicators.style.display = 'none';
+    if (activeSettings.length > 0) {
+      if (whitespaceSidebar) {
+        whitespaceSidebar.innerHTML = activeSettings.join(' · ');
+      }
+      if (sidebarWhitespaceStatus) sidebarWhitespaceStatus.style.display = 'block';
+    } else {
+      if (whitespaceSidebar) whitespaceSidebar.innerHTML = '';
+      if (sidebarWhitespaceStatus) sidebarWhitespaceStatus.style.display = 'none';
+    }
+  } else if (!isDetachedMode) {
+    // Show in footer when not detached
+    if (sidebarWhitespaceStatus) sidebarWhitespaceStatus.style.display = 'none';
+    if (whitespaceIndicators) {
+      if (activeSettings.length > 0) {
+        const text = activeSettings.join(' · ');
+        // Create clickable spans for each setting
+        whitespaceIndicators.innerHTML = activeSettings.map(s => 
+          `<span class="footer-toggle" data-setting="${s}" title="Click to disable ${s}">${s}</span>`
+        ).join(' · ');
+        whitespaceIndicators.title = text; // Tooltip on hover
+        whitespaceIndicators.style.display = 'block';
+      } else {
+        whitespaceIndicators.style.display = 'none';
+      }
+    }
+  }
+}
+
+/**
  * Update extensions indicator UI
  */
 function updateExtensionsIndicator() {
@@ -477,7 +617,7 @@ function updateExtensionsIndicator() {
     'i18n': 'Internationalization - {% trans %} tags for translatable content',
     'do': 'Do statements - {% do ... %} for expressions without output',
     'loopcontrols': 'Loop controls - {% break %} and {% continue %} in loops',
-    'with': 'With blocks - {% with %} for scoped variable contexts',
+    'with': 'With blocks - {% with %} (built-in since Jinja2 2.9, no extension needed)',
     'autoescape': 'Autoescape - Automatic HTML escaping control',
     'debug': 'Debug - {% debug %} tag to inspect template context'
   };
@@ -569,17 +709,7 @@ function detectSuggestedExtensions(template) {
     }
   }
   
-  // Check for with extension patterns
-  if (/\{%\s*with\s+/i.test(template)) {
-    if (!enabledExtensions.with) {
-      suggestions.push({
-        key: 'with',
-        name: 'with',
-        description: 'With blocks - {% with %} tag detected',
-        icon: 'symbol-namespace'
-      });
-    }
-  }
+  // Note: 'with' is built-in since Jinja2 2.9+, no extension suggestion needed
   
   // Check for autoescape extension patterns
   if (/\{%\s*autoescape\s+|\{%\s*endautoescape\s*%\}/i.test(template)) {
@@ -833,7 +963,7 @@ async function update() {
     if (enabledExtensions.i18n) extensionsList.push("'jinja2.ext.i18n'");
     if (enabledExtensions.do) extensionsList.push("'jinja2.ext.do'");
     if (enabledExtensions.loopcontrols) extensionsList.push("'jinja2.ext.loopcontrols'");
-    if (enabledExtensions.with) extensionsList.push("'jinja2.ext.with_'");
+    // Note: 'with' is built-in since Jinja2 2.9+, no extension needed
     if (enabledExtensions.autoescape) extensionsList.push("'jinja2.ext.autoescape'");
     if (enabledExtensions.debug) extensionsList.push("'jinja2.ext.debug'");
     
@@ -844,6 +974,7 @@ async function update() {
     }
     
     const extensionsStr = extensionsList.join(', ');
+    const stripBlockWhitespaceStr = stripBlockWhitespace ? 'True' : 'False';
     
     const result = pyodide.runPython(`
 import jinja2
@@ -946,6 +1077,9 @@ try:
     template_str = """${escapedTemplate}"""
     context_str = """${escapedContext}"""
     
+    # Environment options (stripBlockWhitespace enables both trim_blocks and lstrip_blocks)
+    strip_block_whitespace = ${stripBlockWhitespaceStr}
+    
     # Create environment with extensions
     extensions = [${extensionsStr}]
     try:
@@ -971,8 +1105,12 @@ try:
                 except Exception as ce:
                     raise Exception(f"Error loading custom extension '{ext}': {str(ce)}")
         
-        # Create environment with validated extensions
-        env = jinja2.Environment(extensions=validated_extensions)
+        # Create environment with validated extensions and options
+        env = jinja2.Environment(
+            extensions=validated_extensions,
+            trim_blocks=strip_block_whitespace,
+            lstrip_blocks=strip_block_whitespace
+        )
         
         # Install translation functions for i18n extension
         if 'jinja2.ext.i18n' in validated_extensions:
@@ -1061,25 +1199,9 @@ result
     const endTime = performance.now();
     const renderTime = Math.round(endTime - startTime);
     
-    // Update performance metrics
-    if (performanceMetrics && performanceText && showPerformanceMetrics) {
-      performanceText.textContent = `Render time: ${renderTime}ms`;
-      performanceMetrics.style.display = 'block';
-      
-      // Color code based on performance
-      if (renderTime > 1000) {
-        performanceMetrics.style.borderColor = 'var(--vscode-inputValidation-errorBorder)';
-        performanceMetrics.style.background = 'var(--vscode-inputValidation-errorBackground)';
-      } else if (renderTime > 500) {
-        performanceMetrics.style.borderColor = 'var(--vscode-inputValidation-warningBorder)';
-        performanceMetrics.style.background = 'var(--vscode-inputValidation-warningBackground)';
-      } else {
-        performanceMetrics.style.borderColor = 'var(--vscode-panel-border)';
-        performanceMetrics.style.background = 'var(--vscode-editor-background)';
-      }
-    } else if (performanceMetrics) {
-      performanceMetrics.style.display = 'none';
-    }
+    // Update render time and whitespace indicators
+    updateRenderTimeDisplay(renderTime);
+    updateWhitespaceIndicators();
     
     // Update extension suggestions based on template syntax
     if (suggestExtensions) {
@@ -1403,7 +1525,9 @@ if (isSidebarMode && fileHistoryDropdown && fileHistoryMenu) {
 if (isSidebarMode && autoRerenderToggle) {
   autoRerenderToggle.addEventListener('click', async () => {
     autoRerender = !autoRerender;
+    trackSettingChange('Auto-rerender', autoRerender);
     updateAutoRerenderToggle();
+    updateWhitespaceIndicators();
     
     if (autoRerender) {
       await update();
@@ -1736,16 +1860,25 @@ async function handleMessage(message) {
     
     case 'updateSettings':
       if (message.settings) {
-        isMarkdownMode = message.settings.enableMarkdown;
-        isMermaidMode = message.settings.enableMermaid;
+        // Helper to update setting and track if changed
+        const updateSetting = (key, oldVal, newVal) => {
+          if (newVal !== oldVal) trackSettingChange(key, newVal);
+          return newVal;
+        };
+        
+        isMarkdownMode = updateSetting('Markdown', isMarkdownMode, message.settings.enableMarkdown);
+        isMermaidMode = updateSetting('Mermaid', isMermaidMode, message.settings.enableMermaid);
         mermaidZoomSensitivity = message.settings.mermaidZoomSensitivity !== undefined ? message.settings.mermaidZoomSensitivity : 0.05;
-        showWhitespace = message.settings.showWhitespace;
-        cullWhitespace = message.settings.cullWhitespace;
-        autoRerender = message.settings.autoRerender !== undefined ? message.settings.autoRerender : true;
+        showWhitespace = updateSetting('Show Whitespace', showWhitespace, message.settings.showWhitespace);
+        cullWhitespace = updateSetting('Cull Whitespace', cullWhitespace, message.settings.cullWhitespace);
+        autoRerender = updateSetting('Auto-rerender', autoRerender, message.settings.autoRerender !== undefined ? message.settings.autoRerender : true);
         ghostSaveEnabled = message.settings.ghostSaveEnabled !== undefined ? message.settings.ghostSaveEnabled : true;
         historyEnabled = message.settings.historyEnabled !== undefined ? message.settings.historyEnabled : true;
         showPerformanceMetrics = message.settings.showPerformanceMetrics !== undefined ? message.settings.showPerformanceMetrics : true;
         suggestExtensions = message.settings.suggestExtensions !== undefined ? message.settings.suggestExtensions : true;
+        
+        // Update environment settings
+        stripBlockWhitespace = updateSetting('Strip Blocks', stripBlockWhitespace, message.settings.stripBlockWhitespace !== undefined ? message.settings.stripBlockWhitespace : false);
         
         // Update extensions settings
         if (message.settings.extensions) {
@@ -1851,6 +1984,9 @@ async function handleMessage(message) {
       if (!isDetachedMode && message.fileUri === currentFileUri) {
         console.log('[Webview] Hiding output - detached panel opened');
         document.body.classList.add('detached-active');
+        // Update indicators to show in sidebar
+        updateRenderTimeDisplay();
+        updateWhitespaceIndicators();
       }
       break;
     
@@ -1859,6 +1995,9 @@ async function handleMessage(message) {
       if (!isDetachedMode && message.fileUri === currentFileUri) {
         console.log('[Webview] Showing output - detached panel closed');
         document.body.classList.remove('detached-active');
+        // Update indicators to show in footer
+        updateRenderTimeDisplay();
+        updateWhitespaceIndicators();
       }
       break;
   }
@@ -1876,6 +2015,48 @@ window.addEventListener('message', async event => {
   
   await handleMessage(message);
 });
+
+// Footer toggle click handler - clicking disables the setting
+if (whitespaceIndicators) {
+  whitespaceIndicators.addEventListener('click', async (e) => {
+    const target = /** @type {HTMLElement} */ (e.target);
+    if (target && target.classList && target.classList.contains('footer-toggle')) {
+      const setting = target.getAttribute('data-setting');
+      
+      // Toggle the setting off
+      switch (setting) {
+        case 'Markdown':
+          isMarkdownMode = false;
+          trackSettingChange('Markdown', false);
+          break;
+        case 'Mermaid':
+          isMermaidMode = false;
+          trackSettingChange('Mermaid', false);
+          break;
+        case 'Auto-rerender':
+          autoRerender = false;
+          trackSettingChange('Auto-rerender', false);
+          updateAutoRerenderToggle();
+          break;
+        case 'Show Whitespace':
+          showWhitespace = false;
+          trackSettingChange('Show Whitespace', false);
+          break;
+        case 'Cull Whitespace':
+          cullWhitespace = false;
+          trackSettingChange('Cull Whitespace', false);
+          break;
+        case 'Strip Blocks':
+          stripBlockWhitespace = false;
+          trackSettingChange('Strip Blocks', false);
+          break;
+      }
+      
+      updateWhitespaceIndicators();
+      await update();
+    }
+  });
+}
 
 // Start Pyodide and initial render
 setupPyodide();

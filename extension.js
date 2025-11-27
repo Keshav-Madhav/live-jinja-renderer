@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🎨 Improvements:\n• Mermaid diagrams: fixed node width & crisp zoom\n• Smarter activation (no notification on non-Jinja files)\n\n⚙️ New Setting:\n• general.enableForTextFiles - toggle extension for .txt files`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n⚙️ New Setting:\n• Strip Block Whitespace (default: ON) - clean output from block tags\n\n🎨 UI Improvements:\n• Settings footer - click to disable any setting\n• Compact render time in output header\n\n🐛 Bug Fix:\n• Fixed jinja2.ext.with_ error`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

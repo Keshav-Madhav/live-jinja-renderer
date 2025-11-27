@@ -124,6 +124,7 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
     showPerformanceMetrics: config.get('advanced.showPerformanceMetrics', true),
     suggestExtensions: config.get('advanced.suggestExtensions', true),
     selectionRange: lastSelectionRange, // Include selection range in settings
+    stripBlockWhitespace: config.get('environment.stripBlockWhitespace', false),
     extensions: config.get('extensions', {
       i18n: false,
       do: false,

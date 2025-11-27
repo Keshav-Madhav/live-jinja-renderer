@@ -68,6 +68,10 @@ h2 {
   font-weight: 600;
   color: var(--vscode-foreground);
   text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
   letter-spacing: 0.5px;
   opacity: 0.9;
 }
@@ -534,6 +538,94 @@ textarea:focus {
   color: var(--vscode-button-foreground);
 }
 
+/* Render Time in Header */
+.render-time-header {
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--vscode-descriptionForeground);
+  margin-left: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+  text-transform: none;
+}
+
+.render-time-header.slow {
+  color: var(--vscode-inputValidation-warningBorder);
+}
+
+.render-time-header.very-slow {
+  color: var(--vscode-inputValidation-errorBorder);
+}
+
+/* Sidebar Render Time (shown when output is detached) */
+.sidebar-render-time {
+  padding: 4px 8px;
+  margin-top: 4px;
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.render-time-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.render-time-sidebar.slow {
+  color: var(--vscode-inputValidation-warningBorder);
+}
+
+.render-time-sidebar.very-slow {
+  color: var(--vscode-inputValidation-errorBorder);
+}
+
+/* Sidebar Whitespace Status (shown when output is detached) */
+.sidebar-whitespace-status {
+  padding: 4px 8px;
+  margin-top: 4px;
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 3px;
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.whitespace-status-sidebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Whitespace Indicators Footer */
+.whitespace-indicators {
+  display: block;
+  padding: 4px 8px;
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 3px;
+  margin: 4px 0 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footer-toggle {
+  cursor: pointer;
+  transition: opacity 0.1s ease;
+}
+
+.footer-toggle:hover {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
 /* Error Styles */
 .error {
   color: var(--vscode-errorForeground);
@@ -822,6 +914,14 @@ body.detached-active .variables-section {
 
 body.detached-active .resize-handle {
     display: none !important;
+}
+
+body.detached-active .sidebar-render-time {
+    display: block !important;
+}
+
+body.detached-active .sidebar-whitespace-status {
+    display: block !important;
 }
 
 ::-webkit-scrollbar {

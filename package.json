@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with markdown, mermaid diagrams, and inline variable extraction",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -97,6 +97,12 @@
         "command": "live-jinja-tester.toggleCullWhitespace",
         "title": "Toggle Cull Whitespace",
         "icon": "$(tools)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.toggleStripBlockWhitespace",
+        "title": "Toggle Strip Block Whitespace",
+        "icon": "$(whitespace)",
         "category": "Jinja"
       },
       {
@@ -251,6 +257,11 @@
           "group": "2_whitespace@2"
         },
         {
+          "command": "live-jinja-tester.toggleStripBlockWhitespace",
+          "when": "view == jinjaRendererView",
+          "group": "2_whitespace@3"
+        },
+        {
           "command": "live-jinja-tester.reextractVariables",
           "when": "view == jinjaRendererView",
           "group": "3_actions@1"
@@ -332,6 +343,11 @@
           "group": "2_whitespace@2"
         },
         {
+          "command": "live-jinja-tester.toggleStripBlockWhitespace",
+          "when": "webviewId == 'jinjaRendererView'",
+          "group": "2_whitespace@3"
+        },
+        {
           "command": "live-jinja-tester.reextractVariables",
           "when": "webviewId == 'jinjaRendererView'",
           "group": "2_jinja@1"
@@ -362,6 +378,11 @@
           "group": "2_whitespace@2"
         },
         {
+          "command": "live-jinja-tester.toggleStripBlockWhitespace",
+          "when": "webviewId == 'jinjaRenderer'",
+          "group": "2_whitespace@3"
+        },
+        {
           "command": "live-jinja-tester.reextractVariables",
           "when": "webviewId == 'jinjaRenderer'",
           "group": "2_jinja@1"
@@ -390,6 +411,9 @@
         },
         {
           "command": "live-jinja-tester.toggleCullWhitespace"
+        },
+        {
+          "command": "live-jinja-tester.toggleStripBlockWhitespace"
         },
         {
           "command": "live-jinja-tester.reextractVariables"
@@ -599,6 +623,12 @@
           "default": true,
           "description": "Enable Jinja syntax highlighting for .txt and plain text files (only applies when general.enableForTextFiles is also enabled)",
           "order": 35
+        },
+        "liveJinjaRenderer.environment.stripBlockWhitespace": {
+          "type": "boolean",
+          "default": true,
+          "description": "Strip whitespace around block tags ({% if %}, {% for %}, etc.). Enables both trim_blocks and lstrip_blocks for clean output without extra blank lines or indentation from template logic.",
+          "order": 38
         },
         "liveJinjaRenderer.extensions": {
           "type": "object",

@@ -49,13 +49,19 @@
             <textarea id="variables">{
   "name": "World"
 }</textarea>
+            <div class="sidebar-render-time" id="sidebar-render-time" style="display: none;">
+                <span id="render-time-sidebar" class="render-time-sidebar"></span>
+            </div>
+            <div class="sidebar-whitespace-status" id="sidebar-whitespace-status" style="display: none;">
+                <span id="whitespace-status-sidebar" class="whitespace-status-sidebar"></span>
+            </div>
         </div>
         
         <div class="resize-handle" id="resize-handle"></div>
         
         <div class="output-section" id="output-section">
             <div class="header-group">
-                <h2>Output</h2>
+                <h2>Output <span id="render-time-header" class="render-time-header" style="display: none;"></span></h2>
                 <div class="header-actions">
                     <button class="icon-button" id="detach-output-btn" title="Detach Output Window">
                         <i class="codicon codicon-link-external"></i>
@@ -75,10 +81,6 @@
                 <pre id="output"></pre>
                 <div id="markdown-output" style="display: none;"></div>
             </div>
-            <div class="performance-metrics" id="performance-metrics" style="display: none; font-size: 11px; padding: 4px 8px; margin: 4px 0 0 0; background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border); border-radius: 3px; color: var(--vscode-descriptionForeground);">
-                <i class="codicon codicon-pulse" style="font-size: 12px; margin-right: 4px;"></i>
-                <span id="performance-text">Render time: 0ms</span>
-            </div>
             <div class="extension-suggestions" id="extension-suggestions" style="display: none; font-size: 11px; padding: 6px 8px; margin: 4px 0 0 0; background: var(--vscode-inputValidation-infoBackground); border-left: 3px solid var(--vscode-inputValidation-infoBorder); border-radius: 2px;">
                 <div style="margin-bottom: 4px; color: var(--vscode-inputValidation-infoForeground); font-weight: 500;">
                     <i class="codicon codicon-lightbulb" style="font-size: 12px; margin-right: 4px;"></i>
@@ -86,6 +88,7 @@
                 </div>
                 <div id="extension-suggestions-list" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
             </div>
+            <div class="whitespace-indicators" id="whitespace-indicators" style="display: none;"></div>
             {{OUTPUT_FOOTER}}
         </div>
     </div>
