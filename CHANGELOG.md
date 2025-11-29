@@ -4,6 +4,18 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.9.1] - 2025-11-29
+
+### Improved
+- **Status footer stays in main panel** when output is detached - render time, template indicator, and toggle status remain interactive
+- **Render time bar**: Click to force re-render, shows render count (×N), performance tips on hover for slow renders
+- **Line gutter zebra striping**: Alternates shade when line number changes for better readability with includes/blocks
+
+### Fixed
+- Footer elements no longer move with detached output window
+
+---
+
 ## [1.9.0] - 2025-11-27 — Major Update
 
 ### ✨ Template Includes & Extends

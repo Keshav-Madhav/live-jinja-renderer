@@ -477,6 +477,14 @@ textarea:focus {
   width: 100%;
 }
 
+/* Zebra striping that toggles when line number changes */
+/* Same line numbers stay same shade, shade toggles when number changes */
+/* Only applies to cycle-0 (no loop coloring) to avoid conflicting with loop colors */
+/* Subtle difference - subconsciously differentiable */
+.output-row.cycle-0.line-stripe-b .output-line-number {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
 #markdown-output {
   flex: 1;
   padding: 12px;
@@ -538,90 +546,58 @@ textarea:focus {
   color: var(--vscode-button-foreground);
 }
 
-/* Render Time in Header */
-.render-time-header {
-  font-size: 9px;
-  font-weight: 400;
-  color: var(--vscode-descriptionForeground);
-  margin-left: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100px;
-  text-transform: none;
+/* Status Footer - Contains render time, template indicator, whitespace indicators */
+/* This section stays in the main panel when output is detached */
+.status-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
 }
 
-.render-time-header.slow {
-  color: var(--vscode-inputValidation-warningBorder);
-}
-
-.render-time-header.very-slow {
-  color: var(--vscode-inputValidation-errorBorder);
-}
-
-/* Sidebar Render Time (shown when output is detached) */
-.sidebar-render-time {
+/* Status Render Time - Always visible in footer */
+.status-render-time {
   padding: 4px 8px;
-  margin-top: 4px;
   background: var(--vscode-editor-background);
   border: 1px solid var(--vscode-panel-border);
   border-radius: 3px;
   font-size: 11px;
   color: var(--vscode-descriptionForeground);
-}
-
-.render-time-sidebar {
   display: flex;
   align-items: center;
-  gap: 4px;
-}
-
-.render-time-sidebar.slow {
-  color: var(--vscode-inputValidation-warningBorder);
-}
-
-.render-time-sidebar.very-slow {
-  color: var(--vscode-inputValidation-errorBorder);
-}
-
-/* Sidebar Whitespace Status (shown when output is detached) */
-.sidebar-whitespace-status {
-  padding: 4px 8px;
-  margin-top: 4px;
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  font-size: 10px;
-  color: var(--vscode-descriptionForeground);
-}
-
-/* Sidebar Template Status (shown when output is detached) */
-.sidebar-template-status {
-  padding: 4px 8px;
-  margin-top: 4px;
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-left: 2px solid var(--vscode-charts-green);
-  border-radius: 3px;
-  font-size: 10px;
-  color: var(--vscode-descriptionForeground);
-  cursor: pointer;
-}
-
-.sidebar-template-status:hover {
-  background: var(--vscode-list-hoverBackground);
-}
-
-.template-status-sidebar {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.whitespace-status-sidebar {
-  display: flex;
-  flex-wrap: wrap;
   gap: 6px;
+  cursor: pointer;
+  transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+
+.status-render-time:hover {
+  background: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-focusBorder);
+}
+
+.status-render-time:active {
+  background: var(--vscode-list-activeSelectionBackground);
+}
+
+.status-render-time .codicon {
+  font-size: 12px;
+}
+
+.status-render-time.slow {
+  color: var(--vscode-inputValidation-warningBorder);
+  border-left: 2px solid var(--vscode-inputValidation-warningBorder);
+}
+
+.status-render-time.very-slow {
+  color: var(--vscode-inputValidation-errorBorder);
+  border-left: 2px solid var(--vscode-inputValidation-errorBorder);
+}
+
+/* Render count badge */
+.render-count {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-left: auto;
 }
 
 /* Whitespace Indicators Footer */
@@ -633,7 +609,6 @@ textarea:focus {
   background: var(--vscode-editor-background);
   border: 1px solid var(--vscode-panel-border);
   border-radius: 3px;
-  margin: 4px 0 0 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -902,7 +877,7 @@ textarea:focus {
   text-align: center !important;
 }
 
-/* Detached Mode */
+/* Detached Mode - For the detached output window */
 body.detached-mode .variables-section,
 body.detached-mode .file-name-display,
 body.detached-mode .resize-handle,
@@ -912,7 +887,7 @@ body.detached-mode .controls,
 body.detached-mode .output-footer,
 body.detached-mode .extensions-indicator,
 body.detached-mode .extension-suggestions,
-body.detached-mode .template-indicator {
+body.detached-mode .status-footer {
     display: none !important;
 }
 
@@ -929,12 +904,12 @@ body.detached-mode .container {
 }
 
 /* Detached Active Mode (Main Window) - Hide output when detached window is open */
+/* Status footer remains visible with full functionality */
 body.detached-active .output-section {
     display: none !important;
 }
 
 body.detached-active .variables-section {
-    height: 100% !important;
     flex: 1 !important;
 }
 
@@ -942,16 +917,13 @@ body.detached-active .resize-handle {
     display: none !important;
 }
 
-body.detached-active .sidebar-render-time {
-    display: block !important;
+/* Status footer stays visible and interactive when output is detached */
+body.detached-active .status-footer {
+    display: flex !important;
 }
 
-body.detached-active .sidebar-whitespace-status {
-    display: block !important;
-}
-
-body.detached-active .sidebar-template-status {
-    display: block !important;
+body.detached-active .status-render-time {
+    display: flex !important;
 }
 
 ::-webkit-scrollbar {
@@ -1158,7 +1130,6 @@ body.detached-active .sidebar-template-status {
   border: 1px solid var(--vscode-panel-border);
   border-left: 2px solid var(--vscode-charts-green);
   border-radius: 3px;
-  margin: 4px 0 0 0;
   cursor: pointer;
   transition: background-color 0.1s ease, border-color 0.1s ease;
 }

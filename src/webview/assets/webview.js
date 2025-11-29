@@ -19,13 +19,9 @@ const fileHistoryDropdown = isSidebarMode ? /** @type {HTMLButtonElement | null}
 const fileHistoryMenu = isSidebarMode ? /** @type {HTMLDivElement | null} */ (document.getElementById('file-history-menu')) : null;
 const extensionsIndicator = /** @type {HTMLDivElement | null} */ (document.getElementById('extensions-indicator'));
 const extensionsList = /** @type {HTMLSpanElement | null} */ (document.getElementById('extensions-list'));
-const renderTimeHeader = /** @type {HTMLSpanElement | null} */ (document.getElementById('render-time-header'));
-const sidebarRenderTime = /** @type {HTMLDivElement | null} */ (document.getElementById('sidebar-render-time'));
-const renderTimeSidebar = /** @type {HTMLSpanElement | null} */ (document.getElementById('render-time-sidebar'));
-const sidebarWhitespaceStatus = /** @type {HTMLDivElement | null} */ (document.getElementById('sidebar-whitespace-status'));
-const whitespaceSidebar = /** @type {HTMLSpanElement | null} */ (document.getElementById('whitespace-status-sidebar'));
-const sidebarTemplateStatus = /** @type {HTMLDivElement | null} */ (document.getElementById('sidebar-template-status'));
-const templateSidebar = /** @type {HTMLSpanElement | null} */ (document.getElementById('template-status-sidebar'));
+const statusRenderTime = /** @type {HTMLDivElement | null} */ (document.getElementById('status-render-time'));
+const renderTimeStatus = /** @type {HTMLSpanElement | null} */ (document.getElementById('render-time-status'));
+const renderCountEl = /** @type {HTMLSpanElement | null} */ (document.getElementById('render-count'));
 const whitespaceIndicators = /** @type {HTMLDivElement | null} */ (document.getElementById('whitespace-indicators'));
 const extensionSuggestions = /** @type {HTMLDivElement | null} */ (document.getElementById('extension-suggestions'));
 const extensionSuggestionsList = /** @type {HTMLDivElement | null} */ (document.getElementById('extension-suggestions-list'));
@@ -69,6 +65,9 @@ let templateSummary = { enabled: false, count: 0, paths: [], error: null };
 
 // Last render time for UI updates
 let lastRenderTime = 0;
+
+// Render count for statistics
+let renderCount = 0;
 
 // Track order of enabled settings (most recent first)
 let settingsEnableOrder = [];
@@ -239,6 +238,10 @@ function renderWhitespace(text) {
   // Build HTML using a row-based layout to ensure perfect alignment with wrapping
   let html = '<div class="output-rows">';
   
+  // Track zebra stripe toggling based on line number changes
+  let lastLineNo = null;
+  let stripeToggle = false;
+  
   for (let i = 0; i < finalLines.length; i++) {
     let lineContent = finalLines[i].text
       .replace(/&/g, '&amp;')
@@ -265,11 +268,19 @@ function renderWhitespace(text) {
     const isLastInGroup = (i === finalLines.length - 1) || (finalLines[i].cycleId !== finalLines[i + 1].cycleId);
     const groupEndClass = isLastInGroup && finalLines[i].cycleId > 0 ? 'cycle-group-end' : '';
     
+    // Zebra striping: toggle shade when line number changes
+    // Same line numbers stay same shade, different line number toggles the shade
+    if (adjustedLineNo !== null && adjustedLineNo !== lastLineNo) {
+      stripeToggle = !stripeToggle;
+      lastLineNo = adjustedLineNo;
+    }
+    const lineStripeClass = stripeToggle ? 'line-stripe-a' : 'line-stripe-b';
+    
     // Add data-line attribute for click handling (only if lineNo is valid)
     // Use the adjusted line number for click handling
     const lineAttr = adjustedLineNo !== null ? `data-line="${adjustedLineNo}"` : '';
     
-    html += `<div class="output-row ${cycleClass} ${groupEndClass}" ${lineAttr}>
+    html += `<div class="output-row ${cycleClass} ${groupEndClass} ${lineStripeClass}" ${lineAttr}>
               <div class="output-line-number">${displayLineNo}</div>
               <div class="output-line-content">${lineContent}</div>
             </div>`;
@@ -502,59 +513,67 @@ function trackSettingChange(key, isEnabled) {
 
 /**
  * Update render time display
- * - In normal mode: shows in output header
- * - When output is detached: shows in sidebar status
+ * Always shows in status footer with render count and performance tips
  */
-function updateRenderTimeDisplay(renderTime) {
+function updateRenderTimeDisplay(renderTime, incrementCount = false) {
   // Store the render time for later updates (e.g., when detach state changes)
   if (renderTime !== undefined) {
     lastRenderTime = renderTime;
   }
   
+  // Increment render count when a new render completes
+  if (incrementCount) {
+    renderCount++;
+  }
+  
+  // In detached mode, don't show (CSS hides status-footer anyway)
+  if (isDetachedMode) return;
+  
   if (!showPerformanceMetrics || lastRenderTime === 0) {
-    if (renderTimeHeader) renderTimeHeader.style.display = 'none';
-    if (sidebarRenderTime) sidebarRenderTime.style.display = 'none';
+    if (statusRenderTime) statusRenderTime.style.display = 'none';
     return;
   }
   
   const timeText = `${lastRenderTime}ms`;
-  const isOutputDetached = document.body.classList.contains('detached-active');
   
-  // Determine color class based on performance
+  // Determine color class and performance tips based on render time
   let colorClass = '';
+  let performanceTip = 'Click to force re-render';
+  
   if (lastRenderTime > 1000) {
     colorClass = 'very-slow';
+    performanceTip = '⚠️ Very slow render! Tips:\n• Reduce template complexity\n• Minimize nested loops\n• Simplify variable data\n• Check for recursive includes\n\nClick to force re-render';
   } else if (lastRenderTime > 500) {
     colorClass = 'slow';
+    performanceTip = '⚠️ Slow render. Tips:\n• Consider simplifying loops\n• Reduce nested conditionals\n• Check variable data size\n\nClick to force re-render';
+  } else if (lastRenderTime < 50) {
+    performanceTip = '✨ Fast render!\n\nClick to force re-render';
   }
   
-  if (isOutputDetached && !isDetachedMode) {
-    // Output is detached - show in sidebar
-    if (renderTimeHeader) renderTimeHeader.style.display = 'none';
-    if (sidebarRenderTime) sidebarRenderTime.style.display = 'block';
-    if (renderTimeSidebar) {
-      renderTimeSidebar.innerHTML = `<i class="codicon codicon-pulse"></i> Render time: ${timeText}`;
-      renderTimeSidebar.className = 'render-time-sidebar' + (colorClass ? ' ' + colorClass : '');
-    }
-  } else if (!isDetachedMode) {
-    // Normal mode - show in output header
-    if (renderTimeHeader) {
-      renderTimeHeader.textContent = `Render time: ${timeText}`;
-      renderTimeHeader.className = 'render-time-header' + (colorClass ? ' ' + colorClass : '');
-      renderTimeHeader.style.display = 'inline';
-    }
-    if (sidebarRenderTime) sidebarRenderTime.style.display = 'none';
+  // Always show in status footer
+  if (statusRenderTime) {
+    statusRenderTime.style.display = 'flex';
+    statusRenderTime.className = 'status-render-time' + (colorClass ? ' ' + colorClass : '');
+    statusRenderTime.title = performanceTip;
+  }
+  
+  if (renderTimeStatus) {
+    renderTimeStatus.textContent = timeText;
+  }
+  
+  // Update render count display
+  if (renderCountEl) {
+    renderCountEl.textContent = `×${renderCount}`;
   }
 }
 
 /**
  * Update settings indicators
- * Shows enabled settings in footer (or sidebar when detached)
+ * Shows enabled settings in status footer
  * Ordered by most recently enabled
+ * Status footer stays in main panel even when output is detached
  */
 function updateWhitespaceIndicators() {
-  const isOutputDetached = document.body.classList.contains('detached-active');
-  
   // All possible settings with their current values
   const allSettings = {
     'Markdown': isMarkdownMode,
@@ -582,33 +601,18 @@ function updateWhitespaceIndicators() {
     }
   }
   
-  if (isOutputDetached && !isDetachedMode) {
-    // Show in sidebar when output is detached
-    if (whitespaceIndicators) whitespaceIndicators.style.display = 'none';
+  // Status footer is always visible in main panel (hidden only in detached window via CSS)
+  if (!isDetachedMode && whitespaceIndicators) {
     if (activeSettings.length > 0) {
-      if (whitespaceSidebar) {
-        whitespaceSidebar.innerHTML = activeSettings.join(' · ');
-      }
-      if (sidebarWhitespaceStatus) sidebarWhitespaceStatus.style.display = 'block';
+      const text = activeSettings.join(' · ');
+      // Create clickable spans for each setting
+      whitespaceIndicators.innerHTML = activeSettings.map(s => 
+        `<span class="footer-toggle" data-setting="${s}" title="Click to disable ${s}">${s}</span>`
+      ).join(' · ');
+      whitespaceIndicators.title = text; // Tooltip on hover
+      whitespaceIndicators.style.display = 'block';
     } else {
-      if (whitespaceSidebar) whitespaceSidebar.innerHTML = '';
-      if (sidebarWhitespaceStatus) sidebarWhitespaceStatus.style.display = 'none';
-    }
-  } else if (!isDetachedMode) {
-    // Show in footer when not detached
-    if (sidebarWhitespaceStatus) sidebarWhitespaceStatus.style.display = 'none';
-    if (whitespaceIndicators) {
-      if (activeSettings.length > 0) {
-        const text = activeSettings.join(' · ');
-        // Create clickable spans for each setting
-        whitespaceIndicators.innerHTML = activeSettings.map(s => 
-          `<span class="footer-toggle" data-setting="${s}" title="Click to disable ${s}">${s}</span>`
-        ).join(' · ');
-        whitespaceIndicators.title = text; // Tooltip on hover
-        whitespaceIndicators.style.display = 'block';
-      } else {
-        whitespaceIndicators.style.display = 'none';
-      }
+      whitespaceIndicators.style.display = 'none';
     }
   }
 }
@@ -675,11 +679,16 @@ function updateExtensionsIndicator() {
 
 /**
  * Update template loader indicator UI
+ * Template indicator is in the status footer which stays in main panel
  */
 function updateTemplateIndicator() {
   const templateIndicator = document.getElementById('template-indicator');
   const templateList = document.getElementById('template-list');
-  const isOutputDetached = document.body.classList.contains('detached-active');
+  
+  // In detached mode, we don't show the indicator (CSS hides status-footer)
+  if (isDetachedMode) return;
+  
+  if (!templateIndicator || !templateList) return;
   
   // Ensure templateSummary has default values
   const summary = templateSummary || { enabled: false, count: 0, paths: [], error: null };
@@ -692,7 +701,7 @@ function updateTemplateIndicator() {
     tooltip += `\n\nSearch directories:\n`;
     tooltip += summary.searchDirs.map(d => `• ${d}`).join('\n');
   }
-  tooltip += '\n\nClick to reload templates';
+  tooltip += '\n\nClick to expand/collapse';
   
   const contentHtml = summary.error
     ? `<i class="codicon codicon-warning" style="color: var(--vscode-inputValidation-warningBorder);"></i> Error: ${summary.error}`
@@ -700,45 +709,18 @@ function updateTemplateIndicator() {
   
   const errorTooltip = summary.error ? `Template loading error: ${summary.error}` : tooltip;
   
-  if (isOutputDetached && !isDetachedMode) {
-    // Show in sidebar when output is detached (main window)
-    if (templateIndicator) templateIndicator.style.display = 'none';
-    
-    if (summary.enabled && summary.count > 0 || summary.error) {
-      if (templateSidebar) {
-        templateSidebar.innerHTML = contentHtml;
-      }
-      if (sidebarTemplateStatus) {
-        sidebarTemplateStatus.style.display = 'block';
-        sidebarTemplateStatus.title = errorTooltip;
-        if (summary.error) {
-          sidebarTemplateStatus.classList.add('error');
-        } else {
-          sidebarTemplateStatus.classList.remove('error');
-        }
-      }
-    } else {
-      if (sidebarTemplateStatus) sidebarTemplateStatus.style.display = 'none';
-    }
-  } else if (!isDetachedMode) {
-    // Show in footer when not detached (normal mode)
-    if (sidebarTemplateStatus) sidebarTemplateStatus.style.display = 'none';
-    
-    if (!templateIndicator || !templateList) return;
-    
-    if (summary.error) {
-      templateList.innerHTML = contentHtml;
-      templateIndicator.style.display = 'block';
-      templateIndicator.classList.add('error');
-      templateIndicator.title = errorTooltip;
-    } else if (summary.enabled && summary.count > 0) {
-      templateList.innerHTML = contentHtml;
-      templateIndicator.style.display = 'block';
-      templateIndicator.classList.remove('error');
-      templateIndicator.title = tooltip;
-    } else {
-      templateIndicator.style.display = 'none';
-    }
+  if (summary.error) {
+    templateList.innerHTML = contentHtml;
+    templateIndicator.style.display = 'flex';
+    templateIndicator.classList.add('error');
+    templateIndicator.title = errorTooltip;
+  } else if (summary.enabled && summary.count > 0) {
+    templateList.innerHTML = contentHtml;
+    templateIndicator.style.display = 'flex';
+    templateIndicator.classList.remove('error');
+    templateIndicator.title = tooltip;
+  } else {
+    templateIndicator.style.display = 'none';
   }
 }
 
@@ -1347,8 +1329,8 @@ result
     const endTime = performance.now();
     const renderTime = Math.round(endTime - startTime);
     
-    // Update render time and whitespace indicators
-    updateRenderTimeDisplay(renderTime);
+    // Update render time (increment count) and whitespace indicators
+    updateRenderTimeDisplay(renderTime, true);
     updateWhitespaceIndicators();
     
     // Update extension suggestions based on template syntax
@@ -1807,6 +1789,23 @@ if (extensionsIndicator) {
   });
 }
 
+// Render time click handler - force re-render
+if (statusRenderTime) {
+  statusRenderTime.addEventListener('click', async () => {
+    // Visual feedback
+    statusRenderTime.style.opacity = '0.5';
+    if (renderTimeStatus) {
+      renderTimeStatus.textContent = '...';
+    }
+    
+    // Force re-render
+    await update();
+    
+    // Restore opacity
+    statusRenderTime.style.opacity = '1';
+  });
+}
+
 // Template indicator click handler - toggle dropdown
 const templateIndicatorEl = document.getElementById('template-indicator');
 const templateDropdown = document.getElementById('template-dropdown');
@@ -1886,12 +1885,6 @@ if (templateIndicatorEl && templateDropdown) {
   });
 }
 
-// Sidebar template status click handler - reload templates
-if (sidebarTemplateStatus) {
-  sidebarTemplateStatus.addEventListener('click', () => {
-    vscode.postMessage({ type: 'reloadTemplates' });
-  });
-}
 
 // Panel mode: Action button listeners
 if (!isSidebarMode) {
@@ -2235,7 +2228,7 @@ async function handleMessage(message) {
       if (!isDetachedMode && message.fileUri === currentFileUri) {
         console.log('[Webview] Hiding output - detached panel opened');
         document.body.classList.add('detached-active');
-        // Update indicators to show in sidebar
+        // Update indicators - they stay in status footer which remains visible
         updateRenderTimeDisplay();
         updateWhitespaceIndicators();
         updateTemplateIndicator();
@@ -2247,7 +2240,7 @@ async function handleMessage(message) {
       if (!isDetachedMode && message.fileUri === currentFileUri) {
         console.log('[Webview] Showing output - detached panel closed');
         document.body.classList.remove('detached-active');
-        // Update indicators to show in footer
+        // Update indicators - render time moves back to header
         updateRenderTimeDisplay();
         updateWhitespaceIndicators();
         updateTemplateIndicator();

@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n⚙️ New Setting:\n• Strip Block Whitespace (default: ON) - clean output from block tags\n\n🎨 UI Improvements:\n• Settings footer - click to disable any setting\n• Compact render time in output header\n\n🐛 Bug Fix:\n• Fixed jinja2.ext.with_ error`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🎯 Detached Output Improved:\n• Status footer stays in main panel when output is detached\n\n⏱️ Render Time Bar:\n• Click to force re-render\n• Shows render count (×N)\n• Performance tips on hover\n\n🎨 Line Gutter:\n• Zebra striping for better readability`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

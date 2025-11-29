@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.9.0-blue)
+![Version](https://img.shields.io/badge/version-1.9.1-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,22 +10,21 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.9.0 (Major Update)
+## 🚀 What's New in v1.9.1
 
-### ✨ Template Includes & Extends
-Full support for Jinja2's template composition features:
-- **`{% include "header.jinja" %}`** - Include other templates
-- **`{% extends "base.jinja" %}`** - Template inheritance with blocks
-- **`{% from "macros.jinja" import button %}`** - Import macros
+### 🎯 Improved Detached Output
+- **Status footer stays in main panel** when output is detached (render time, templates, toggles)
+- Full interactivity preserved - click templates to browse, click toggles to disable
 
-Templates are automatically loaded from your workspace. Click the **"X templates loaded"** indicator to browse and open any template file.
+### ⏱️ Enhanced Render Time Bar
+- **Click to force re-render**
+- **Render count** shows total renders this session
+- **Performance tips** on hover when slow
 
-### 🎯 Quick Setup
-```json
-"liveJinjaRenderer.templates.searchPaths": ["templates"]
-```
+### 🎨 Line Gutter Improvements
+- **Zebra striping** based on line number changes for better readability with includes/blocks
 
-> 💡 **Previous updates**: Strip Block Whitespace (v1.8.4), Detached Output Window (v1.8.0), IntelliSense (v1.7.x)
+> 💡 **Previous**: Template Includes & Extends (v1.9.0), Detached Output (v1.8.0), IntelliSense (v1.7.x)
 
 ---
 
