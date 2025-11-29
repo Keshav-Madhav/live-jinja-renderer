@@ -57,14 +57,14 @@ function getWebviewContent(isSidebar = false, isDetached = false) {
         <div class="control-group">
             <span class="control-label">Show Whitespace</span>
             <label class="switch">
-                <input type="checkbox" id="show-whitespace-toggle">
+                <input type="checkbox" id="show-whitespace-toggle" checked>
                 <span class="slider"></span>
             </label>
         </div>
         <div class="control-group">
             <span class="control-label">Cull Whitespace</span>
             <label class="switch">
-                <input type="checkbox" id="cull-whitespace-toggle" checked>
+                <input type="checkbox" id="cull-whitespace-toggle">
                 <span class="slider"></span>
             </label>
         </div>

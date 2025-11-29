@@ -4,15 +4,36 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.9.2] - 2025-11-29
+
+### ⚡ Smart Template Loading
+- Templates only load when `{% include %}`, `{% extends %}`, `{% import %}`, or `{% from %}` tags are detected
+- Zero overhead for simple templates without includes
+- Dynamically loads/unloads as you add or remove template references
+
+### 🎨 Color-coded Template Browser  
+- **Green (✓)**: Templates currently used in your file
+- **Dimmed**: Available but unused templates
+- Shows "X used / Y templates" count in footer
+- Live updates as you edit
+
+### ✨ Inline JSON Validation
+- Error indicator below variables editor with line/column info
+- Red border highlights invalid JSON immediately
+
+### 🐛 Fixed
+- Status footer no longer overflows when template indicator is hidden
+- Toggle defaults now match settings (Show Whitespace: on, Cull Whitespace: off)
+- Improved path matching for `./` and `../` relative includes
+
+---
+
 ## [1.9.1] - 2025-11-29
 
-### Improved
-- **Status footer stays in main panel** when output is detached - render time, template indicator, and toggle status remain interactive
-- **Render time bar**: Click to force re-render, shows render count (×N), performance tips on hover for slow renders
-- **Line gutter zebra striping**: Alternates shade when line number changes for better readability with includes/blocks
-
-### Fixed
-- Footer elements no longer move with detached output window
+### 🎯 Detached Output Improvements
+- Status footer stays in main panel when output is detached
+- Render time bar: click to re-render, shows count (×N), performance tips on hover
+- Line gutter zebra striping for better readability with includes/blocks
 
 ---
 

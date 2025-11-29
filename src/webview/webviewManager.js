@@ -1,7 +1,7 @@
 const vscode = require('vscode');
 const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
 const { handleExportVariables } = require('../commands/importExportCommands');
-const { loadTemplates, getTemplateSummary, watchTemplateChanges } = require('../utils/templateLoader');
+const { loadTemplates, getTemplateSummary, watchTemplateChanges, usesExternalTemplates, extractReferencedTemplates } = require('../utils/templateLoader');
 
 /**
  * Sets up webview with template rendering capabilities
@@ -145,8 +145,39 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
     }
   };
   
-  // Load templates for includes/extends support
-  async function loadAndSendTemplates() {
+  // Track if we need external templates
+  let needsExternalTemplates = usesExternalTemplates(lastTemplate);
+  
+  // Load templates for includes/extends support (only if needed)
+  async function loadAndSendTemplates(forceCheck = false) {
+    // Re-check if external templates are needed
+    if (forceCheck) {
+      needsExternalTemplates = usesExternalTemplates(lastTemplate);
+    }
+    
+    // Extract which templates are actually used in the current template
+    const usedTemplates = extractReferencedTemplates(lastTemplate);
+    
+    // Skip loading if template doesn't use external references
+    if (!needsExternalTemplates) {
+      // Send empty templates to webview
+      webview.postMessage({
+        type: 'updateTemplates',
+        templates: {},
+        summary: {
+          enabled: false,
+          count: 0,
+          paths: [],
+          searchDirs: [],
+          error: null,
+          skipped: true,
+          reason: 'No include/extends/import/from tags detected'
+        },
+        usedTemplates: []
+      });
+      return;
+    }
+    
     const filePath = editor.document.uri.fsPath;
     const result = await loadTemplates(filePath);
     loadedTemplates = result.templates;
@@ -155,8 +186,35 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
     webview.postMessage({
       type: 'updateTemplates',
       templates: loadedTemplates,
-      summary: summary
+      summary: summary,
+      usedTemplates: usedTemplates
     });
+  }
+  
+  // Setup template watcher (only if needed, and lazily)
+  function ensureTemplateWatcher() {
+    if (!templateWatcher && needsExternalTemplates) {
+      templateWatcher = watchTemplateChanges(async () => {
+        // Reload templates when any template file changes
+        await loadAndSendTemplates();
+      });
+    }
+  }
+  
+  // Debounced function to send used templates update
+  // Prevents excessive updates on rapid typing
+  let usedTemplatesTimeout = null;
+  function debouncedSendUsedTemplates() {
+    if (usedTemplatesTimeout) {
+      clearTimeout(usedTemplatesTimeout);
+    }
+    usedTemplatesTimeout = setTimeout(() => {
+      const currentUsedTemplates = extractReferencedTemplates(lastTemplate);
+      webview.postMessage({
+        type: 'updateUsedTemplates',
+        usedTemplates: currentUsedTemplates
+      });
+    }, 150); // 150ms debounce for responsive but not excessive updates
   }
   
   // Send initial settings to webview
@@ -166,15 +224,10 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
       settings: settings
     });
     
-    // Load templates after settings
+    // Load templates after settings (only if needed)
     await loadAndSendTemplates();
+    ensureTemplateWatcher();
   }, 100);
-  
-  // Watch for template file changes
-  templateWatcher = watchTemplateChanges(async () => {
-    // Reload templates when any template file changes
-    await loadAndSendTemplates();
-  });
   
   // Update template if the original file changes
   // The webview will decide whether to auto-render based on autoRerender setting
@@ -254,6 +307,22 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
       setTimeout(() => {
         applySelectionHighlight();
       }, 50);
+      
+      // Check if external templates usage changed and reload if needed
+      const previouslyNeededTemplates = needsExternalTemplates;
+      needsExternalTemplates = usesExternalTemplates(lastTemplate);
+      
+      // If template now needs external templates but didn't before, load them
+      if (needsExternalTemplates && !previouslyNeededTemplates) {
+        loadAndSendTemplates();
+        ensureTemplateWatcher();
+      } else if (!needsExternalTemplates && previouslyNeededTemplates) {
+        // If template no longer needs external templates, send empty
+        loadAndSendTemplates();
+      } else if (needsExternalTemplates) {
+        // Template still uses external templates - send updated usedTemplates list (debounced)
+        debouncedSendUsedTemplates();
+      }
       
       // Send updated template to the webview (without auto-extraction)
       webview.postMessage({ 
@@ -568,9 +637,10 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
           return;
         
         case 'reloadTemplates':
-          // Reload templates for includes/extends
+          // Reload templates for includes/extends (force-check if needed)
           try {
-            await loadAndSendTemplates();
+            await loadAndSendTemplates(true);
+            ensureTemplateWatcher();
           } catch (err) {
             console.error('Failed to reload templates:', err);
           }

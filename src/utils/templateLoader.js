@@ -7,6 +7,73 @@ const path = require('path');
  */
 
 /**
+ * Check if template content uses external template references
+ * (include, extends, import, from ... import)
+ * @param {string} templateContent - The template content to check
+ * @returns {boolean} True if the template references external templates
+ */
+function usesExternalTemplates(templateContent) {
+  if (!templateContent || typeof templateContent !== 'string') {
+    return false;
+  }
+  
+  // Regex patterns for Jinja tags that reference other templates
+  // {% include "template.html" %} or {% include 'template.html' %} or {% include variable %}
+  // {% extends "base.html" %} or {% extends 'base.html' %} or {% extends variable %}
+  // {% import "macros.html" as macros %} or {% import 'macros.html' as macros %}
+  // {% from "macros.html" import macro_name %} or {% from 'macros.html' import macro_name %}
+  const externalTemplatePattern = /\{%[-+]?\s*(include|extends|import|from)\s+/i;
+  
+  return externalTemplatePattern.test(templateContent);
+}
+
+/**
+ * Extract referenced template names from template content
+ * @param {string} templateContent - The template content to parse
+ * @returns {string[]} Array of template names referenced in the content
+ */
+function extractReferencedTemplates(templateContent) {
+  if (!templateContent || typeof templateContent !== 'string') {
+    return [];
+  }
+  
+  const references = new Set();
+  
+  // Match {% include "template.html" %} or {% include 'template.html' %}
+  // Also handles {% include "template.html" with context %} etc.
+  const includePattern = /\{%[-+]?\s*include\s+['"]([^'"]+)['"]/gi;
+  
+  // Match {% extends "base.html" %} or {% extends 'base.html' %}
+  const extendsPattern = /\{%[-+]?\s*extends\s+['"]([^'"]+)['"]/gi;
+  
+  // Match {% import "macros.html" as ... %} or {% import 'macros.html' as ... %}
+  const importPattern = /\{%[-+]?\s*import\s+['"]([^'"]+)['"]/gi;
+  
+  // Match {% from "macros.html" import ... %} or {% from 'macros.html' import ... %}
+  const fromPattern = /\{%[-+]?\s*from\s+['"]([^'"]+)['"]/gi;
+  
+  let match;
+  
+  while ((match = includePattern.exec(templateContent)) !== null) {
+    references.add(match[1]);
+  }
+  
+  while ((match = extendsPattern.exec(templateContent)) !== null) {
+    references.add(match[1]);
+  }
+  
+  while ((match = importPattern.exec(templateContent)) !== null) {
+    references.add(match[1]);
+  }
+  
+  while ((match = fromPattern.exec(templateContent)) !== null) {
+    references.add(match[1]);
+  }
+  
+  return Array.from(references);
+}
+
+/**
  * Get the workspace root folder
  * @returns {string|null} The workspace root path or null if no workspace is open
  */
@@ -184,6 +251,8 @@ module.exports = {
   loadTemplates,
   getTemplateSummary,
   watchTemplateChanges,
-  getWorkspaceRoot
+  getWorkspaceRoot,
+  usesExternalTemplates,
+  extractReferencedTemplates
 };
 

@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.9.1-blue)
+![Version](https://img.shields.io/badge/version-1.9.2-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,21 +10,26 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.9.1
+## 🚀 What's New in v1.9.2
 
-### 🎯 Improved Detached Output
-- **Status footer stays in main panel** when output is detached (render time, templates, toggles)
-- Full interactivity preserved - click templates to browse, click toggles to disable
+### ⚡ Smart Template Loading
+- **Zero overhead** for simple templates - only loads adjacent files when `{% include %}`, `{% extends %}`, `{% import %}`, or `{% from %}` tags are detected
+- **Live detection** - adds/removes template loading as you edit
 
-### ⏱️ Enhanced Render Time Bar
-- **Click to force re-render**
-- **Render count** shows total renders this session
-- **Performance tips** on hover when slow
+### 🎨 Color-coded Template Browser
+- **Green (✓)**: Templates currently used in your file
+- **Dimmed**: Available but unused templates
+- **Live updates** as you add/remove include tags
 
-### 🎨 Line Gutter Improvements
-- **Zebra striping** based on line number changes for better readability with includes/blocks
+### ✨ Inline JSON Validation
+- **Error indicator** below variables editor with line/column info
+- Red border highlights invalid JSON immediately
 
-> 💡 **Previous**: Template Includes & Extends (v1.9.0), Detached Output (v1.8.0), IntelliSense (v1.7.x)
+### 🐛 Bug Fixes
+- Fixed toggle defaults (Show Whitespace now checked, Cull Whitespace now unchecked)
+- Fixed status footer overflow when template indicator is hidden
+
+> 💡 **Previous**: Detached Output Improvements (v1.9.1), Template Includes & Extends (v1.9.0)
 
 ---
 
@@ -375,6 +380,17 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 ---
 
 ## Recent Updates
+
+### 1.9.2 - Smart Loading & JSON Validation
+- **Smart Template Loading** - Zero overhead for simple templates
+- **Color-coded Template Browser** - Green for used, dimmed for available
+- **Inline JSON Validation** - Error indicator with line/column info
+- Fixed toggle defaults and status footer overflow
+
+### 1.9.1 - Detached Output Improvements
+- **Status footer stays in main panel** when output is detached
+- **Render time bar**: Click to re-render, shows count, performance tips
+- **Zebra striping** on line gutter for better readability
 
 ### 1.9.0 - Template Includes & Extends (Major Update)
 - **`{% include %}` and `{% extends %}` support** - Full template composition

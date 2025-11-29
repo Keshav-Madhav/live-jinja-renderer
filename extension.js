@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🎯 Detached Output Improved:\n• Status footer stays in main panel when output is detached\n\n⏱️ Render Time Bar:\n• Click to force re-render\n• Shows render count (×N)\n• Performance tips on hover\n\n🎨 Line Gutter:\n• Zebra striping for better readability`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n⚡ Smart Template Loading:\n• Zero overhead for simple templates\n• Only loads files when include/extends detected\n\n🎨 Color-coded Templates:\n• Green = used, Dimmed = available\n• Live updates as you edit\n\n✨ Inline JSON Validation:\n• Error indicator with line/column info`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

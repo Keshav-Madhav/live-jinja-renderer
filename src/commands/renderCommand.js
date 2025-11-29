@@ -52,21 +52,14 @@ function notifyMainWindows(fileUri, isDetachedActive) {
  * Close all detached panels for a specific file
  */
 function closeDetachedPanels(fileUri) {
-    console.log('[RenderCommand] closeDetachedPanels called for:', fileUri);
-    console.log('[RenderCommand] Current detached panels:', Array.from(detachedPanels.keys()));
-    
     if (detachedPanels.has(fileUri)) {
         const panels = detachedPanels.get(fileUri);
-        console.log('[RenderCommand] Found', panels.length, 'detached panel(s) to close');
         // Create a copy of the array since dispose will modify the original
         const panelsCopy = [...panels];
         panelsCopy.forEach(panel => {
             panel.dispose();
         });
         detachedPanels.delete(fileUri);
-        console.log('[RenderCommand] Detached panels closed');
-    } else {
-        console.log('[RenderCommand] No detached panels found for this file URI');
     }
 }
 
@@ -178,7 +171,6 @@ function registerRenderCommand(context, intelliSenseManager = null, sidebarProvi
   }));
 
   const renderPanelCommand = vscode.commands.registerCommand('live-jinja-tester.render', function () {
-    console.log('✅ Render panel command triggered!');
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
       vscode.window.showInformationMessage('No active editor. Open a file to render.');
@@ -237,13 +229,11 @@ function registerRenderCommand(context, intelliSenseManager = null, sidebarProvi
     
     // Clean up the subscription when the panel is closed
     panel.onDidDispose(() => {
-      console.log('[Panel] Panel disposed');
       subscription.dispose();
       currentPanel = null; // Clear reference
       
       // Close any detached panels for this file
       const fileUri = editor.document.uri.toString();
-      console.log('[Panel] Closing detached panels for:', fileUri);
       closeDetachedPanels(fileUri);
     }, null, context.subscriptions);
   });

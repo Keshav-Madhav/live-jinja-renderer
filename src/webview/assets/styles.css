@@ -343,6 +343,39 @@ textarea:focus {
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
 }
 
+#variables.json-error {
+  border-color: var(--vscode-inputValidation-errorBorder, #f14c4c) !important;
+}
+
+/* JSON Error Indicator */
+.json-error-indicator {
+  display: none;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--vscode-inputValidation-errorForeground, #f14c4c);
+  background: var(--vscode-inputValidation-errorBackground, rgba(241, 76, 76, 0.1));
+  border: 1px solid var(--vscode-inputValidation-errorBorder, #f14c4c);
+  border-top: none;
+  border-radius: 0 0 3px 3px;
+  align-items: center;
+  gap: 6px;
+}
+
+.json-error-indicator.visible {
+  display: flex;
+}
+
+.json-error-indicator .codicon-error {
+  color: var(--vscode-inputValidation-errorBorder, #f14c4c);
+}
+
+#json-error-message {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Resize Handle */
 .resize-handle {
   height: 6px;
@@ -390,8 +423,9 @@ textarea:focus {
 .output-section {
   display: flex;
   flex-direction: column;
-  min-height: 200px;
+  min-height: 150px; /* Reduced to allow more space for footer */
   flex: 1;
+  overflow: hidden; /* Ensure content doesn't overflow */
 }
 
 /* Output Container */
@@ -403,6 +437,7 @@ textarea:focus {
   border-radius: 2px;
   background-color: var(--vscode-editor-background);
   overflow: hidden;
+  min-height: 0; /* Allow proper flex shrinking */
 }
 
 #output {
@@ -553,6 +588,7 @@ textarea:focus {
   flex-direction: column;
   gap: 4px;
   margin-top: 2px;
+  flex-shrink: 0; /* Prevent footer from being pushed out of view */
 }
 
 /* Status Render Time - Always visible in footer */
@@ -1244,5 +1280,28 @@ body.detached-active .status-render-time {
 
 .template-dropdown-reload:hover {
   background: var(--vscode-menu-selectionBackground);
+}
+
+/* Used templates - highlighted in green */
+.template-dropdown-item.template-used {
+  color: var(--vscode-testing-iconPassed, #73c991);
+  font-weight: 500;
+}
+
+.template-dropdown-item.template-used::before {
+  display: none; /* Hide default icon since we use codicon-check */
+}
+
+.template-dropdown-item.template-used .codicon-check {
+  color: var(--vscode-testing-iconPassed, #73c991);
+}
+
+/* Unused templates - slightly dimmed */
+.template-dropdown-item.template-unused {
+  opacity: 0.7;
+}
+
+.template-dropdown-item.template-unused:hover {
+  opacity: 1;
 }
 

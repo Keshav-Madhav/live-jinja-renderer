@@ -62,6 +62,7 @@ let stripBlockWhitespace = true;
 // Template includes/extends support
 let loadedTemplates = {};
 let templateSummary = { enabled: false, count: 0, paths: [], error: null };
+let usedTemplates = []; // Templates actually referenced in the current template
 
 // Last render time for UI updates
 let lastRenderTime = 0;
@@ -695,17 +696,42 @@ function updateTemplateIndicator() {
   
   // Build tooltip with ALL template names
   const allPaths = summary.paths || [];
+  
+  // Count used templates
+  const usedCount = allPaths.filter(p => isTemplateUsed(p, usedTemplates)).length;
+  
   let tooltip = `Templates available for {% include %} and {% extends %}:\n\n`;
-  tooltip += allPaths.map(p => `• ${p}`).join('\n');
+  
+  // Show used templates first in tooltip
+  const usedPaths = allPaths.filter(p => isTemplateUsed(p, usedTemplates));
+  const unusedPaths = allPaths.filter(p => !isTemplateUsed(p, usedTemplates));
+  
+  if (usedPaths.length > 0) {
+    tooltip += `Used (${usedPaths.length}):\n`;
+    tooltip += usedPaths.map(p => `  ✓ ${p}`).join('\n');
+    tooltip += '\n\n';
+  }
+  
+  if (unusedPaths.length > 0) {
+    tooltip += `Available (${unusedPaths.length}):\n`;
+    tooltip += unusedPaths.map(p => `  • ${p}`).join('\n');
+  }
+  
   if (summary.searchDirs && summary.searchDirs.length > 0) {
     tooltip += `\n\nSearch directories:\n`;
     tooltip += summary.searchDirs.map(d => `• ${d}`).join('\n');
   }
   tooltip += '\n\nClick to expand/collapse';
   
-  const contentHtml = summary.error
-    ? `<i class="codicon codicon-warning" style="color: var(--vscode-inputValidation-warningBorder);"></i> Error: ${summary.error}`
-    : `<i class="codicon codicon-file-symlink-directory" style="margin-right: 4px;"></i> ${summary.count} template${summary.count !== 1 ? 's' : ''} loaded`;
+  // Show used/total count in the indicator
+  let contentHtml;
+  if (summary.error) {
+    contentHtml = `<i class="codicon codicon-warning" style="color: var(--vscode-inputValidation-warningBorder);"></i> Error: ${summary.error}`;
+  } else if (usedCount > 0) {
+    contentHtml = `<i class="codicon codicon-file-symlink-directory" style="margin-right: 4px;"></i> <span style="color: var(--vscode-testing-iconPassed, #73c991);">${usedCount} used</span> / ${summary.count} template${summary.count !== 1 ? 's' : ''}`;
+  } else {
+    contentHtml = `<i class="codicon codicon-file-symlink-directory" style="margin-right: 4px;"></i> ${summary.count} template${summary.count !== 1 ? 's' : ''} loaded`;
+  }
   
   const errorTooltip = summary.error ? `Template loading error: ${summary.error}` : tooltip;
   
@@ -814,6 +840,63 @@ function detectIncludeExtendsUsage(template) {
 }
 
 /**
+ * Normalize a template path by removing ./ and ../ prefixes and normalizing separators
+ * @param {string} path - The path to normalize
+ * @returns {string} Normalized path
+ */
+function normalizeTemplatePath(path) {
+  if (!path) return '';
+  
+  return path
+    .replace(/\\/g, '/')           // Normalize separators
+    .replace(/^\.\//, '')          // Remove leading ./
+    .replace(/\/\.\//g, '/')       // Remove /./ in middle
+    .replace(/^\.\.\//, '')        // Remove leading ../
+    .replace(/\/\.\.\/[^/]+\//g, '/'); // Simplify /../dir/ patterns
+}
+
+/**
+ * Check if a template path matches any of the used template references
+ * @param {string} templatePath - The full template path from the loaded templates
+ * @param {string[]} usedRefs - Array of template references from the current template
+ * @returns {boolean} True if this template is being used
+ */
+function isTemplateUsed(templatePath, usedRefs) {
+  if (!usedRefs || usedRefs.length === 0) return false;
+  
+  // Normalize the template path
+  const normalizedPath = normalizeTemplatePath(templatePath);
+  const fileName = normalizedPath.split('/').pop();
+  
+  for (const ref of usedRefs) {
+    const normalizedRef = normalizeTemplatePath(ref);
+    const refFileName = normalizedRef.split('/').pop();
+    
+    // Check for exact match
+    if (normalizedPath === normalizedRef) {
+      return true;
+    }
+    
+    // Check if path ends with the reference (handles relative paths)
+    if (normalizedPath.endsWith('/' + normalizedRef)) {
+      return true;
+    }
+    
+    // Check if reference ends with the path (handles when ref is more specific)
+    if (normalizedRef.endsWith('/' + normalizedPath)) {
+      return true;
+    }
+    
+    // Check filename match (handles simple includes like "header.html")
+    if (fileName === refFileName) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
  * Update the extension suggestions UI
  */
 function updateExtensionSuggestions() {
@@ -915,7 +998,6 @@ function updateAutoRerenderToggle() {
 function updateFileHistoryUI(history, enabled = true) {
   if (!isSidebarMode || !fileHistoryMenu) return;
   
-  console.log('Updating file history UI with', history?.length || 0, 'items, enabled:', enabled);
   fileHistory = history || [];
   historyEnabled = enabled;
   
@@ -938,7 +1020,6 @@ function updateFileHistoryUI(history, enabled = true) {
     emptyItem.style.cursor = 'default';
     emptyItem.textContent = 'No recent files';
     fileHistoryMenu.appendChild(emptyItem);
-    console.log('Added empty state item');
     return;
   }
   
@@ -956,7 +1037,6 @@ function updateFileHistoryUI(history, enabled = true) {
     historyItem.appendChild(label);
     
     historyItem.addEventListener('click', () => {
-      console.log('Switching to history item:', item.index);
       vscode.postMessage({
         type: 'switchToHistoryItem',
         index: item.index
@@ -966,8 +1046,6 @@ function updateFileHistoryUI(history, enabled = true) {
     
     fileHistoryMenu.appendChild(historyItem);
   });
-  
-  console.log('File history UI updated with', fileHistory.length, 'items');
 }
 
 /* ===== PYODIDE AND RENDERING ===== */
@@ -1486,7 +1564,7 @@ function ghostSaveVariables() {
       selectionRange: currentSelectionRange
     });
   } catch {
-    console.log('Ghost save skipped: Invalid JSON');
+    // Silent fail - invalid JSON, nothing to save
   }
 }
 
@@ -1635,13 +1713,11 @@ if (isSidebarMode && fileHistoryDropdown && fileHistoryMenu) {
   
   fileHistoryDropdown.addEventListener('click', (e) => {
     e.stopPropagation();
-    const isShown = fileHistoryMenu.classList.toggle('show');
-    console.log('Dropdown toggled:', isShown ? 'OPEN' : 'CLOSED');
+    fileHistoryMenu.classList.toggle('show');
   });
   
   document.addEventListener('click', () => {
     if (fileHistoryMenu.classList.contains('show')) {
-      console.log('Closing dropdown (clicked outside)');
       fileHistoryMenu.classList.remove('show');
     }
   });
@@ -1670,8 +1746,52 @@ if (isSidebarMode && autoRerenderToggle) {
 // Initialize JSON editor features
 setupJsonEditor(variablesEditor);
 
+// JSON error indicator elements
+const jsonErrorIndicator = document.getElementById('json-error-indicator');
+const jsonErrorMessage = document.getElementById('json-error-message');
+
+/**
+ * Validate JSON and update error indicator
+ * Shows inline error with line/column info when JSON is invalid
+ */
+function validateJsonAndShowError() {
+  const value = variablesEditor.value.trim();
+  
+  // Empty is valid (will default to {})
+  if (!value) {
+    variablesEditor.classList.remove('json-error');
+    if (jsonErrorIndicator) jsonErrorIndicator.classList.remove('visible');
+    return true;
+  }
+  
+  try {
+    JSON.parse(value);
+    variablesEditor.classList.remove('json-error');
+    if (jsonErrorIndicator) jsonErrorIndicator.classList.remove('visible');
+    return true;
+  } catch (e) {
+    variablesEditor.classList.add('json-error');
+    if (jsonErrorIndicator && jsonErrorMessage) {
+      // Extract useful part of error message
+      let errorMsg = e.message;
+      const posMatch = errorMsg.match(/position (\d+)/);
+      if (posMatch) {
+        const pos = parseInt(posMatch[1]);
+        const lines = value.substring(0, pos).split('\n');
+        const line = lines.length;
+        const col = lines[lines.length - 1].length + 1;
+        errorMsg = `Line ${line}, Col ${col}: ${errorMsg.split(' at ')[0]}`;
+      }
+      jsonErrorMessage.textContent = errorMsg;
+      jsonErrorIndicator.classList.add('visible');
+    }
+    return false;
+  }
+}
+
 // Listen for variable changes and auto-rerender (if enabled)
 variablesEditor.addEventListener('input', () => {
+  validateJsonAndShowError();
   if (autoRerender) {
     debouncedUpdate();
   }
@@ -1810,6 +1930,112 @@ if (statusRenderTime) {
 const templateIndicatorEl = document.getElementById('template-indicator');
 const templateDropdown = document.getElementById('template-dropdown');
 
+/**
+ * Generate the HTML content for the template dropdown
+ * @returns {string} HTML content for the dropdown
+ */
+function generateTemplateDropdownHTML() {
+  const summary = templateSummary || { paths: [], searchDirs: [] };
+  const allPaths = summary.paths || [];
+  
+  // Separate used and unused templates
+  const usedPaths = [];
+  const unusedPaths = [];
+  
+  allPaths.forEach(p => {
+    if (isTemplateUsed(p, usedTemplates)) {
+      usedPaths.push(p);
+    } else {
+      unusedPaths.push(p);
+    }
+  });
+  
+  let html = '';
+  
+  // Show used templates first (if any)
+  if (usedPaths.length > 0) {
+    html += '<div class="template-dropdown-header">Used in Current Template</div>';
+    usedPaths.forEach(p => {
+      html += `<div class="template-dropdown-item template-file template-used" data-path="${p}" title="Click to open: ${p}">
+        <i class="codicon codicon-check" style="margin-right: 4px;"></i>${p}
+      </div>`;
+    });
+  }
+  
+  // Show unused templates
+  if (unusedPaths.length > 0) {
+    html += '<div class="template-dropdown-header">Available Templates</div>';
+    unusedPaths.forEach(p => {
+      html += `<div class="template-dropdown-item template-file template-unused" data-path="${p}" title="Click to open: ${p}">${p}</div>`;
+    });
+  }
+  
+  if (allPaths.length === 0) {
+    html += '<div class="template-dropdown-header">Available Templates</div>';
+    html += '<div class="template-dropdown-item" style="opacity: 0.6; cursor: default;">No templates loaded</div>';
+  }
+  
+  if (summary.searchDirs && summary.searchDirs.length > 0) {
+    html += '<div class="template-dropdown-header">Search Directories</div>';
+    summary.searchDirs.forEach(d => {
+      html += `<div class="template-dropdown-item" style="opacity: 0.7;" title="${d}">${d}</div>`;
+    });
+  }
+  
+  html += '<div class="template-dropdown-reload"><i class="codicon codicon-refresh"></i> Reload Templates</div>';
+  
+  return html;
+}
+
+/**
+ * Attach click handlers to dropdown elements
+ */
+function attachDropdownHandlers() {
+  if (!templateDropdown || !templateIndicatorEl) return;
+  
+  // Reload button handler
+  const reloadBtn = templateDropdown.querySelector('.template-dropdown-reload');
+  if (reloadBtn) {
+    reloadBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      vscode.postMessage({ type: 'reloadTemplates' });
+      templateIndicatorEl.classList.remove('expanded');
+      templateDropdown.style.display = 'none';
+    });
+  }
+  
+  // Template file handlers
+  const templateFiles = templateDropdown.querySelectorAll('.template-file');
+  templateFiles.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const templatePath = item.getAttribute('data-path');
+      if (templatePath) {
+        vscode.postMessage({ 
+          type: 'openTemplateFile', 
+          templatePath: templatePath 
+        });
+        templateIndicatorEl.classList.remove('expanded');
+        templateDropdown.style.display = 'none';
+      }
+    });
+  });
+}
+
+/**
+ * Refresh the template dropdown content if it's currently open
+ * Called when usedTemplates changes to provide live updates
+ */
+function refreshTemplateDropdownIfOpen() {
+  if (!templateIndicatorEl || !templateDropdown) return;
+  
+  // Only refresh if dropdown is currently expanded
+  if (!templateIndicatorEl.classList.contains('expanded')) return;
+  
+  templateDropdown.innerHTML = generateTemplateDropdownHTML();
+  attachDropdownHandlers();
+}
+
 if (templateIndicatorEl && templateDropdown) {
   templateIndicatorEl.addEventListener('click', (e) => {
     // Don't toggle if clicking on reload button inside dropdown
@@ -1821,58 +2047,9 @@ if (templateIndicatorEl && templateDropdown) {
     templateDropdown.style.display = isExpanded ? 'block' : 'none';
     
     if (isExpanded) {
-      // Populate dropdown with templates
-      const summary = templateSummary || { paths: [], searchDirs: [] };
-      const allPaths = summary.paths || [];
-      
-      let html = '<div class="template-dropdown-header">Available Templates</div>';
-      
-      if (allPaths.length === 0) {
-        html += '<div class="template-dropdown-item" style="opacity: 0.6; cursor: default;">No templates loaded</div>';
-      } else {
-        allPaths.forEach(p => {
-          html += `<div class="template-dropdown-item template-file" data-path="${p}" title="Click to open: ${p}">${p}</div>`;
-        });
-      }
-      
-      if (summary.searchDirs && summary.searchDirs.length > 0) {
-        html += '<div class="template-dropdown-header">Search Directories</div>';
-        summary.searchDirs.forEach(d => {
-          html += `<div class="template-dropdown-item" style="opacity: 0.7;" title="${d}">${d}</div>`;
-        });
-      }
-      
-      html += '<div class="template-dropdown-reload"><i class="codicon codicon-refresh"></i> Reload Templates</div>';
-      
-      templateDropdown.innerHTML = html;
-      
-      // Add click handler for reload button
-      const reloadBtn = templateDropdown.querySelector('.template-dropdown-reload');
-      if (reloadBtn) {
-        reloadBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          vscode.postMessage({ type: 'reloadTemplates' });
-          templateIndicatorEl.classList.remove('expanded');
-          templateDropdown.style.display = 'none';
-        });
-      }
-      
-      // Add click handlers for template files
-      const templateFiles = templateDropdown.querySelectorAll('.template-file');
-      templateFiles.forEach(item => {
-        item.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const templatePath = item.getAttribute('data-path');
-          if (templatePath) {
-            vscode.postMessage({ 
-              type: 'openTemplateFile', 
-              templatePath: templatePath 
-            });
-            templateIndicatorEl.classList.remove('expanded');
-            templateDropdown.style.display = 'none';
-          }
-        });
-      });
+      // Populate dropdown using shared function
+      templateDropdown.innerHTML = generateTemplateDropdownHTML();
+      attachDropdownHandlers();
     }
   });
   
@@ -2038,7 +2215,6 @@ async function handleMessage(message) {
     
     case 'replaceVariables':
       if (message.extractedVariables) {
-        console.log('[Webview] Received replaceVariables:', { isDetachedMode, variables: message.extractedVariables });
         showLoading('Updating variables...');
         
         let currentVars = {};
@@ -2053,7 +2229,6 @@ async function handleMessage(message) {
         
         // In detached mode, just use the variables directly without merging logic
         if (isDetachedMode) {
-          console.log('[Webview] Detached mode: Using variables directly');
           variablesEditor.value = JSON.stringify(message.extractedVariables, null, 2);
         } else {
           // Normal mode: merge with existing
@@ -2079,9 +2254,7 @@ async function handleMessage(message) {
         
         autoResizeVariablesSection();
         hideLoading();
-        console.log('[Webview] About to call update()');
         await update();
-        console.log('[Webview] Update complete');
       }
       break;
     
@@ -2209,11 +2382,20 @@ async function handleMessage(message) {
       // Update loaded templates for includes/extends
       loadedTemplates = message.templates || {};
       templateSummary = message.summary || { enabled: false, count: 0, paths: [], error: null };
+      usedTemplates = message.usedTemplates || [];
       updateTemplateIndicator();
+      refreshTemplateDropdownIfOpen();
       // Re-render with new templates if we have a template and auto-rerender is on
       if (autoRerender && currentTemplate) {
         await update();
       }
+      break;
+    
+    case 'updateUsedTemplates':
+      // Update which templates are being used (live update as template content changes)
+      usedTemplates = message.usedTemplates || [];
+      updateTemplateIndicator();
+      refreshTemplateDropdownIfOpen();
       break;
     
     case 'execCommand':
@@ -2226,7 +2408,6 @@ async function handleMessage(message) {
     case 'hideOutput':
       // Hide output section when detached panel is opened
       if (!isDetachedMode && message.fileUri === currentFileUri) {
-        console.log('[Webview] Hiding output - detached panel opened');
         document.body.classList.add('detached-active');
         // Update indicators - they stay in status footer which remains visible
         updateRenderTimeDisplay();
@@ -2238,7 +2419,6 @@ async function handleMessage(message) {
     case 'showOutput':
       // Show output section when detached panel is closed
       if (!isDetachedMode && message.fileUri === currentFileUri) {
-        console.log('[Webview] Showing output - detached panel closed');
         document.body.classList.remove('detached-active');
         // Update indicators - render time moves back to header
         updateRenderTimeDisplay();

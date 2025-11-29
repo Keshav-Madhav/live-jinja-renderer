@@ -391,25 +391,20 @@ class JinjaRendererViewProvider {
     
     // Clean up when view is disposed
     webviewView.onDidDispose(() => {
-      console.log('[Sidebar] View disposed, cleaning up...');
       this._disposables.forEach(d => d.dispose());
       this._disposables = [];
       
       // Close any detached panels for the current file
       if (this._currentEditor) {
         const fileUri = this._currentEditor.document.uri.toString();
-        console.log('[Sidebar] Closing detached panels for:', fileUri);
         const vscode = require('vscode');
         vscode.commands.executeCommand('live-jinja-tester.closeDetachedForFile', fileUri);
-      } else {
-        console.log('[Sidebar] No current editor to close detached panels for');
       }
     });
     
     // Clean up highlights when view becomes hidden
     webviewView.onDidChangeVisibility(() => {
       if (!webviewView.visible) {
-        console.log('[Sidebar] View hidden - closing detached panels');
         // View is hidden, clean up decorations
         this._disposables.forEach(d => d.dispose());
         this._disposables = [];
@@ -417,12 +412,10 @@ class JinjaRendererViewProvider {
         // Close any detached panels for the current file when sidebar is hidden/closed
         if (this._currentEditor) {
           const fileUri = this._currentEditor.document.uri.toString();
-          console.log('[Sidebar] Closing detached panels for:', fileUri);
           const vscode = require('vscode');
           vscode.commands.executeCommand('live-jinja-tester.closeDetachedForFile', fileUri);
         }
       } else {
-        console.log('[Sidebar] View visible');
         // View is visible again, re-setup for active editor
         updateForActiveEditor();
       }

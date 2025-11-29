@@ -107,7 +107,6 @@ function registerSelectionActionsProvider(context) {
   );
 
   context.subscriptions.push(disposable);
-  console.log('✅ Selection actions provider registered');
 }
 
 module.exports = {

@@ -40,8 +40,6 @@ class JinjaIntelliSenseManager {
 
     this.disposables.push(completionDisposable);
     this.context.subscriptions.push(completionDisposable);
-    
-    console.log('✅ Jinja IntelliSense completion provider registered with enhanced triggers');
   }
 
   /**
