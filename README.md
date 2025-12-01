@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.9.2-blue)
+![Version](https://img.shields.io/badge/version-1.9.3-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,26 +10,20 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.9.2
+## 🚀 What's New in v1.9.3
 
-### ⚡ Smart Template Loading
-- **Zero overhead** for simple templates - only loads adjacent files when `{% include %}`, `{% extends %}`, `{% import %}`, or `{% from %}` tags are detected
-- **Live detection** - adds/removes template loading as you edit
+### 📁 Relative Path Support for Template Search
+- **Current folder only**: Use `"."` in `searchPaths` to search only the current file's directory
+- **Parent folder**: Use `".."` to search the parent directory
+- **Relative paths**: Use `"./subfolder"` or `"../sibling"` for paths relative to current file
+- Perfect for limiting template scope to just the files in your working directory
 
-### 🎨 Color-coded Template Browser
-- **Green (✓)**: Templates currently used in your file
-- **Dimmed**: Available but unused templates
-- **Live updates** as you add/remove include tags
+**Example**: To only search templates in the same folder as your current file:
+```json
+"liveJinjaRenderer.templates.searchPaths": ["."]
+```
 
-### ✨ Inline JSON Validation
-- **Error indicator** below variables editor with line/column info
-- Red border highlights invalid JSON immediately
-
-### 🐛 Bug Fixes
-- Fixed toggle defaults (Show Whitespace now checked, Cull Whitespace now unchecked)
-- Fixed status footer overflow when template indicator is hidden
-
-> 💡 **Previous**: Detached Output Improvements (v1.9.1), Template Includes & Extends (v1.9.0)
+> 💡 **Previous**: Smart Template Loading & JSON Validation (v1.9.2), Template Includes & Extends (v1.9.0)
 
 ---
 
@@ -280,7 +274,7 @@ The **"X templates loaded"** indicator in the footer shows all available templat
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `templates.enableIncludes` | `true` | Enable/disable template loading |
-| `templates.searchPaths` | `[]` | Directories to search (relative to workspace) |
+| `templates.searchPaths` | `[]` | Directories to search. Supports `.` (current folder), `..`, `./path`, `../path` (relative to file), or paths relative to workspace |
 | `templates.filePatterns` | `["**/*.jinja", "**/*.j2", "**/*.html", "**/*.txt"]` | File patterns to load |
 | `templates.maxFiles` | `100` | Maximum templates to load |
 
@@ -380,6 +374,10 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 ---
 
 ## Recent Updates
+
+### 1.9.3 - Relative Path Support
+- **Relative search paths** - Use `.`, `..`, `./path` for file-relative template search
+- **Current folder only mode** - Set `searchPaths: ["."]` to limit scope
 
 ### 1.9.2 - Smart Loading & JSON Validation
 - **Smart Template Loading** - Zero overhead for simple templates

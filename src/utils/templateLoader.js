@@ -111,16 +111,40 @@ async function loadTemplates(currentFilePath) {
     // Determine search directories
     let searchDirs = [];
     
-    if (searchPaths.length > 0 && workspaceRoot) {
-      // Use configured search paths relative to workspace root
+    if (searchPaths.length > 0) {
+      // Use configured search paths
+      // Supports special tokens:
+      // - "." = current file's directory only
+      // - ".." = parent directory of current file
+      // - "./subfolder" or "../subfolder" = relative to current file's directory
+      // - Regular paths = relative to workspace root
       for (const searchPath of searchPaths) {
-        const fullPath = path.isAbsolute(searchPath) 
-          ? searchPath 
-          : path.join(workspaceRoot, searchPath);
-        searchDirs.push(fullPath);
+        let fullPath;
+        
+        if (searchPath === '.' || searchPath === './') {
+          // Current file's directory only
+          if (currentFilePath) {
+            fullPath = path.dirname(currentFilePath);
+          }
+        } else if (searchPath.startsWith('./') || searchPath.startsWith('../') || searchPath === '..') {
+          // Relative to current file's directory
+          if (currentFilePath) {
+            fullPath = path.resolve(path.dirname(currentFilePath), searchPath);
+          }
+        } else if (path.isAbsolute(searchPath)) {
+          // Absolute path
+          fullPath = searchPath;
+        } else if (workspaceRoot) {
+          // Relative to workspace root
+          fullPath = path.join(workspaceRoot, searchPath);
+        }
+        
+        if (fullPath) {
+          searchDirs.push(fullPath);
+        }
       }
     } else if (currentFilePath) {
-      // Default to the directory containing the current file
+      // Default behavior: current file's directory + workspace root
       searchDirs.push(path.dirname(currentFilePath));
       
       // Also add workspace root if available

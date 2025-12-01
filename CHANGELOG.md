@@ -4,6 +4,23 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.9.3] - 2025-12-01
+
+### 📁 Relative Path Support for Template Search
+- **Current folder only**: Use `"."` in `searchPaths` to search only the current file's directory
+- **Parent folder**: Use `".."` to search the parent directory  
+- **Relative paths**: Use `"./subfolder"` or `"../sibling"` for paths relative to current file
+- Regular paths still work as before (relative to workspace root)
+
+### 🎯 Use Cases
+- Set `searchPaths: ["."]` to only include templates from the same folder as your current file
+- Set `searchPaths: [".", ".."]` to include current folder and parent
+- Combine with `filePatterns` for fine-grained control:
+  - `"**/*.jinja"` = recursive (all subfolders)
+  - `"*.jinja"` = current folder only (no subfolders)
+
+---
+
 ## [1.9.2] - 2025-11-29
 
 ### ⚡ Smart Template Loading

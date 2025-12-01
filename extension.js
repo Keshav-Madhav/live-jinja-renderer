@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n⚡ Smart Template Loading:\n• Zero overhead for simple templates\n• Only loads files when include/extends detected\n\n🎨 Color-coded Templates:\n• Green = used, Dimmed = available\n• Live updates as you edit\n\n✨ Inline JSON Validation:\n• Error indicator with line/column info`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n📁 Relative Path Support:\n• Use "." in searchPaths for current folder only\n• Use ".." for parent, "./path" for relative paths\n• Perfect for limiting template scope\n\n💡 Example: searchPaths: ["."] = only same folder`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
