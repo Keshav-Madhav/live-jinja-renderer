@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n📁 Relative Path Support:\n• Use "." in searchPaths for current folder only\n• Use ".." for parent, "./path" for relative paths\n• Perfect for limiting template scope\n\n💡 Example: searchPaths: ["."] = only same folder`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🔧 Rewritten Variable Extractor:\n• Tokenizer-based architecture for robust extraction\n• Dict methods: .get("key"), .pop(), .setdefault() extract keys\n• Mixed access: data["items"][0].value works correctly\n• Better scope tracking for loops, set, with, macros\n\n💡 42 test cases ensure accuracy!`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

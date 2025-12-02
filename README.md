@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.9.3-blue)
+![Version](https://img.shields.io/badge/version-1.9.4-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,20 +10,24 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.9.3
+## 🚀 What's New in v1.9.4
 
-### 📁 Relative Path Support for Template Search
-- **Current folder only**: Use `"."` in `searchPaths` to search only the current file's directory
-- **Parent folder**: Use `".."` to search the parent directory
-- **Relative paths**: Use `"./subfolder"` or `"../sibling"` for paths relative to current file
-- Perfect for limiting template scope to just the files in your working directory
+### 🔧 Completely Rewritten Variable Extractor
+The variable extraction system has been **completely rewritten from scratch** with a robust tokenizer-based architecture:
 
-**Example**: To only search templates in the same folder as your current file:
+- **Tokenizer-based parsing**: Proper handling of Jinja blocks, strings, and comments
+- **Dict method support**: `.get("key")`, `.pop("key")`, `.setdefault("key")` now extract keys as properties
+- **Mixed access types**: `data["items"][0].value` correctly builds nested structures
+- **Scope tracking**: Proper handling of loop variables, set statements, with blocks, and macros
+- **Type inference**: Smart detection of arrays, dicts, numbers, and strings from usage patterns
+- **42 test cases**: Comprehensive test suite ensures extraction accuracy
+
+**Example**: `{{ config.get("database").host }}` now correctly extracts:
 ```json
-"liveJinjaRenderer.templates.searchPaths": ["."]
+{ "config": { "database": { "host": "" } } }
 ```
 
-> 💡 **Previous**: Smart Template Loading & JSON Validation (v1.9.2), Template Includes & Extends (v1.9.0)
+> 💡 **Previous**: Relative Path Support (v1.9.3), Smart Template Loading (v1.9.2), Template Includes & Extends (v1.9.0)
 
 ---
 
@@ -374,6 +378,13 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 ---
 
 ## Recent Updates
+
+### 1.9.4 - Rewritten Variable Extractor
+- **Complete rewrite** - Tokenizer-based architecture for robust variable extraction
+- **Dict method support** - `.get()`, `.pop()`, `.setdefault()` extract keys as properties
+- **Mixed access types** - `data["key"][0].prop` builds correct nested structures
+- **Better scope tracking** - Proper handling of loops, set, with, and macros
+- **42 test cases** - Comprehensive test coverage
 
 ### 1.9.3 - Relative Path Support
 - **Relative search paths** - Use `.`, `..`, `./path` for file-relative template search

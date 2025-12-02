@@ -4,6 +4,44 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.9.4] - 2025-12-02
+
+### 🔧 Completely Rewritten Variable Extractor
+The variable extraction system has been **completely rebuilt from scratch** with a robust tokenizer-based architecture for more accurate and reliable variable detection.
+
+#### New Architecture
+- **Tokenizer-based parsing**: Proper separation of Jinja blocks (expressions, statements, comments) and literals
+- **Multi-pass expression parsing**: Handles bracket notation, method calls, and general identifiers in separate passes
+- **Scope tracking**: Accurate tracking of local variables from loops, set statements, with blocks, and macros
+- **String placeholder system**: Preserves string content for accurate key extraction in bracket access
+
+#### Dict Method Support
+- **`.get("key")`**: Extracts string literal keys as properties (e.g., `config.get("db")` → `config.db`)
+- **`.pop("key")`**: Same extraction for dict pop operations
+- **`.setdefault("key")`**: Same extraction for setdefault operations
+- **Chained access**: `config.get("section").value` correctly builds `config.section.value`
+- **Variable keys**: Falls back to dict type when key is a variable
+
+#### Mixed Access Types
+- **Bracket + dot notation**: `data["items"][0].value` correctly builds nested structure
+- **String literal preservation**: Keys in `['key']` are properly extracted and not lost
+- **Numeric indices**: Array indices create proper array structures
+
+#### Better Scope Tracking
+- **Loop variables**: `item` in `{% for item in items %}` correctly excluded
+- **Set statements**: Detects self-references like `{% set count = count + 1 %}`
+- **With blocks**: Variables assigned in `{% with x = y %}` are local
+- **Macro parameters**: Parameters are correctly scoped to macro body
+- **Import aliases**: `{% import "x" as m %}` marks `m` as local
+
+#### Type Inference
+- **Arrays**: Detected from `{% for %}` iteration
+- **Dicts**: Detected from `.items()`, `.keys()`, `.values()` calls
+- **Numbers**: Detected from arithmetic operations
+- **Strings**: Detected from string comparisons
+
+---
+
 ## [1.9.3] - 2025-12-01
 
 ### 📁 Relative Path Support for Template Search
