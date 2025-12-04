@@ -1,11 +1,14 @@
 const vscode = require('vscode');
+const path = require('path');
 
 /**
- * Provides hover information for Jinja2 variables in templates
+ * Provides hover information for Jinja2 templates
+ * Shows documentation for macros, filters, keywords, tests, and blocks
  */
 class JinjaHoverProvider {
   constructor() {
     this.variables = {};
+    this.macroCache = new Map(); // Cache macro signatures per file
   }
 
   /**
@@ -106,10 +109,77 @@ class JinjaHoverProvider {
    * Provide hover information for a position in the document
    * @param {vscode.TextDocument} document
    * @param {vscode.Position} position
-   * @returns {vscode.Hover | null}
+   * @returns {Promise<vscode.Hover | null>}
    */
-  provideHover(document, position) { // eslint-disable-line no-unused-vars
-    // Hover functionality temporarily disabled
+  async provideHover(document, position) {
+    const line = document.lineAt(position).text;
+    const wordRange = document.getWordRangeAtPosition(position, /[a-zA-Z_][a-zA-Z0-9_]*/);
+    
+    if (!wordRange) {
+      return null;
+    }
+    
+    const word = document.getText(wordRange);
+    
+    // Check if inside Jinja syntax
+    if (!this.isPositionInsideJinja(line, wordRange.start.character, wordRange.end.character)) {
+      return null;
+    }
+    
+    const textBeforeWord = line.substring(0, wordRange.start.character);
+    const textAfterWord = line.substring(wordRange.end.character);
+    
+    // 1. Check for filters (after |)
+    if (/\|\s*$/.test(textBeforeWord)) {
+      const filterDoc = this.getFilterDocumentation(word);
+      if (filterDoc) {
+        return new vscode.Hover(filterDoc, wordRange);
+      }
+    }
+    
+    // 2. Check for Jinja tests (after "is")
+    if (/\bis\s+(?:not\s+)?$/i.test(textBeforeWord)) {
+      const testDoc = this.getJinjaTestDoc(word);
+      if (testDoc) {
+        return new vscode.Hover(testDoc, wordRange);
+      }
+    }
+    
+    // 3. Check for macro calls (word followed by parenthesis)
+    if (/^\s*\(/.test(textAfterWord)) {
+      // Check if it's a module.macro() call
+      const moduleMatch = textBeforeWord.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*$/);
+      if (moduleMatch) {
+        const macroHover = await this.getMacroHover(document, word, moduleMatch[1]);
+        if (macroHover) {
+          return new vscode.Hover(macroHover, wordRange);
+        }
+      } else {
+        // Direct macro call
+        const macroHover = await this.getMacroHover(document, word, null);
+        if (macroHover) {
+          return new vscode.Hover(macroHover, wordRange);
+        }
+      }
+    }
+    
+    // 4. Check for block names (after {% block)
+    if (/\{%[-+]?\s*block\s+$/.test(textBeforeWord)) {
+      const blockHover = await this.getBlockHover(document, word);
+      if (blockHover) {
+        return new vscode.Hover(blockHover, wordRange);
+      }
+    }
+    
+    // 5. Check for Jinja keywords (after {% or general keywords)
+    const isDottedPath = /\.\s*$/.test(textBeforeWord) || /^\s*\./.test(textAfterWord);
+    if (!isDottedPath) {
+      const keywordDoc = this.getJinjaKeywordDoc(word);
+      if (keywordDoc) {
+        return new vscode.Hover(keywordDoc, wordRange);
+      }
+    }
+    
     return null;
   }
 
@@ -176,6 +246,281 @@ class JinjaHoverProvider {
     }
     
     return false;
+  }
+
+  /**
+   * Get hover information for a macro
+   * @param {vscode.TextDocument} document
+   * @param {string} macroName
+   * @param {string|null} moduleName - The import alias if it's module.macro() call
+   * @returns {Promise<vscode.MarkdownString | null>}
+   */
+  async getMacroHover(document, macroName, moduleName) {
+    const text = document.getText();
+    const currentFilePath = document.uri.fsPath;
+    
+    // If moduleName provided, find the import and look in that file
+    if (moduleName) {
+      const importInfo = this.findImportInfo(text, moduleName);
+      if (importInfo) {
+        const resolvedPath = await this.resolveTemplatePath(importInfo.path, currentFilePath);
+        if (resolvedPath) {
+          const macroInfo = await this.findMacroInFile(resolvedPath, macroName);
+          if (macroInfo) {
+            return this.formatMacroHover(macroInfo, importInfo.path);
+          }
+        }
+      }
+      return null;
+    }
+    
+    // Search in current file first
+    const localMacro = this.findMacroInText(text, macroName);
+    if (localMacro) {
+      return this.formatMacroHover(localMacro, null);
+    }
+    
+    // Search in from-imports
+    const fromImportInfo = this.findFromImportInfo(text, macroName);
+    if (fromImportInfo) {
+      const resolvedPath = await this.resolveTemplatePath(fromImportInfo.path, currentFilePath);
+      if (resolvedPath) {
+        const macroInfo = await this.findMacroInFile(resolvedPath, fromImportInfo.originalName);
+        if (macroInfo) {
+          return this.formatMacroHover(macroInfo, fromImportInfo.path);
+        }
+      }
+    }
+    
+    // Search in included/imported templates
+    const referencedTemplates = this.extractReferencedTemplates(text);
+    for (const templatePath of referencedTemplates) {
+      const resolvedPath = await this.resolveTemplatePath(templatePath, currentFilePath);
+      if (resolvedPath) {
+        const macroInfo = await this.findMacroInFile(resolvedPath, macroName);
+        if (macroInfo) {
+          return this.formatMacroHover(macroInfo, templatePath);
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Find import info for a module alias
+   */
+  findImportInfo(text, alias) {
+    const importPattern = new RegExp(
+      `\\{%[-+]?\\s*import\\s+['"]([^'"]+)['"]\\s+as\\s+${alias}\\s*[-+]?%\\}`,
+      'i'
+    );
+    const match = text.match(importPattern);
+    if (match) {
+      return { path: match[1], alias };
+    }
+    return null;
+  }
+
+  /**
+   * Find from-import info for a specific name
+   */
+  findFromImportInfo(text, name) {
+    const fromImportPattern = /\{%[-+]?\s*from\s+['"]([^'"]+)['"]\s+import\s+([^%]+)[-+]?%\}/gi;
+    let match;
+    while ((match = fromImportPattern.exec(text)) !== null) {
+      const filePath = match[1];
+      const imports = match[2].split(',').map(item => {
+        const parts = item.trim().split(/\s+as\s+/i);
+        return {
+          originalName: parts[0].trim(),
+          alias: parts.length > 1 ? parts[1].trim() : parts[0].trim()
+        };
+      });
+      
+      const found = imports.find(i => i.alias === name || i.originalName === name);
+      if (found) {
+        return { path: filePath, ...found };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Find macro definition in text and extract info
+   */
+  findMacroInText(text, macroName) {
+    const macroPattern = new RegExp(
+      `\\{%[-+]?\\s*macro\\s+(${macroName})\\s*\\(([^)]*)\\)\\s*[-+]?%\\}`,
+      'gi'
+    );
+    
+    const match = macroPattern.exec(text);
+    if (match && match[1] === macroName) {
+      const params = this.parseParameters(match[2]);
+      return { name: macroName, params, raw: match[0] };
+    }
+    return null;
+  }
+
+  /**
+   * Find macro in a file
+   */
+  async findMacroInFile(filePath, macroName) {
+    try {
+      const uri = vscode.Uri.file(filePath);
+      const content = await vscode.workspace.fs.readFile(uri);
+      const text = Buffer.from(content).toString('utf8');
+      return this.findMacroInText(text, macroName);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Parse macro parameters into structured format
+   */
+  parseParameters(paramsStr) {
+    if (!paramsStr.trim()) return [];
+    
+    return paramsStr.split(',').map(p => {
+      const trimmed = p.trim();
+      const eqIndex = trimmed.indexOf('=');
+      if (eqIndex !== -1) {
+        return {
+          name: trimmed.substring(0, eqIndex).trim(),
+          defaultValue: trimmed.substring(eqIndex + 1).trim()
+        };
+      }
+      return { name: trimmed, defaultValue: null };
+    });
+  }
+
+  /**
+   * Format macro info as hover markdown
+   */
+  formatMacroHover(macroInfo, sourceFile) {
+    const markdown = new vscode.MarkdownString();
+    markdown.isTrusted = true;
+    
+    // Build signature
+    const paramsStr = macroInfo.params.map(p => {
+      if (p.defaultValue) {
+        return `${p.name}=${p.defaultValue}`;
+      }
+      return p.name;
+    }).join(', ');
+    
+    markdown.appendMarkdown(`### Macro: \`${macroInfo.name}\`\n\n`);
+    markdown.appendCodeblock(`{% macro ${macroInfo.name}(${paramsStr}) %}`, 'jinja');
+    
+    if (macroInfo.params.length > 0) {
+      markdown.appendMarkdown('\n**Parameters:**\n');
+      macroInfo.params.forEach(p => {
+        if (p.defaultValue) {
+          markdown.appendMarkdown(`- \`${p.name}\` (default: \`${p.defaultValue}\`)\n`);
+        } else {
+          markdown.appendMarkdown(`- \`${p.name}\` *(required)*\n`);
+        }
+      });
+    }
+    
+    if (sourceFile) {
+      markdown.appendMarkdown(`\n*Defined in: ${sourceFile}*`);
+    }
+    
+    return markdown;
+  }
+
+  /**
+   * Get hover for a block
+   */
+  async getBlockHover(document, blockName) {
+    const text = document.getText();
+    const currentFilePath = document.uri.fsPath;
+    
+    const markdown = new vscode.MarkdownString();
+    markdown.isTrusted = true;
+    
+    markdown.appendMarkdown(`### Block: \`${blockName}\`\n\n`);
+    markdown.appendCodeblock(`{% block ${blockName} %}...{% endblock %}`, 'jinja');
+    
+    // Check if this template extends another
+    const extendsMatch = text.match(/\{%[-+]?\s*extends\s+['"]([^'"]+)['"]/i);
+    if (extendsMatch) {
+      markdown.appendMarkdown(`\n*Overrides block from: ${extendsMatch[1]}*\n`);
+      markdown.appendMarkdown(`\nUse \`{{ super() }}\` to include parent content.`);
+    } else {
+      markdown.appendMarkdown(`\nTemplate block for inheritance. Child templates can override this block.`);
+    }
+    
+    return markdown;
+  }
+
+  /**
+   * Extract referenced template paths
+   */
+  extractReferencedTemplates(text) {
+    const refs = new Set();
+    const patterns = [
+      /\{%[-+]?\s*include\s+['"]([^'"]+)['"]/gi,
+      /\{%[-+]?\s*extends\s+['"]([^'"]+)['"]/gi,
+      /\{%[-+]?\s*import\s+['"]([^'"]+)['"]/gi,
+      /\{%[-+]?\s*from\s+['"]([^'"]+)['"]/gi
+    ];
+    
+    for (const pattern of patterns) {
+      let match;
+      while ((match = pattern.exec(text)) !== null) {
+        refs.add(match[1]);
+      }
+    }
+    return Array.from(refs);
+  }
+
+  /**
+   * Resolve template path relative to current file
+   */
+  async resolveTemplatePath(templatePath, currentFilePath) {
+    const currentDir = path.dirname(currentFilePath);
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    const workspaceRoot = workspaceFolders ? workspaceFolders[0].uri.fsPath : null;
+    
+    const candidates = [
+      path.resolve(currentDir, templatePath),
+      workspaceRoot ? path.resolve(workspaceRoot, templatePath) : null,
+      workspaceRoot ? path.resolve(workspaceRoot, 'templates', templatePath) : null,
+    ].filter(Boolean);
+    
+    // Try configured search paths
+    const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+    const searchPaths = config.get('templates.searchPaths', []);
+    
+    for (const searchPath of searchPaths) {
+      let basePath;
+      if (searchPath === '.' || searchPath === './') {
+        basePath = currentDir;
+      } else if (searchPath.startsWith('./') || searchPath.startsWith('../')) {
+        basePath = path.resolve(currentDir, searchPath);
+      } else if (path.isAbsolute(searchPath)) {
+        basePath = searchPath;
+      } else if (workspaceRoot) {
+        basePath = path.resolve(workspaceRoot, searchPath);
+      }
+      if (basePath) {
+        candidates.push(path.resolve(basePath, templatePath));
+      }
+    }
+    
+    for (const candidate of candidates) {
+      try {
+        await vscode.workspace.fs.stat(vscode.Uri.file(candidate));
+        return candidate;
+      } catch {
+        // Continue
+      }
+    }
+    return null;
   }
 
   /**
@@ -549,115 +894,316 @@ class JinjaHoverProvider {
    */
   getFilterDocumentation(filterName) {
     const filters = {
-      'default': {
-        signature: 'default(default_value, boolean=False)',
-        description: 'If the value is undefined, return the default value. Set boolean=True to use for falsy values too.',
-        example: '{{ variable | default("N/A") }}'
-      },
-      'length': {
-        signature: 'length',
-        description: 'Return the number of items in a sequence or mapping.',
-        example: '{{ items | length }}'
-      },
+      // String filters
       'lower': {
         signature: 'lower',
-        description: 'Convert a value to lowercase.',
-        example: '{{ name | lower }}'
+        description: 'Convert a string to lowercase.',
+        example: '{{ "HELLO" | lower }}  →  hello'
       },
       'upper': {
         signature: 'upper',
-        description: 'Convert a value to uppercase.',
-        example: '{{ name | upper }}'
+        description: 'Convert a string to uppercase.',
+        example: '{{ "hello" | upper }}  →  HELLO'
       },
       'capitalize': {
         signature: 'capitalize',
-        description: 'Capitalize the first character of a string.',
-        example: '{{ text | capitalize }}'
+        description: 'Capitalize the first character, lowercase the rest.',
+        example: '{{ "hELLO" | capitalize }}  →  Hello'
       },
       'title': {
         signature: 'title',
-        description: 'Return a titlecased version of the string (first letter of each word uppercase).',
-        example: '{{ text | title }}'
+        description: 'Return titlecased string (first letter of each word uppercase).',
+        example: '{{ "hello world" | title }}  →  Hello World'
       },
       'trim': {
-        signature: 'trim',
-        description: 'Strip leading and trailing whitespace.',
-        example: '{{ text | trim }}'
+        signature: 'trim(chars=None)',
+        description: 'Strip leading and trailing whitespace (or specified chars).',
+        example: '{{ "  hello  " | trim }}  →  hello'
       },
-      'join': {
-        signature: 'join(separator=", ")',
-        description: 'Join a sequence of strings with a separator.',
-        example: '{{ items | join(", ") }}'
+      'strip': {
+        signature: 'strip',
+        description: 'Alias for trim. Strip leading and trailing whitespace.',
+        example: '{{ "  hello  " | strip }}  →  hello'
+      },
+      'lstrip': {
+        signature: 'lstrip',
+        description: 'Strip leading whitespace.',
+        example: '{{ "  hello" | lstrip }}  →  hello'
+      },
+      'rstrip': {
+        signature: 'rstrip',
+        description: 'Strip trailing whitespace.',
+        example: '{{ "hello  " | rstrip }}  →  hello'
       },
       'replace': {
         signature: 'replace(old, new, count=None)',
-        description: 'Replace occurrences of old with new in the string.',
-        example: '{{ text | replace("old", "new") }}'
+        description: 'Replace occurrences of old with new. Optional count limits replacements.',
+        example: '{{ "hello" | replace("l", "L") }}  →  heLLo'
+      },
+      'truncate': {
+        signature: 'truncate(length=255, killwords=False, end="...", leeway=0)',
+        description: 'Truncate string to specified length, adding ellipsis.',
+        example: '{{ "hello world" | truncate(8) }}  →  hello...'
+      },
+      'wordwrap': {
+        signature: 'wordwrap(width=79, break_long_words=True, wrapstring="\\n")',
+        description: 'Wrap text at specified width.',
+        example: '{{ text | wordwrap(40) }}'
+      },
+      'center': {
+        signature: 'center(width)',
+        description: 'Center the string in a field of given width.',
+        example: '{{ "hi" | center(10) }}  →  "    hi    "'
+      },
+      'indent': {
+        signature: 'indent(width=4, first=False, blank=False)',
+        description: 'Indent lines with specified number of spaces.',
+        example: '{{ text | indent(4) }}'
+      },
+      'striptags': {
+        signature: 'striptags',
+        description: 'Strip HTML/XML tags from a string.',
+        example: '{{ "<p>Hello</p>" | striptags }}  →  Hello'
+      },
+      'escape': {
+        signature: 'escape',
+        description: 'Escape HTML characters (&, <, >, ", \').',
+        example: '{{ "<script>" | escape }}  →  &lt;script&gt;'
+      },
+      'e': {
+        signature: 'e',
+        description: 'Alias for escape. Escape HTML characters.',
+        example: '{{ "<div>" | e }}  →  &lt;div&gt;'
+      },
+      'safe': {
+        signature: 'safe',
+        description: 'Mark string as safe HTML (prevent auto-escaping).',
+        example: '{{ html_content | safe }}'
+      },
+      'forceescape': {
+        signature: 'forceescape',
+        description: 'Force HTML escaping even if marked safe.',
+        example: '{{ content | forceescape }}'
+      },
+      'urlencode': {
+        signature: 'urlencode',
+        description: 'URL encode a string or dictionary.',
+        example: '{{ "hello world" | urlencode }}  →  hello%20world'
+      },
+      'urlize': {
+        signature: 'urlize(trim_url_limit=None, nofollow=False, target=None)',
+        description: 'Convert URLs in text to clickable links.',
+        example: '{{ "Visit example.com" | urlize }}'
+      },
+      'wordcount': {
+        signature: 'wordcount',
+        description: 'Count the words in a string.',
+        example: '{{ "hello world" | wordcount }}  →  2'
+      },
+      'format': {
+        signature: 'format(*args, **kwargs)',
+        description: 'Apply Python string formatting.',
+        example: '{{ "Hello %s" | format(name) }}'
+      },
+      'split': {
+        signature: 'split(separator=None, maxsplit=-1)',
+        description: 'Split string into a list by separator.',
+        example: '{{ "a,b,c" | split(",") }}  →  ["a", "b", "c"]'
+      },
+      
+      // Number filters
+      'abs': {
+        signature: 'abs',
+        description: 'Return the absolute value of a number.',
+        example: '{{ -5 | abs }}  →  5'
       },
       'round': {
         signature: 'round(precision=0, method="common")',
-        description: 'Round a number to a given precision.',
-        example: '{{ 42.55 | round(1) }}'
+        description: 'Round number to given precision. Methods: common, ceil, floor.',
+        example: '{{ 42.55 | round(1) }}  →  42.6'
       },
       'int': {
         signature: 'int(default=0, base=10)',
-        description: 'Convert the value into an integer.',
-        example: '{{ "42" | int }}'
+        description: 'Convert value to integer.',
+        example: '{{ "42" | int }}  →  42'
       },
       'float': {
         signature: 'float(default=0.0)',
-        description: 'Convert the value into a floating point number.',
-        example: '{{ "42.5" | float }}'
+        description: 'Convert value to floating point number.',
+        example: '{{ "3.14" | float }}  →  3.14'
       },
-      'list': {
-        signature: 'list',
-        description: 'Convert the value into a list.',
-        example: '{{ value | list }}'
+      'filesizeformat': {
+        signature: 'filesizeformat(binary=False)',
+        description: 'Format bytes as human-readable file size.',
+        example: '{{ 1024 | filesizeformat }}  →  1.0 kB'
       },
-      'sort': {
-        signature: 'sort(reverse=False, case_sensitive=False, attribute=None)',
-        description: 'Sort an iterable.',
-        example: '{{ items | sort }}'
+      
+      // List/Sequence filters
+      'length': {
+        signature: 'length',
+        description: 'Return the number of items in a sequence or mapping.',
+        example: '{{ [1,2,3] | length }}  →  3'
       },
-      'reverse': {
-        signature: 'reverse',
-        description: 'Reverse the order of items in a sequence.',
-        example: '{{ items | reverse }}'
+      'count': {
+        signature: 'count',
+        description: 'Alias for length. Return number of items.',
+        example: '{{ items | count }}'
       },
       'first': {
         signature: 'first',
         description: 'Return the first item of a sequence.',
-        example: '{{ items | first }}'
+        example: '{{ [1,2,3] | first }}  →  1'
       },
       'last': {
         signature: 'last',
         description: 'Return the last item of a sequence.',
-        example: '{{ items | last }}'
+        example: '{{ [1,2,3] | last }}  →  3'
+      },
+      'random': {
+        signature: 'random',
+        description: 'Return a random item from the sequence.',
+        example: '{{ [1,2,3] | random }}'
+      },
+      'reverse': {
+        signature: 'reverse',
+        description: 'Reverse the sequence.',
+        example: '{{ [1,2,3] | reverse | list }}  →  [3,2,1]'
+      },
+      'sort': {
+        signature: 'sort(reverse=False, case_sensitive=False, attribute=None)',
+        description: 'Sort an iterable. Use attribute for objects.',
+        example: '{{ users | sort(attribute="name") }}'
+      },
+      'unique': {
+        signature: 'unique(case_sensitive=False, attribute=None)',
+        description: 'Return unique items from sequence.',
+        example: '{{ [1,1,2,2,3] | unique | list }}  →  [1,2,3]'
+      },
+      'join': {
+        signature: 'join(separator="", attribute=None)',
+        description: 'Join sequence items into a string.',
+        example: '{{ ["a","b","c"] | join(", ") }}  →  a, b, c'
+      },
+      'list': {
+        signature: 'list',
+        description: 'Convert value to a list.',
+        example: '{{ "abc" | list }}  →  ["a","b","c"]'
+      },
+      'batch': {
+        signature: 'batch(linecount, fill_with=None)',
+        description: 'Split sequence into batches of N items.',
+        example: '{{ [1,2,3,4,5] | batch(2) | list }}'
+      },
+      'slice': {
+        signature: 'slice(slices, fill_with=None)',
+        description: 'Slice sequence into N roughly equal parts.',
+        example: '{{ items | slice(3) }}'
+      },
+      'sum': {
+        signature: 'sum(attribute=None, start=0)',
+        description: 'Sum numeric values. Use attribute for objects.',
+        example: '{{ [1,2,3] | sum }}  →  6'
+      },
+      'min': {
+        signature: 'min(case_sensitive=False, attribute=None)',
+        description: 'Return the smallest item.',
+        example: '{{ [3,1,2] | min }}  →  1'
+      },
+      'max': {
+        signature: 'max(case_sensitive=False, attribute=None)',
+        description: 'Return the largest item.',
+        example: '{{ [1,3,2] | max }}  →  3'
       },
       'map': {
-        signature: 'map(attribute)',
-        description: 'Apply an attribute or filter to a sequence of objects.',
-        example: '{{ users | map(attribute="name") | join(", ") }}'
+        signature: 'map(filter_or_attribute, *args, **kwargs)',
+        description: 'Apply filter or extract attribute from each item.',
+        example: '{{ users | map(attribute="name") | list }}'
       },
       'select': {
-        signature: 'select(test)',
-        description: 'Filter a sequence by applying a test to each object.',
-        example: '{{ numbers | select("odd") }}'
+        signature: 'select(test_or_attribute=None)',
+        description: 'Filter items that pass a test.',
+        example: '{{ numbers | select("odd") | list }}'
+      },
+      'selectattr': {
+        signature: 'selectattr(attribute, test=None, value=None)',
+        description: 'Filter objects by attribute test.',
+        example: '{{ users | selectattr("active", "eq", true) | list }}'
       },
       'reject': {
-        signature: 'reject(test)',
-        description: 'Filter a sequence by rejecting objects that pass a test.',
-        example: '{{ numbers | reject("odd") }}'
+        signature: 'reject(test_or_attribute=None)',
+        description: 'Filter out items that pass a test.',
+        example: '{{ numbers | reject("odd") | list }}'
       },
+      'rejectattr': {
+        signature: 'rejectattr(attribute, test=None, value=None)',
+        description: 'Filter out objects by attribute test.',
+        example: '{{ users | rejectattr("active") | list }}'
+      },
+      'groupby': {
+        signature: 'groupby(attribute, default=None)',
+        description: 'Group items by an attribute.',
+        example: '{% for group in users | groupby("role") %}'
+      },
+      
+      // Dictionary filters
+      'dictsort': {
+        signature: 'dictsort(case_sensitive=False, by="key", reverse=False)',
+        description: 'Sort dictionary by key or value.',
+        example: '{{ mydict | dictsort }}'
+      },
+      'items': {
+        signature: 'items',
+        description: 'Return dictionary items as (key, value) pairs.',
+        example: '{% for k, v in mydict | items %}'
+      },
+      'keys': {
+        signature: 'keys',
+        description: 'Return dictionary keys.',
+        example: '{{ mydict | keys | list }}'
+      },
+      'values': {
+        signature: 'values',
+        description: 'Return dictionary values.',
+        example: '{{ mydict | values | list }}'
+      },
+      'attr': {
+        signature: 'attr(name)',
+        description: 'Get attribute from object (like getattr).',
+        example: '{{ obj | attr("name") }}'
+      },
+      
+      // Default/Fallback filters
+      'default': {
+        signature: 'default(default_value="", boolean=False)',
+        description: 'Return default if value is undefined. Set boolean=True for falsy values.',
+        example: '{{ name | default("Anonymous") }}'
+      },
+      'd': {
+        signature: 'd(default_value="", boolean=False)',
+        description: 'Alias for default filter.',
+        example: '{{ name | d("Anonymous") }}'
+      },
+      
+      // Serialization filters
       'tojson': {
         signature: 'tojson(indent=None)',
-        description: 'Serialize value to JSON.',
-        example: '{{ data | tojson }}'
+        description: 'Serialize value to JSON string.',
+        example: '{{ data | tojson(indent=2) }}'
       },
-      'safe': {
-        signature: 'safe',
-        description: 'Mark the value as safe, preventing automatic escaping.',
-        example: '{{ html_content | safe }}'
+      'pprint': {
+        signature: 'pprint',
+        description: 'Pretty print a variable for debugging.',
+        example: '{{ complex_data | pprint }}'
+      },
+      'string': {
+        signature: 'string',
+        description: 'Convert value to string.',
+        example: '{{ 42 | string }}'
+      },
+      'xmlattr': {
+        signature: 'xmlattr(autospace=True)',
+        description: 'Create XML/HTML attribute string from dict.',
+        example: '{{ {"class": "btn", "id": "submit"} | xmlattr }}'
       }
     };
     

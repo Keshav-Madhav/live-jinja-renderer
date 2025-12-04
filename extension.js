@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🔧 Rewritten Variable Extractor:\n• Tokenizer-based architecture for robust extraction\n• Dict methods: .get("key"), .pop(), .setdefault() extract keys\n• Mixed access: data["items"][0].value works correctly\n• Better scope tracking for loops, set, with, macros\n\n💡 42 test cases ensure accuracy!`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🎯 Go to Definition:\n• Ctrl/Cmd+Click on macros, variables, blocks, template paths\n• Click imported names in {% from "x" import name %}\n\n📚 Hover Documentation:\n• Macro signatures with parameters\n• 50+ filters with examples\n• All keywords and tests documented`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

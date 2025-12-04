@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.9.4-blue)
+![Version](https://img.shields.io/badge/version-1.9.5-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,24 +10,25 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.9.4
+## 🚀 What's New in v1.9.5
 
-### 🔧 Completely Rewritten Variable Extractor
-The variable extraction system has been **completely rewritten from scratch** with a robust tokenizer-based architecture:
+### 🎯 Go to Definition (Ctrl/Cmd+Click)
+Navigate directly to definitions with **Ctrl/Cmd+Click**:
 
-- **Tokenizer-based parsing**: Proper handling of Jinja blocks, strings, and comments
-- **Dict method support**: `.get("key")`, `.pop("key")`, `.setdefault("key")` now extract keys as properties
-- **Mixed access types**: `data["items"][0].value` correctly builds nested structures
-- **Scope tracking**: Proper handling of loop variables, set statements, with blocks, and macros
-- **Type inference**: Smart detection of arrays, dicts, numbers, and strings from usage patterns
-- **42 test cases**: Comprehensive test suite ensures extraction accuracy
+- **Macros**: Click `my_macro()` → jumps to `{% macro my_macro() %}`
+- **Template paths**: Click path in `{% import 'path.jinja' %}` → opens the file
+- **Variables**: Navigate to `{% set %}`, `{% for %}`, `{% with %}`, macro params
+- **Imported names**: Click `button` in `{% from "x" import button %}` → goes to macro
 
-**Example**: `{{ config.get("database").host }}` now correctly extracts:
-```json
-{ "config": { "database": { "host": "" } } }
-```
+### 📚 Enhanced Hover Documentation
+Rich hover tooltips for all Jinja elements:
 
-> 💡 **Previous**: Relative Path Support (v1.9.3), Smart Template Loading (v1.9.2), Template Includes & Extends (v1.9.0)
+- **Macros**: Shows signature with parameters and default values
+- **Filters**: 50+ filters with signatures, descriptions, and examples
+- **Keywords**: `for`, `if`, `set`, `block`, `macro`, `import`, etc.
+- **Tests**: `defined`, `none`, `even`, `odd`, `iterable`, etc.
+
+> 💡 **Previous**: Rewritten Variable Extractor (v1.9.4), Relative Path Support (v1.9.3), Template Includes (v1.9.0)
 
 ---
 
@@ -40,10 +41,11 @@ The variable extraction system has been **completely rewritten from scratch** wi
 - **Template Preview**: Syntax-highlighted template display in sidebar/panel
 
 ### 💡 **Full IntelliSense System**
+- **Go to Definition**: Ctrl/Cmd+Click to navigate to macros, variables, blocks, and template paths
+- **Hover Documentation**: Rich tooltips for macros (signatures), filters (50+), keywords, and tests
 - **Variable Autocomplete**: Intelligent suggestions inside `{{ }}` and `{% %}` blocks
 - **Dot Notation IntelliSense**: Navigate nested objects (e.g., `user.address.city`)
-- **Hover Documentation**: Types, values, and available properties
-- **Filter Library**: 20+ Jinja2 filters with full documentation
+- **Filter Library**: 50+ Jinja2 filters with signatures and examples
 - **Keyword Completion**: Autocomplete for `for`, `if`, `set`, `block`, `extends`, `macro`, etc.
 - **Smart Context Detection**: Only activates in Jinja template syntax
 
@@ -379,12 +381,17 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 
 ## Recent Updates
 
+### 1.9.5 - Go to Definition & Hover Docs
+- **Ctrl/Cmd+Click navigation** - Jump to macros, variables, blocks, template paths
+- **Macro hover** - Shows signature with parameters and default values
+- **Filter hover** - 50+ filters with signatures, descriptions, examples
+- **Keyword/test hover** - Documentation for all Jinja keywords and tests
+
 ### 1.9.4 - Rewritten Variable Extractor
 - **Complete rewrite** - Tokenizer-based architecture for robust variable extraction
 - **Dict method support** - `.get()`, `.pop()`, `.setdefault()` extract keys as properties
 - **Mixed access types** - `data["key"][0].prop` builds correct nested structures
 - **Better scope tracking** - Proper handling of loops, set, with, and macros
-- **42 test cases** - Comprehensive test coverage
 
 ### 1.9.3 - Relative Path Support
 - **Relative search paths** - Use `.`, `..`, `./path` for file-relative template search

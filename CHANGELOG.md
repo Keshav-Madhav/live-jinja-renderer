@@ -4,6 +4,24 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.9.5] - 2025-12-04
+
+### 🎯 Go to Definition (Ctrl/Cmd+Click)
+- **Macros**: Navigate to `{% macro %}` definitions (same file or imported via `{% import %}`, `{% from %}`)
+- **Variables**: Navigate to `{% set %}`, `{% for %}`, `{% with %}`, macro parameters
+- **Template paths**: Click paths in `{% import "file.jinja" %}` to open the file
+- **Imported names**: Click `button` in `{% from "x" import button %}` to jump to macro
+- **Blocks**: Navigate to `{% block %}` definitions in parent templates
+- Only triggers for template-defined variables (not external ones)
+
+### 📚 Hover Documentation
+- **Macros**: Signature with parameters and default values, source file
+- **Filters**: 50+ filters with signatures, descriptions, examples
+- **Keywords**: `for`, `if`, `set`, `block`, `macro`, `import`, `extends`, etc.
+- **Tests**: `defined`, `none`, `even`, `odd`, `iterable`, `mapping`, etc.
+
+---
+
 ## [1.9.4] - 2025-12-02
 
 ### 🔧 Completely Rewritten Variable Extractor
