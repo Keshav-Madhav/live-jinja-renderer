@@ -237,6 +237,26 @@ class JinjaDefinitionProvider {
   }
 
   /**
+   * Built-in Python/Jinja methods that should NOT be treated as macros
+   */
+  static BUILTIN_METHODS = new Set([
+    // String methods
+    'lower', 'upper', 'capitalize', 'title', 'strip', 'lstrip', 'rstrip',
+    'split', 'rsplit', 'join', 'replace', 'find', 'rfind', 'index', 'rindex',
+    'count', 'startswith', 'endswith', 'isdigit', 'isalpha', 'isalnum',
+    'isspace', 'islower', 'isupper', 'format', 'zfill', 'center', 'ljust', 'rjust',
+    'encode', 'decode', 'swapcase', 'partition', 'rpartition',
+    // Dict methods
+    'get', 'keys', 'values', 'items', 'pop', 'setdefault', 'update', 'clear', 'copy', 'fromkeys',
+    // List methods
+    'append', 'extend', 'insert', 'remove', 'reverse', 'sort',
+    // Common functions
+    'len', 'str', 'int', 'float', 'bool', 'list', 'dict', 'set', 'tuple',
+    'range', 'enumerate', 'zip', 'sorted', 'reversed', 'filter', 'map', 'any', 'all',
+    'min', 'max', 'sum', 'abs', 'round', 'type', 'isinstance', 'hasattr', 'getattr'
+  ]);
+
+  /**
    * Determine the context of an identifier (macro call, import alias, variable, etc.)
    */
   getIdentifierContext(line, wordRange, word) {
@@ -246,16 +266,20 @@ class JinjaDefinitionProvider {
     // Check for module.macro() pattern (e.g., forms.input())
     // Pattern: identifier followed by opening paren
     if (/^\s*\(/.test(textAfterWord)) {
-      // Check if preceded by "alias."
+      // Check if preceded by "alias." (method call on object)
       const moduleMatch = textBeforeWord.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*$/);
       if (moduleMatch) {
+        // Check if it's a built-in method - if so, don't treat as macro
+        if (JinjaDefinitionProvider.BUILTIN_METHODS.has(word.toLowerCase())) {
+          return null; // Built-in method, no definition to navigate to
+        }
         return {
           type: 'macro_call',
           macroName: word,
           moduleName: moduleMatch[1]
         };
       }
-      // Direct macro call
+      // Direct macro call (not preceded by dot)
       return {
         type: 'macro_call',
         macroName: word,

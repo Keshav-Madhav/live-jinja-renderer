@@ -4,6 +4,15 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.9.6] - 2025-12-05
+
+### 🔧 Built-in Method Fixes
+- **Hover documentation**: 60+ built-in methods documented (`.get()`, `.split()`, `.items()`, `.keys()`, etc.)
+- **Definition provider**: Built-in methods no longer incorrectly try to navigate to macro definitions
+- **Syntax highlighting**: Methods now have distinct purple color (`#C586C0`) vs yellow for macros
+
+---
+
 ## [1.9.5] - 2025-12-04
 
 ### 🎯 Go to Definition (Ctrl/Cmd+Click)

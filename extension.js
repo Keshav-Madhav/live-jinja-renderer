@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🎯 Go to Definition:\n• Ctrl/Cmd+Click on macros, variables, blocks, template paths\n• Click imported names in {% from "x" import name %}\n\n📚 Hover Documentation:\n• Macro signatures with parameters\n• 50+ filters with examples\n• All keywords and tests documented`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🔧 Built-in Method Fixes:\n• Hover docs for 60+ methods (.get, .split, .items, etc.)\n• Methods no longer misidentified as macros\n• Distinct purple highlighting for methods`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

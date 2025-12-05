@@ -145,17 +145,35 @@ class JinjaHoverProvider {
       }
     }
     
-    // 3. Check for macro calls (word followed by parenthesis)
+    // 3. Check for built-in methods (preceded by .)
+    if (/\.\s*$/.test(textBeforeWord)) {
+      const methodDoc = this.getBuiltinMethodDocumentation(word);
+      if (methodDoc) {
+        return new vscode.Hover(methodDoc, wordRange);
+      }
+    }
+    
+    // 4. Check for macro calls (word followed by parenthesis, but not built-in methods)
     if (/^\s*\(/.test(textAfterWord)) {
-      // Check if it's a module.macro() call
-      const moduleMatch = textBeforeWord.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*$/);
-      if (moduleMatch) {
-        const macroHover = await this.getMacroHover(document, word, moduleMatch[1]);
-        if (macroHover) {
-          return new vscode.Hover(macroHover, wordRange);
+      // Check if it's preceded by a dot (method call on object)
+      const isPrecededByDot = /\.\s*$/.test(textBeforeWord);
+      
+      if (isPrecededByDot) {
+        // It's a method call - check if it's a built-in method first
+        const methodDoc = this.getBuiltinMethodDocumentation(word);
+        if (methodDoc) {
+          return new vscode.Hover(methodDoc, wordRange);
+        }
+        // If not a built-in method, check if it's a module.macro() call
+        const moduleMatch = textBeforeWord.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*\.\s*$/);
+        if (moduleMatch) {
+          const macroHover = await this.getMacroHover(document, word, moduleMatch[1]);
+          if (macroHover) {
+            return new vscode.Hover(macroHover, wordRange);
+          }
         }
       } else {
-        // Direct macro call
+        // Direct macro call (not preceded by dot)
         const macroHover = await this.getMacroHover(document, word, null);
         if (macroHover) {
           return new vscode.Hover(macroHover, wordRange);
@@ -163,7 +181,7 @@ class JinjaHoverProvider {
       }
     }
     
-    // 4. Check for block names (after {% block)
+    // 5. Check for block names (after {% block)
     if (/\{%[-+]?\s*block\s+$/.test(textBeforeWord)) {
       const blockHover = await this.getBlockHover(document, word);
       if (blockHover) {
@@ -171,7 +189,7 @@ class JinjaHoverProvider {
       }
     }
     
-    // 5. Check for Jinja keywords (after {% or general keywords)
+    // 6. Check for Jinja keywords (after {% or general keywords)
     const isDottedPath = /\.\s*$/.test(textBeforeWord) || /^\s*\./.test(textAfterWord);
     if (!isDottedPath) {
       const keywordDoc = this.getJinjaKeywordDoc(word);
@@ -1219,6 +1237,258 @@ class JinjaHoverProvider {
     markdown.appendMarkdown(`**Signature:** \`${filter.signature}\`\n\n`);
     markdown.appendMarkdown(`${filter.description}\n\n`);
     markdown.appendMarkdown(`**Example:**\n\`\`\`jinja\n${filter.example}\n\`\`\`\n`);
+    
+    return markdown;
+  }
+
+  /**
+   * Get documentation for built-in Python/Jinja methods
+   * @param {string} methodName
+   * @returns {vscode.MarkdownString | null}
+   */
+  getBuiltinMethodDocumentation(methodName) {
+    const methods = {
+      // String methods
+      'lower': {
+        signature: 'str.lower()',
+        description: 'Return a copy of the string with all characters converted to lowercase.',
+        example: '{{ "HELLO".lower() }}  →  hello'
+      },
+      'upper': {
+        signature: 'str.upper()',
+        description: 'Return a copy of the string with all characters converted to uppercase.',
+        example: '{{ "hello".upper() }}  →  HELLO'
+      },
+      'capitalize': {
+        signature: 'str.capitalize()',
+        description: 'Return a copy with first character capitalized and rest lowercased.',
+        example: '{{ "hELLO".capitalize() }}  →  Hello'
+      },
+      'title': {
+        signature: 'str.title()',
+        description: 'Return a titlecased version (words start with uppercase).',
+        example: '{{ "hello world".title() }}  →  Hello World'
+      },
+      'strip': {
+        signature: 'str.strip([chars])',
+        description: 'Return a copy with leading and trailing whitespace (or chars) removed.',
+        example: '{{ "  hello  ".strip() }}  →  hello'
+      },
+      'lstrip': {
+        signature: 'str.lstrip([chars])',
+        description: 'Return a copy with leading whitespace (or chars) removed.',
+        example: '{{ "  hello".lstrip() }}  →  hello'
+      },
+      'rstrip': {
+        signature: 'str.rstrip([chars])',
+        description: 'Return a copy with trailing whitespace (or chars) removed.',
+        example: '{{ "hello  ".rstrip() }}  →  hello'
+      },
+      'split': {
+        signature: 'str.split([sep[, maxsplit]])',
+        description: 'Split string by separator into a list. Default separator is whitespace.',
+        example: '{{ "a,b,c".split(",") }}  →  ["a", "b", "c"]'
+      },
+      'rsplit': {
+        signature: 'str.rsplit([sep[, maxsplit]])',
+        description: 'Split string from the right by separator.',
+        example: '{{ "a,b,c".rsplit(",", 1) }}  →  ["a,b", "c"]'
+      },
+      'join': {
+        signature: 'str.join(iterable)',
+        description: 'Join elements of iterable with the string as separator.',
+        example: '{{ ", ".join(["a", "b", "c"]) }}  →  a, b, c'
+      },
+      'replace': {
+        signature: 'str.replace(old, new[, count])',
+        description: 'Return a copy with all occurrences of old replaced by new.',
+        example: '{{ "hello".replace("l", "L") }}  →  heLLo'
+      },
+      'find': {
+        signature: 'str.find(sub[, start[, end]])',
+        description: 'Return lowest index where substring is found, or -1 if not found.',
+        example: '{{ "hello".find("l") }}  →  2'
+      },
+      'rfind': {
+        signature: 'str.rfind(sub[, start[, end]])',
+        description: 'Return highest index where substring is found, or -1 if not found.',
+        example: '{{ "hello".rfind("l") }}  →  3'
+      },
+      'index': {
+        signature: 'str.index(sub[, start[, end]])',
+        description: 'Like find(), but raises ValueError if substring not found.',
+        example: '{{ "hello".index("e") }}  →  1'
+      },
+      'count': {
+        signature: 'str.count(sub[, start[, end]])',
+        description: 'Return the number of non-overlapping occurrences of substring.',
+        example: '{{ "hello".count("l") }}  →  2'
+      },
+      'startswith': {
+        signature: 'str.startswith(prefix[, start[, end]])',
+        description: 'Return True if string starts with the prefix.',
+        example: '{{ "hello".startswith("he") }}  →  True'
+      },
+      'endswith': {
+        signature: 'str.endswith(suffix[, start[, end]])',
+        description: 'Return True if string ends with the suffix.',
+        example: '{{ "hello".endswith("lo") }}  →  True'
+      },
+      'isdigit': {
+        signature: 'str.isdigit()',
+        description: 'Return True if all characters are digits.',
+        example: '{{ "123".isdigit() }}  →  True'
+      },
+      'isalpha': {
+        signature: 'str.isalpha()',
+        description: 'Return True if all characters are alphabetic.',
+        example: '{{ "hello".isalpha() }}  →  True'
+      },
+      'isalnum': {
+        signature: 'str.isalnum()',
+        description: 'Return True if all characters are alphanumeric.',
+        example: '{{ "hello123".isalnum() }}  →  True'
+      },
+      'islower': {
+        signature: 'str.islower()',
+        description: 'Return True if all cased characters are lowercase.',
+        example: '{{ "hello".islower() }}  →  True'
+      },
+      'isupper': {
+        signature: 'str.isupper()',
+        description: 'Return True if all cased characters are uppercase.',
+        example: '{{ "HELLO".isupper() }}  →  True'
+      },
+      'format': {
+        signature: 'str.format(*args, **kwargs)',
+        description: 'Perform string formatting with positional and keyword arguments.',
+        example: '{{ "Hello {}".format(name) }}'
+      },
+      'zfill': {
+        signature: 'str.zfill(width)',
+        description: 'Pad string on the left with zeros to fill width.',
+        example: '{{ "42".zfill(5) }}  →  00042'
+      },
+      'center': {
+        signature: 'str.center(width[, fillchar])',
+        description: 'Return centered string of given width, padded with fillchar.',
+        example: '{{ "hi".center(6, "-") }}  →  --hi--'
+      },
+      'ljust': {
+        signature: 'str.ljust(width[, fillchar])',
+        description: 'Return left-justified string of given width.',
+        example: '{{ "hi".ljust(5, "-") }}  →  hi---'
+      },
+      'rjust': {
+        signature: 'str.rjust(width[, fillchar])',
+        description: 'Return right-justified string of given width.',
+        example: '{{ "hi".rjust(5, "-") }}  →  ---hi'
+      },
+      
+      // Dictionary methods
+      'get': {
+        signature: 'dict.get(key[, default])',
+        description: 'Return value for key if key is in dict, else default (None if not provided).',
+        example: '{{ user.get("name", "Anonymous") }}'
+      },
+      'keys': {
+        signature: 'dict.keys()',
+        description: 'Return a view of the dictionary\'s keys.',
+        example: '{% for key in mydict.keys() %}'
+      },
+      'values': {
+        signature: 'dict.values()',
+        description: 'Return a view of the dictionary\'s values.',
+        example: '{% for value in mydict.values() %}'
+      },
+      'items': {
+        signature: 'dict.items()',
+        description: 'Return a view of the dictionary\'s (key, value) pairs.',
+        example: '{% for key, value in mydict.items() %}'
+      },
+      'pop': {
+        signature: 'dict.pop(key[, default])',
+        description: 'Remove and return value for key. Return default if key not found.',
+        example: '{{ mydict.pop("key", "default") }}'
+      },
+      'setdefault': {
+        signature: 'dict.setdefault(key[, default])',
+        description: 'Return value for key; if not present, insert key with default value.',
+        example: '{{ mydict.setdefault("key", "value") }}'
+      },
+      'update': {
+        signature: 'dict.update([other])',
+        description: 'Update dictionary with key/value pairs from other dict or iterable.',
+        example: '{% do mydict.update({"key": "value"}) %}'
+      },
+      
+      // List methods
+      'append': {
+        signature: 'list.append(item)',
+        description: 'Add an item to the end of the list.',
+        example: '{% do mylist.append("item") %}'
+      },
+      'extend': {
+        signature: 'list.extend(iterable)',
+        description: 'Extend list by appending elements from the iterable.',
+        example: '{% do mylist.extend([1, 2, 3]) %}'
+      },
+      'insert': {
+        signature: 'list.insert(index, item)',
+        description: 'Insert an item at a given position.',
+        example: '{% do mylist.insert(0, "first") %}'
+      },
+      'remove': {
+        signature: 'list.remove(item)',
+        description: 'Remove the first occurrence of item from the list.',
+        example: '{% do mylist.remove("item") %}'
+      },
+      'clear': {
+        signature: 'list.clear()',
+        description: 'Remove all items from the list.',
+        example: '{% do mylist.clear() %}'
+      },
+      'copy': {
+        signature: 'list.copy()',
+        description: 'Return a shallow copy of the list.',
+        example: '{% set newlist = mylist.copy() %}'
+      },
+      'reverse': {
+        signature: 'list.reverse()',
+        description: 'Reverse the elements of the list in place.',
+        example: '{% do mylist.reverse() %}'
+      },
+      'sort': {
+        signature: 'list.sort(key=None, reverse=False)',
+        description: 'Sort the list in place.',
+        example: '{% do mylist.sort() %}'
+      },
+      
+      // Common methods
+      'length': {
+        signature: 'length',
+        description: 'Return the number of items. Note: use |length filter or len() in Jinja.',
+        example: '{{ items | length }}  or  {{ items.__len__() }}'
+      },
+      'len': {
+        signature: 'len(obj)',
+        description: 'Return the number of items in a container.',
+        example: '{{ len(items) }}'
+      }
+    };
+    
+    const method = methods[methodName.toLowerCase()];
+    if (!method) {
+      return null;
+    }
+    
+    const markdown = new vscode.MarkdownString();
+    markdown.isTrusted = true;
+    
+    markdown.appendMarkdown(`### Method: \`${methodName}\`\n\n`);
+    markdown.appendMarkdown(`**Signature:** \`${method.signature}\`\n\n`);
+    markdown.appendMarkdown(`${method.description}\n\n`);
+    markdown.appendMarkdown(`**Example:**\n\`\`\`jinja\n${method.example}\n\`\`\`\n`);
     
     return markdown;
   }
