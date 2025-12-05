@@ -30,20 +30,27 @@
         
         <div class="variables-section" id="variables-section">
             <div class="header-group">
-                <h2>Variables (JSON)</h2>
-                <div class="header-actions">
-                    <button class="icon-button" id="save-variables-btn" title="Save Variables Preset">
-                        <i class="codicon codicon-save"></i>
-                    </button>
-                    <button class="icon-button" id="load-variables-btn" title="Load Variables Preset">
-                        <i class="codicon codicon-folder-opened"></i>
-                    </button>
-                    <button class="icon-button" id="import-variables-btn" title="Import Variables">
-                        <i class="codicon codicon-file-add"></i>
-                    </button>
-                    <button class="icon-button" id="export-variables-btn" title="Export Variables">
-                        <i class="codicon codicon-export"></i>
-                    </button>
+                <div class="variables-header-row">
+                    <div class="variables-header-left">
+                        <h2>Variables (JSON)</h2>
+                    </div>
+                    <div class="variables-header-right">
+                        <button class="ai-generate-btn" id="smart-generate-btn" title="Generate realistic test data based on variable names and template patterns">
+                            <i class="codicon codicon-sparkle"></i>
+                        </button>
+                        <button class="icon-button" id="save-variables-btn" title="Save Variables Preset">
+                            <i class="codicon codicon-save"></i>
+                        </button>
+                        <button class="icon-button" id="load-variables-btn" title="Load Variables Preset">
+                            <i class="codicon codicon-folder-opened"></i>
+                        </button>
+                        <button class="icon-button" id="import-variables-btn" title="Import Variables">
+                            <i class="codicon codicon-file-add"></i>
+                        </button>
+                        <button class="icon-button" id="export-variables-btn" title="Export Variables">
+                            <i class="codicon codicon-export"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             <textarea id="variables">{

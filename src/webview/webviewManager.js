@@ -2,6 +2,7 @@ const vscode = require('vscode');
 const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
 const { handleExportVariables } = require('../commands/importExportCommands');
 const { loadTemplates, getTemplateSummary, watchTemplateChanges, usesExternalTemplates, extractReferencedTemplates } = require('../utils/templateLoader');
+const { generateSmartData, analyzeTemplate } = require('../utils/smartDataGenerator');
 
 /**
  * Sets up webview with template rendering capabilities
@@ -682,6 +683,37 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
           } catch (err) {
             console.error('Failed to open template file:', err);
             vscode.window.showErrorMessage(`Could not open template: ${message.templatePath}`);
+          }
+          return;
+        
+        case 'smartGenerateData':
+          // Generate smart test data based on variable names and template patterns
+          try {
+            const currentVariables = message.currentVariables || {};
+            const template = message.template || lastTemplate;
+            
+            // Analyze template for context (filters, iterables, etc.)
+            const templateAnalysis = analyzeTemplate(template);
+            
+            // Generate smart data based on the structure and names
+            const generatedData = generateSmartData(currentVariables, templateAnalysis);
+            
+            // Send back to webview
+            webview.postMessage({
+              type: 'smartGeneratedData',
+              generatedData: generatedData
+            });
+            
+            vscode.window.showInformationMessage('✨ Smart data generated!');
+          } catch (err) {
+            console.error('Smart data generation failed:', err);
+            vscode.window.showErrorMessage(`Failed to generate data: ${err.message}`);
+            
+            // Send back empty so button can reset
+            webview.postMessage({
+              type: 'smartGeneratedData',
+              generatedData: null
+            });
           }
           return;
         

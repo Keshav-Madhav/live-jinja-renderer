@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.9.6-blue)
+![Version](https://img.shields.io/badge/version-1.10.0-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,25 +10,21 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.9.5
+## 🚀 What's New in v1.10.0
 
-### 🎯 Go to Definition (Ctrl/Cmd+Click)
-Navigate directly to definitions with **Ctrl/Cmd+Click**:
+### ✨ Smart Data Generator
+Generate realistic test data with one click!
 
-- **Macros**: Click `my_macro()` → jumps to `{% macro my_macro() %}`
-- **Template paths**: Click path in `{% import 'path.jinja' %}` → opens the file
-- **Variables**: Navigate to `{% set %}`, `{% for %}`, `{% with %}`, macro params
-- **Imported names**: Click `button` in `{% from "x" import button %}` → goes to macro
+- **Click the ✦ button** in the Variables section header
+- **Smart inference** from variable names: `email` → emails, `price` → numbers, `is_active` → booleans
+- **Template-aware**: Uses comparison values from your template!
+  ```jinja
+  {% if branch == "hdfc" %}  →  branch: "hdfc"
+  {% if user.role == "admin" %}  →  user.role: "admin"
+  ```
+- **Rich data pools**: Names, companies, products, addresses, DevOps terms, and more
 
-### 📚 Enhanced Hover Documentation
-Rich hover tooltips for all Jinja elements:
-
-- **Macros**: Shows signature with parameters and default values
-- **Filters**: 50+ filters with signatures, descriptions, and examples
-- **Keywords**: `for`, `if`, `set`, `block`, `macro`, `import`, etc.
-- **Tests**: `defined`, `none`, `even`, `odd`, `iterable`, etc.
-
-> 💡 **Previous**: Rewritten Variable Extractor (v1.9.4), Relative Path Support (v1.9.3), Template Includes (v1.9.0)
+> 💡 **Previous**: Built-in Method Fixes (v1.9.6), Go to Definition (v1.9.5), Template Includes (v1.9.0)
 
 ---
 
@@ -380,6 +376,12 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 ---
 
 ## Recent Updates
+
+### 1.10.0 - Smart Data Generator
+- **One-click data generation** - Click ✦ button to fill variables with realistic data
+- **40+ name patterns** - Recognizes email, name, price, is_active, created_at, etc.
+- **Template-aware** - Uses comparison values (e.g., `branch == "hdfc"` → `"hdfc"`)
+- **Smart arrays** - `users`, `products` get proper nested object structures
 
 ### 1.9.5 - Go to Definition & Hover Docs
 - **Ctrl/Cmd+Click navigation** - Jump to macros, variables, blocks, template paths

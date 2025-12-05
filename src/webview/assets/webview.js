@@ -1902,6 +1902,33 @@ exportVariablesBtn.addEventListener('click', () => {
   }
 });
 
+// Smart Generate button handler
+const smartGenerateBtn = document.getElementById('smart-generate-btn');
+if (smartGenerateBtn) {
+  smartGenerateBtn.addEventListener('click', () => {
+    // Add loading state
+    smartGenerateBtn.classList.add('loading');
+    
+    // Get current variables to preserve structure
+    let currentVars = {};
+    try {
+      currentVars = JSON.parse(variablesEditor.value || '{}');
+    } catch {
+      // Invalid JSON, start fresh
+    }
+    
+    // Request smart data generation from extension
+    vscode.postMessage({
+      type: 'smartGenerateData',
+      currentVariables: currentVars,
+      template: currentTemplate
+    });
+  });
+  
+  // Add tooltip on hover showing what it does
+  smartGenerateBtn.title = 'Generate smart test data';
+}
+
 // Extensions indicator click handler
 if (extensionsIndicator) {
   extensionsIndicator.addEventListener('click', () => {
@@ -2424,6 +2451,28 @@ async function handleMessage(message) {
         updateRenderTimeDisplay();
         updateWhitespaceIndicators();
         updateTemplateIndicator();
+      }
+      break;
+    
+    case 'smartGeneratedData':
+      // Smart data generation complete
+      const smartGenerateBtnEl = document.getElementById('smart-generate-btn');
+      if (smartGenerateBtnEl) {
+        smartGenerateBtnEl.classList.remove('loading');
+        smartGenerateBtnEl.classList.add('success');
+        setTimeout(() => {
+          smartGenerateBtnEl.classList.remove('success');
+        }, 1000);
+      }
+      
+      if (message.generatedData) {
+        variablesEditor.value = JSON.stringify(message.generatedData, null, 2);
+        validateJsonAndShowError();
+        autoResizeVariablesSection();
+        debouncedGhostSave();
+        if (autoRerender) {
+          await update();
+        }
       }
       break;
   }

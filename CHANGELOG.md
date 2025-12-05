@@ -4,6 +4,36 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.10.0] - 2025-12-05
+
+### ✨ NEW - Smart Data Generator
+One-click generation of realistic test data based on variable names and template patterns!
+
+- **Sparkle Button**: Click the ✦ button in Variables header to generate smart test data
+- **Name-based Inference**: Recognizes 40+ patterns like `email`, `name`, `price`, `is_active`, `created_at`
+- **Template-aware Generation**: Analyzes your template to use comparison values
+  - `{% if branch == "hdfc" %}` → generates `branch: "hdfc"`
+  - `{% if status == "active" %}` → generates `status: "active"`
+  - `{% if count >= 10 %}` → generates `count: 10`
+- **Smart Object Generation**: Arrays like `users`, `products`, `orders` get realistic nested objects
+- **Filter Detection**: Variables with `| currency` → numbers, `| date` → dates
+- **Nested Path Support**: `user.role == "admin"` → generates `user.role: "admin"`
+
+#### Data Pools Include:
+- Names, emails, phones, addresses, cities, countries
+- Companies, products, categories, prices
+- Statuses, roles, priorities, tags
+- DevOps: hosts, ports, environments, regions, versions
+- And more!
+
+#### UI
+- Compact icon button with gradient styling
+- Shimmer animation on hover
+- Loading spinner during generation
+- Success flash when complete
+
+---
+
 ## [1.9.6] - 2025-12-05
 
 ### 🔧 Built-in Method Fixes

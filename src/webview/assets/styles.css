@@ -1305,3 +1305,136 @@ body.detached-active .status-render-time {
   opacity: 1;
 }
 
+/* ============================================================================
+   SMART DATA GENERATOR - AI Sparkle Button
+   ============================================================================ */
+
+/* Smart Generate button - icon only with gradient */
+.ai-generate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Gradient background - purple to blue AI vibes */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  
+  /* Subtle glow */
+  box-shadow: 0 1px 4px rgba(102, 126, 234, 0.3);
+}
+
+.ai-generate-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 
+    0 2px 8px rgba(102, 126, 234, 0.5),
+    0 0 12px rgba(118, 75, 162, 0.3);
+}
+
+.ai-generate-btn:active {
+  transform: scale(0.95);
+}
+
+.ai-generate-btn:focus {
+  outline: 2px solid rgba(102, 126, 234, 0.5);
+  outline-offset: 2px;
+}
+
+/* Icon styling */
+.ai-generate-btn .codicon {
+  font-size: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Shimmer effect overlay */
+.ai-generate-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  50%, 100% {
+    left: 100%;
+  }
+}
+
+/* Loading state */
+.ai-generate-btn.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.ai-generate-btn.loading .codicon {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Success flash */
+.ai-generate-btn.success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  animation: success-pulse 0.4s ease-out;
+}
+
+@keyframes success-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Variables header with generate button */
+.variables-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.variables-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.variables-header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+

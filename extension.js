@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🔧 Built-in Method Fixes:\n• Hover docs for 60+ methods (.get, .split, .items, etc.)\n• Methods no longer misidentified as macros\n• Distinct purple highlighting for methods`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n✨ Smart Data Generator:\n• Click ✦ button to generate realistic test data\n• Infers types from variable names (email, price, etc.)`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
