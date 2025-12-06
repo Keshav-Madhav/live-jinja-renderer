@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.10.0-blue)
+![Version](https://img.shields.io/badge/version-1.10.1-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -376,6 +376,9 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 ---
 
 ## Recent Updates
+
+### 1.10.1 - UI Cleanup
+- **Cleaner header** - Consolidated 5 buttons into 3 with dropdown menus
 
 ### 1.10.0 - Smart Data Generator
 - **One-click data generation** - Click ✦ button to fill variables with realistic data

@@ -1867,31 +1867,16 @@ if (!isSidebarMode) {
   });
 }
 
-// Save and Load Variables handlers
+// Save and Load Variables handlers (consolidated with export/import)
 const saveVariablesBtn = document.getElementById('save-variables-btn');
 const loadVariablesBtn = document.getElementById('load-variables-btn');
-const importVariablesBtn = document.getElementById('import-variables-btn');
-const exportVariablesBtn = document.getElementById('export-variables-btn');
 
 saveVariablesBtn.addEventListener('click', () => {
-  vscode.postMessage({ type: 'executeCommand', command: 'live-jinja-tester.saveVariables' });
-});
-
-loadVariablesBtn.addEventListener('click', () => {
-  vscode.postMessage({ type: 'executeCommand', command: 'live-jinja-tester.loadVariables' });
-});
-
-importVariablesBtn.addEventListener('click', () => {
-  // Request VS Code to show native quick pick for import options
-  vscode.postMessage({ type: 'showImportQuickPick' });
-});
-
-exportVariablesBtn.addEventListener('click', () => {
-  // Request VS Code to show native quick pick for export options
+  // Show QuickPick with save/export options
   try {
     const variables = JSON.parse(variablesEditor.value || '{}');
     vscode.postMessage({ 
-      type: 'showExportQuickPick',
+      type: 'showSaveQuickPick',
       variables: variables
     });
   } catch {
@@ -1900,6 +1885,11 @@ exportVariablesBtn.addEventListener('click', () => {
       message: 'Invalid JSON in variables'
     });
   }
+});
+
+loadVariablesBtn.addEventListener('click', () => {
+  // Show QuickPick with load/import options
+  vscode.postMessage({ type: 'showLoadQuickPick' });
 });
 
 // Smart Generate button handler

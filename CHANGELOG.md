@@ -4,6 +4,16 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.10.1] - 2025-12-06
+
+### 🎨 Variables Header Cleanup
+- Consolidated 5 buttons into 3 for a cleaner interface
+- **Save button** (💾): Opens menu with Save Preset, Export to JSON File, Copy to Clipboard
+- **Load button** (📂): Opens menu with Load Saved Preset, Import from Workspace, Import from File Browser
+- Same functionality, less visual clutter
+
+---
+
 ## [1.10.0] - 2025-12-05
 
 ### ✨ NEW - Smart Data Generator

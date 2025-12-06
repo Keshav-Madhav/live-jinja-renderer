@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n✨ Smart Data Generator:\n• Click ✦ button to generate realistic test data\n• Infers types from variable names (email, price, etc.)`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🎨 UI Cleanup:\n• Variables header now has 3 buttons instead of 5\n• Save/Load buttons open dropdown menus`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

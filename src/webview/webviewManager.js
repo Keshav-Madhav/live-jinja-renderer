@@ -543,81 +543,78 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
           }
           return;
         
-        case 'showImportQuickPick':
-          // Show native VS Code quick pick for import options
+        case 'showSaveQuickPick':
+          // Show native VS Code quick pick for save/export options
           try {
-            const importOptions = [
+            const variables = message.variables;
+            
+            const saveOptions = [
               {
-                label: '$(file-code) Workspace JSON File',
+                label: '$(save) Save Preset',
+                description: 'Save as a named preset for later use',
+                action: 'preset'
+              },
+              {
+                label: '$(export) Export to JSON File',
+                description: 'Save as a formatted JSON file',
+                action: 'file'
+              },
+              {
+                label: '$(clippy) Copy to Clipboard',
+                description: 'Copy to clipboard as JSON',
+                action: 'clipboard'
+              }
+            ];
+            
+            const selected = await vscode.window.showQuickPick(saveOptions, {
+              placeHolder: 'Choose how to save variables',
+              title: 'Save Variables'
+            });
+            
+            if (selected) {
+              if (selected.action === 'preset') {
+                await vscode.commands.executeCommand('live-jinja-tester.saveVariables');
+              } else {
+                await handleExportVariables(variables, selected.action, lastFileUri);
+              }
+            }
+          } catch (err) {
+            vscode.window.showErrorMessage('Failed to save variables');
+            console.error('Save quick pick failed:', err);
+          }
+          return;
+        
+        case 'showLoadQuickPick':
+          // Show native VS Code quick pick for load/import options
+          try {
+            const loadOptions = [
+              {
+                label: '$(folder-opened) Load Saved Preset',
+                description: 'Load a previously saved preset',
+                command: 'live-jinja-tester.loadVariables'
+              },
+              {
+                label: '$(file-code) Import from Workspace',
                 description: 'Choose from JSON files in your workspace',
                 command: 'live-jinja-tester.importVariablesFromWorkspace'
               },
               {
-                label: '$(folder-opened) File Browser',
+                label: '$(folder) Import from File Browser',
                 description: 'Browse and select any JSON file',
                 command: 'live-jinja-tester.importVariablesFromFile'
               }
             ];
             
-            // Only add "Active Editor" option if the current file is JSON
-            const activeEditor = vscode.window.activeTextEditor;
-            if (activeEditor) {
-              const fileName = activeEditor.document.fileName.toLowerCase();
-              const isJsonFile = fileName.endsWith('.json') || 
-                                 activeEditor.document.languageId === 'json' ||
-                                 activeEditor.document.languageId === 'jsonc';
-              
-              if (isJsonFile) {
-                importOptions.push({
-                  label: '$(json) Active Editor',
-                  description: 'Import from currently open JSON file',
-                  command: 'live-jinja-tester.importVariablesFromEditor'
-                });
-              }
-            }
-            
-            const selected = await vscode.window.showQuickPick(importOptions, {
-              placeHolder: 'Select import source',
-              title: 'Import Variables From'
+            const selected = await vscode.window.showQuickPick(loadOptions, {
+              placeHolder: 'Choose how to load variables',
+              title: 'Load Variables'
             });
             
             if (selected) {
               await vscode.commands.executeCommand(selected.command);
             }
           } catch (err) {
-            console.error('Import quick pick failed:', err);
-          }
-          return;
-        
-        case 'showExportQuickPick':
-          // Show native VS Code quick pick for export options
-          try {
-            const variables = message.variables;
-            
-            const exportOptions = [
-              {
-                label: '$(export) JSON File',
-                description: 'Save as a formatted JSON file',
-                type: 'file'
-              },
-              {
-                label: '$(clippy) Clipboard',
-                description: 'Copy to clipboard as JSON',
-                type: 'clipboard'
-              }
-            ];
-            
-            const selected = await vscode.window.showQuickPick(exportOptions, {
-              placeHolder: 'Select export destination',
-              title: 'Export Variables To'
-            });
-            
-            if (selected) {
-              await handleExportVariables(variables, selected.type, lastFileUri);
-            }
-          } catch (err) {
-            vscode.window.showErrorMessage('Failed to export variables');
-            console.error('Export quick pick failed:', err);
+            console.error('Load quick pick failed:', err);
           }
           return;
         
