@@ -309,6 +309,12 @@ function inferType(name, context = {}) {
     return 'array';
   }
   
+  // Check if used in simple conditional (boolean check)
+  // context.simpleConditionals contains variables used as truthy/falsy checks
+  if (context.simpleConditionals && context.simpleConditionals.has && context.simpleConditionals.has(name)) {
+    return 'boolean';
+  }
+  
   // Check patterns
   for (const [type, pattern] of Object.entries(PATTERNS)) {
     if (pattern.test(name)) {
@@ -618,7 +624,8 @@ function analyzeTemplate(template) {
     iterables: new Set(),
     filters: {},
     conditionals: new Set(),
-    comparisons: {}, // NEW: Track comparison values { varName: ['value1', 'value2'] }
+    simpleConditionals: new Set(), // Variables used as truthy/falsy checks (not comparisons)
+    comparisons: {}, // Track comparison values { varName: ['value1', 'value2'] }
   };
   
   // Find for loops to identify iterables
@@ -639,10 +646,30 @@ function analyzeTemplate(template) {
     analysis.filters[varName].push(filter);
   }
   
-  // Find conditionals
+  // Find all conditionals
   const ifPattern = /\{%[-+]?\s*if\s+([a-zA-Z_][a-zA-Z0-9_]*)/g;
   while ((match = ifPattern.exec(template)) !== null) {
     analysis.conditionals.add(match[1]);
+  }
+  
+  // Find simple conditionals (truthy/falsy checks without comparison operators)
+  // Pattern: {% if variable %} or {% if variable and ... %} or {% if variable or ... %}
+  const simpleCondPattern = /\{%[-+]?\s*(?:if|elif)\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s*(?:%\}|\s+(?:and|or)\s))/g;
+  while ((match = simpleCondPattern.exec(template)) !== null) {
+    const varName = match[1];
+    // Make sure this isn't actually a comparison by checking the full context
+    const fullMatch = template.slice(match.index, match.index + 100);
+    // Check it's not followed by a comparison operator
+    const isComparison = /\{%[-+]?\s*(?:if|elif)\s+[a-zA-Z_][a-zA-Z0-9_]*\s*(?:==|!=|<=?|>=?|\s+(?:is|in|not\s+in)\s)/i.test(fullMatch);
+    if (!isComparison) {
+      analysis.simpleConditionals.add(varName);
+    }
+  }
+  
+  // Also handle "not variable" pattern
+  const notCondPattern = /\{%[-+]?\s*(?:if|elif)\s+not\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s*(?:%\}|\s+(?:and|or)\s))/g;
+  while ((match = notCondPattern.exec(template)) !== null) {
+    analysis.simpleConditionals.add(match[1]);
   }
   
   // NEW: Find comparison values (variable == "value", variable != "value", etc.)

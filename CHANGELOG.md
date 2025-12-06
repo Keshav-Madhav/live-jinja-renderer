@@ -4,6 +4,14 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.10.4] - 2025-12-06
+
+### 🐛 FIX - Boolean Variable Extraction
+- `{% if variable %}` now correctly infers as `true` instead of `""`
+- Affects both variable extraction and Smart Data Generator
+
+---
+
 ## [1.10.3] - 2025-12-06
 
 ### 🤖 NEW - OpenAI API Integration

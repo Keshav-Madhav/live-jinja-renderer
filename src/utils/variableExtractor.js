@@ -979,6 +979,32 @@ function inferDefaultValue(name, info, template) {
     return { key: 'value' };
   }
   
+  // Simple boolean condition check: {% if variable %} (not {% if variable == "..." %})
+  // This detects when a variable is used as a truthy/falsy check without comparison
+  const simpleBooleanPattern = new RegExp(
+    `\\{%[-+]?\\s*(?:if|elif)\\s+${escaped}\\s*(?:%\\}|\\s+(?:and|or)\\s)`,
+    'i'
+  );
+  if (simpleBooleanPattern.test(template)) {
+    // Check it's not actually a comparison (like {% if rating == 5 %})
+    const comparisonPattern = new RegExp(
+      `\\{%[-+]?\\s*(?:if|elif)\\s+${escaped}\\s*(?:==|!=|<=?|>=?|\\s+(?:is|in|not)\\s)`,
+      'i'
+    );
+    if (!comparisonPattern.test(template)) {
+      return true;
+    }
+  }
+  
+  // Also check for "not variable" pattern: {% if not variable %}
+  const notBooleanPattern = new RegExp(
+    `\\{%[-+]?\\s*(?:if|elif)\\s+not\\s+${escaped}\\s*(?:%\\}|\\s+(?:and|or)\\s)`,
+    'i'
+  );
+  if (notBooleanPattern.test(template)) {
+    return true;
+  }
+  
   // Numeric operations
   const numericPatterns = [
     `${escaped}\\s*[+\\-*/%]\\s*\\d`,

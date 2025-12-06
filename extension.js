@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🤖 NEW: OpenAI API Integration:\n• Use your own API key for AI generation\n• Add key via: ⋮ → Configure AI Keys → OpenAI`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🐛 FIX: Boolean variable extraction\n• {% if variable %} now correctly infers as true`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
