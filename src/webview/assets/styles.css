@@ -347,6 +347,24 @@ textarea:focus {
   border-color: var(--vscode-inputValidation-errorBorder, #f14c4c) !important;
 }
 
+/* Streaming state - shows when Copilot is generating */
+#variables.streaming {
+  border-color: #06b6d4 !important;
+  background: linear-gradient(
+    90deg,
+    var(--vscode-input-background) 0%,
+    rgba(6, 182, 212, 0.05) 50%,
+    var(--vscode-input-background) 100%
+  );
+  background-size: 200% 100%;
+  animation: streaming-bg 1.5s ease-in-out infinite;
+}
+
+@keyframes streaming-bg {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* JSON Error Indicator */
 .json-error-indicator {
   display: none;
@@ -1381,13 +1399,13 @@ body.detached-active .status-render-time {
   }
 }
 
-/* Loading state */
+/* Loading state - for smart generate (spinning icon) */
 .ai-generate-btn.loading {
   pointer-events: none;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
-.ai-generate-btn.loading .codicon {
+.ai-generate-btn.loading:not(.llm-generate-btn) .codicon {
   animation: spin 0.8s linear infinite;
 }
 
@@ -1400,10 +1418,83 @@ body.detached-active .status-render-time {
   }
 }
 
+/* LLM Loading state - rotating border instead of spinning icon */
+.llm-generate-btn.loading {
+  opacity: 1;
+  position: relative;
+}
+
+.llm-generate-btn.loading::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 6px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    #06b6d4 60deg,
+    #22d3ee 120deg,
+    transparent 180deg
+  );
+  animation: rotate-border 1s linear infinite;
+  z-index: -1;
+}
+
+.llm-generate-btn.loading::before {
+  animation: none; /* Disable shimmer during loading */
+}
+
+@keyframes rotate-border {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Copilot status indicator animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes fadeOutDown {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+}
+
 /* Success flash */
 .ai-generate-btn.success {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   animation: success-pulse 0.4s ease-out;
+}
+
+/* Error state */
+.ai-generate-btn.error {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  animation: error-shake 0.4s ease-out;
+}
+
+@keyframes error-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
 }
 
 @keyframes success-pulse {
@@ -1416,6 +1507,44 @@ body.detached-active .status-render-time {
   100% {
     transform: scale(1);
   }
+}
+
+/* LLM Generate Button - Copilot-powered (cyan/teal theme) */
+.llm-generate-btn {
+  /* Override gradient with Copilot-inspired cyan theme */
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  box-shadow: 0 1px 4px rgba(6, 182, 212, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.llm-generate-btn:hover {
+  box-shadow: 
+    0 2px 8px rgba(6, 182, 212, 0.5),
+    0 0 12px rgba(8, 145, 178, 0.3);
+}
+
+.llm-generate-btn:focus {
+  outline: 2px solid rgba(6, 182, 212, 0.5);
+}
+
+/* LLM button shimmer - slightly different timing */
+.llm-generate-btn::before {
+  animation: shimmer 3s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+/* Copilot badge/indicator */
+.llm-generate-btn .copilot-indicator {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+  border-radius: 50%;
+  border: 1px solid var(--vscode-editor-background);
+  z-index: 2;
 }
 
 /* Variables header with generate button */

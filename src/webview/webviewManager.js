@@ -3,6 +3,7 @@ const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
 const { handleExportVariables } = require('../commands/importExportCommands');
 const { loadTemplates, getTemplateSummary, watchTemplateChanges, usesExternalTemplates, extractReferencedTemplates } = require('../utils/templateLoader');
 const { generateSmartData, analyzeTemplate } = require('../utils/smartDataGenerator');
+const { generateWithLLMStreaming, isCopilotAvailable } = require('../utils/llmDataGenerator');
 
 /**
  * Sets up webview with template rendering capabilities
@@ -220,9 +221,13 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
   
   // Send initial settings to webview
   setTimeout(async () => {
+    // Check if Copilot is available
+    const copilotAvailable = await isCopilotAvailable();
+    
     webview.postMessage({
       type: 'updateSettings',
-      settings: settings
+      settings: settings,
+      copilotAvailable: copilotAvailable
     });
     
     // Load templates after settings (only if needed)
@@ -710,6 +715,58 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
             webview.postMessage({
               type: 'smartGeneratedData',
               generatedData: null
+            });
+          }
+          return;
+        
+        case 'llmGenerateData':
+          // Generate test data using Copilot LLM with streaming
+          try {
+            const currentVariables = message.currentVariables || {};
+            const template = message.template || lastTemplate;
+            
+            // Check if Copilot is available
+            const copilotAvailable = await isCopilotAvailable();
+            if (!copilotAvailable) {
+              vscode.window.showWarningMessage('GitHub Copilot is not available. Please ensure Copilot is installed and activated.');
+              webview.postMessage({
+                type: 'llmGeneratedData',
+                generatedData: null,
+                error: 'Copilot not available'
+              });
+              return;
+            }
+            
+            // Generate data using LLM with streaming
+            const generatedData = await generateWithLLMStreaming(
+              currentVariables, 
+              template,
+              (partialText, isDone) => {
+                // Send streaming chunks to webview
+                webview.postMessage({
+                  type: 'llmStreamChunk',
+                  text: partialText,
+                  isDone: isDone
+                });
+              }
+            );
+            
+            // Send final parsed data
+            webview.postMessage({
+              type: 'llmGeneratedData',
+              generatedData: generatedData
+            });
+            
+            vscode.window.showInformationMessage('🤖 AI-powered data generated with Copilot!');
+          } catch (err) {
+            console.error('LLM data generation failed:', err);
+            vscode.window.showErrorMessage(`AI generation failed: ${err.message}`);
+            
+            // Send back error so button can reset
+            webview.postMessage({
+              type: 'llmGeneratedData',
+              generatedData: null,
+              error: err.message
             });
           }
           return;

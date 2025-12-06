@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.10.1-blue)
+![Version](https://img.shields.io/badge/version-1.10.2-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,21 +10,23 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.10.0
+## 🚀 What's New in v1.10.2
 
-### ✨ Smart Data Generator
-Generate realistic test data with one click!
+### 🤖 Copilot-Powered Variable Generation
+Generate contextually-aware test data using GitHub Copilot!
 
-- **Click the ✦ button** in the Variables section header
-- **Smart inference** from variable names: `email` → emails, `price` → numbers, `is_active` → booleans
-- **Template-aware**: Uses comparison values from your template!
-  ```jinja
-  {% if branch == "hdfc" %}  →  branch: "hdfc"
-  {% if user.role == "admin" %}  →  user.role: "admin"
-  ```
-- **Rich data pools**: Names, companies, products, addresses, DevOps terms, and more
+- **New Copilot button** in Variables header (only appears if Copilot is installed)
+- **Streaming response** - watch values appear in real-time as Copilot generates them
+- **Context-aware** - Copilot understands your template semantically
+- **Visual feedback** - rotating border, toast notifications, animated textarea
 
-> 💡 **Previous**: Built-in Method Fixes (v1.9.6), Go to Definition (v1.9.5), Template Includes (v1.9.0)
+### Two Generation Modes
+| Button | Method | Best For |
+|--------|--------|----------|
+| ✦ (Purple) | Algorithmic | Fast, offline, pattern-based |
+| (Cyan) | Copilot AI | Context-aware, semantic understanding |
+
+> 💡 **Previous**: Smart Data Generator (v1.10.0), Go to Definition (v1.9.5), Template Includes (v1.9.0)
 
 ---
 
@@ -376,6 +378,12 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 ---
 
 ## Recent Updates
+
+### 1.10.2 - Copilot-Powered Generation
+- **Copilot integration** - AI-powered variable generation using GitHub Copilot
+- **Streaming response** - Real-time streaming as Copilot generates data
+- **Smart visibility** - Button only appears when Copilot is available
+- **Visual feedback** - Rotating border, toast notifications, animated textarea
 
 ### 1.10.1 - UI Cleanup
 - **Cleaner header** - Consolidated 5 buttons into 3 with dropdown menus
