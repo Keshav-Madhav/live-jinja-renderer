@@ -3,7 +3,7 @@ const { JinjaRendererViewProvider } = require('./src/providers/jinjaRendererView
 const { registerSelectionActionsProvider } = require('./src/providers/selectionActionsProvider');
 const { JinjaIntelliSenseManager } = require('./src/providers/jinjaIntelliSenseManager');
 const { JinjaSyntaxDecorator } = require('./src/providers/jinjaSyntaxDecorator');
-const { registerSettingsCommands } = require('./src/commands/settingsCommands');
+const { registerSettingsCommands, setSidebarProvider } = require('./src/commands/settingsCommands');
 const { registerVariableCommands } = require('./src/commands/variableCommands');
 const { registerImportExportCommands } = require('./src/commands/importExportCommands');
 const { registerActionCommands } = require('./src/commands/actionCommands');
@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🤖 NEW: Copilot-Powered Generation:\n• AI-powered variable generation using GitHub Copilot\n• Streaming response with real-time updates\n• Button only appears when Copilot is available`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🤖 NEW: OpenAI API Integration:\n• Use your own API key for AI generation\n• Add key via: ⋮ → Configure AI Keys → OpenAI`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
@@ -187,6 +187,9 @@ async function activate(context) {
     context.subscriptions.push(
       vscode.window.registerWebviewViewProvider('jinjaRendererView', sidebarProvider)
     );
+    
+    // Set sidebar provider reference for API key notifications
+    setSidebarProvider(sidebarProvider);
     
     // Register selection actions provider (lightbulb actions on text selection)
     registerSelectionActionsProvider(context);

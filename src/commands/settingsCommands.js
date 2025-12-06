@@ -1,5 +1,9 @@
 const vscode = require('vscode');
 const { updateStatusBar } = require('../utils/statusBar');
+const { setOpenAIApiKey, validateOpenAIKey } = require('../utils/llmDataGenerator');
+
+// Secret storage key constants
+const OPENAI_API_KEY_SECRET = 'liveJinjaRenderer.openai.apiKey';
 
 /**
  * Update context keys based on configuration
@@ -36,6 +40,30 @@ async function updateContextKeys() {
   
   // Update status bar
   updateStatusBar();
+}
+
+// Reference to sidebar provider for notifying webview of key changes
+let _sidebarProvider = null;
+
+/**
+ * Set the sidebar provider reference for API key notifications
+ * @param {any} provider - The sidebar provider instance
+ */
+function setSidebarProvider(provider) {
+  _sidebarProvider = provider;
+}
+
+/**
+ * Notify webview about OpenAI key status change
+ * @param {boolean} available - Whether the key is now available
+ */
+function notifyOpenAIKeyChange(available) {
+  if (_sidebarProvider && _sidebarProvider._view) {
+    _sidebarProvider._view.webview.postMessage({
+      type: 'openaiKeyUpdated',
+      available: available
+    });
+  }
 }
 
 /**
@@ -128,8 +156,124 @@ function registerSettingsCommands(context) {
     await vscode.commands.executeCommand('workbench.action.openSettings', 'liveJinjaRenderer.extensions');
   });
   context.subscriptions.push(openExtensionSettingsCommand);
+  
+  // ============================================
+  // AI API KEY MANAGEMENT COMMANDS
+  // ============================================
+  
+  // Add/Update OpenAI API Key
+  const openaiAddKeyCommand = vscode.commands.registerCommand('live-jinja-tester.openaiAddKey', async () => {
+    try {
+      const newKey = await vscode.window.showInputBox({
+        prompt: 'Enter your OpenAI API key',
+        placeHolder: 'sk-...',
+        password: true,
+        ignoreFocusOut: true,
+        validateInput: (value) => {
+          if (!value || value.trim() === '') {
+            return 'API key cannot be empty';
+          }
+          if (!value.startsWith('sk-')) {
+            return 'OpenAI API keys typically start with "sk-"';
+          }
+          return null;
+        }
+      });
+      
+      if (newKey) {
+        // Show progress while validating
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: 'Validating OpenAI API key...',
+          cancellable: false
+        }, async () => {
+          const isValid = await validateOpenAIKey(newKey.trim());
+          
+          if (isValid) {
+            // Store in SecretStorage
+            await context.secrets.store(OPENAI_API_KEY_SECRET, newKey.trim());
+            // Update llmDataGenerator cache
+            setOpenAIApiKey(newKey.trim());
+            
+            // Notify webview to show the OpenAI button
+            notifyOpenAIKeyChange(true);
+            
+            vscode.window.showInformationMessage('✓ OpenAI API key saved securely!');
+          } else {
+            vscode.window.showErrorMessage('Invalid OpenAI API key. Please check and try again.');
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error adding OpenAI key:', err);
+      vscode.window.showErrorMessage(`Failed to save API key: ${err.message}`);
+    }
+  });
+  context.subscriptions.push(openaiAddKeyCommand);
+  
+  // View OpenAI API Key
+  const openaiViewKeyCommand = vscode.commands.registerCommand('live-jinja-tester.openaiViewKey', async () => {
+    try {
+      const storedKey = await context.secrets.get(OPENAI_API_KEY_SECRET);
+      
+      if (storedKey) {
+        // Show masked version of the key
+        const maskedKey = storedKey.substring(0, 7) + '...' + storedKey.substring(storedKey.length - 4);
+        
+        const action = await vscode.window.showInformationMessage(
+          `🔑 OpenAI API Key: ${maskedKey}`,
+          'Copy Full Key',
+          'Close'
+        );
+        
+        if (action === 'Copy Full Key') {
+          await vscode.env.clipboard.writeText(storedKey);
+          vscode.window.showInformationMessage('API key copied to clipboard!');
+        }
+      } else {
+        vscode.window.showWarningMessage('No OpenAI API key configured. Use "Add / Update OpenAI API Key" to add one.');
+      }
+    } catch (err) {
+      console.error('Error viewing OpenAI key:', err);
+      vscode.window.showErrorMessage(`Failed to view API key: ${err.message}`);
+    }
+  });
+  context.subscriptions.push(openaiViewKeyCommand);
+  
+  // Remove OpenAI API Key
+  const openaiRemoveKeyCommand = vscode.commands.registerCommand('live-jinja-tester.openaiRemoveKey', async () => {
+    try {
+      const storedKey = await context.secrets.get(OPENAI_API_KEY_SECRET);
+      
+      if (!storedKey) {
+        vscode.window.showWarningMessage('No OpenAI API key to remove.');
+        return;
+      }
+      
+      const confirm = await vscode.window.showWarningMessage(
+        'Are you sure you want to remove your OpenAI API key?',
+        { modal: true },
+        'Remove'
+      );
+      
+      if (confirm === 'Remove') {
+        await context.secrets.delete(OPENAI_API_KEY_SECRET);
+        setOpenAIApiKey(null);
+        
+        // Notify webview to hide the OpenAI button
+        notifyOpenAIKeyChange(false);
+        
+        vscode.window.showInformationMessage('OpenAI API key removed.');
+      }
+    } catch (err) {
+      console.error('Error removing OpenAI key:', err);
+      vscode.window.showErrorMessage(`Failed to remove API key: ${err.message}`);
+    }
+  });
+  context.subscriptions.push(openaiRemoveKeyCommand);
 }
 
 module.exports = {
-  registerSettingsCommands
+  registerSettingsCommands,
+  setSidebarProvider
 };

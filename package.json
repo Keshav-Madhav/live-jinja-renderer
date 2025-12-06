@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with include/extends support, markdown, mermaid diagrams, and IntelliSense",
-  "version": "1.10.2",
+  "version": "1.10.3",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -187,12 +187,38 @@
         "title": "Configure Jinja2 Extensions",
         "icon": "$(extensions)",
         "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.openaiAddKey",
+        "title": "Add / Update OpenAI API Key",
+        "icon": "$(key)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.openaiViewKey",
+        "title": "View OpenAI API Key",
+        "icon": "$(eye)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.openaiRemoveKey",
+        "title": "Remove OpenAI API Key",
+        "icon": "$(trash)",
+        "category": "Jinja"
       }
     ],
     "submenus": [
       {
         "id": "jinjaVariablesSubmenu",
         "label": "Variables"
+      },
+      {
+        "id": "jinjaAIKeysSubmenu",
+        "label": "Configure AI Keys"
+      },
+      {
+        "id": "jinjaOpenAISubmenu",
+        "label": "OpenAI"
       }
     ],
     "menus": {
@@ -282,6 +308,11 @@
           "group": "4_variables"
         },
         {
+          "submenu": "jinjaAIKeysSubmenu",
+          "when": "view == jinjaRendererView",
+          "group": "5_ai"
+        },
+        {
           "command": "live-jinja-tester.openExtensionSettings",
           "when": "view == jinjaRendererView",
           "group": "6_settings@1"
@@ -324,6 +355,26 @@
         {
           "command": "live-jinja-tester.importVariablesFromWorkspace",
           "group": "3_import@3"
+        }
+      ],
+      "jinjaAIKeysSubmenu": [
+        {
+          "submenu": "jinjaOpenAISubmenu",
+          "group": "1_providers@1"
+        }
+      ],
+      "jinjaOpenAISubmenu": [
+        {
+          "command": "live-jinja-tester.openaiAddKey",
+          "group": "1_manage@1"
+        },
+        {
+          "command": "live-jinja-tester.openaiViewKey",
+          "group": "1_manage@2"
+        },
+        {
+          "command": "live-jinja-tester.openaiRemoveKey",
+          "group": "2_danger@1"
         }
       ],
       "webview/context": [

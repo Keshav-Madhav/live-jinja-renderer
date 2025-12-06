@@ -1934,7 +1934,7 @@ if (llmGenerateBtn) {
     llmGenerateBtn.classList.add('loading');
     
     // Show indicator that Copilot is being invoked
-    showCopilotStatus('Asking Copilot...');
+    showAIStatus('Asking Copilot...', 'copilot');
     
     // Get current variables to preserve structure
     let currentVars = {};
@@ -1956,6 +1956,43 @@ if (llmGenerateBtn) {
   llmGenerateBtn.title = 'Generate test data using GitHub Copilot';
 }
 
+// OpenAI Generate button handler
+const openaiGenerateBtn = document.getElementById('openai-generate-btn');
+let openaiAvailable = false; // Will be set when settings are received
+
+if (openaiGenerateBtn) {
+  // Initially hide the button until we know OpenAI is available
+  openaiGenerateBtn.style.display = 'none';
+  
+  openaiGenerateBtn.addEventListener('click', () => {
+    if (!openaiAvailable) return;
+    
+    // Add loading state
+    openaiGenerateBtn.classList.add('loading');
+    
+    // Show indicator that OpenAI is being invoked
+    showAIStatus('Asking OpenAI...', 'openai');
+    
+    // Get current variables to preserve structure
+    let currentVars = {};
+    try {
+      currentVars = JSON.parse(variablesEditor.value || '{}');
+    } catch {
+      // Invalid JSON, start fresh
+    }
+    
+    // Request OpenAI data generation from extension
+    vscode.postMessage({
+      type: 'openaiGenerateData',
+      currentVariables: currentVars,
+      template: currentTemplate
+    });
+  });
+  
+  // Add tooltip on hover showing what it does
+  openaiGenerateBtn.title = 'Generate test data using OpenAI API';
+}
+
 /**
  * Update Copilot button visibility based on availability
  * @param {boolean} available - Whether Copilot is available
@@ -1968,24 +2005,50 @@ function updateCopilotButtonVisibility(available) {
 }
 
 /**
- * Show a temporary Copilot status indicator
- * @param {string} message - Status message to show
+ * Update OpenAI button visibility based on availability
+ * @param {boolean} available - Whether OpenAI is available
  */
-function showCopilotStatus(message) {
+function updateOpenAIButtonVisibility(available) {
+  openaiAvailable = available;
+  if (openaiGenerateBtn) {
+    openaiGenerateBtn.style.display = available ? 'inline-flex' : 'none';
+  }
+}
+
+// OpenAI SVG icon for status indicators
+const OPENAI_ICON_SVG = `<svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.8956zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.4066-.6898zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>`;
+
+/**
+ * Show a temporary AI status indicator
+ * @param {string} message - Status message to show
+ * @param {string} provider - AI provider ('copilot' or 'openai')
+ */
+function showAIStatus(message, provider = 'copilot') {
   // Remove any existing status
-  const existing = document.getElementById('copilot-status');
+  const existing = document.getElementById('ai-status');
   if (existing) existing.remove();
+  
+  const iconHtml = provider === 'openai' 
+    ? OPENAI_ICON_SVG 
+    : '<i class="codicon codicon-copilot"></i>';
+  const gradient = provider === 'openai' 
+    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'  // Green for OpenAI
+    : 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'; // Cyan for Copilot
+  const shadow = provider === 'openai'
+    ? 'rgba(16, 185, 129, 0.4)'
+    : 'rgba(6, 182, 212, 0.4)';
   
   // Create status indicator
   const status = document.createElement('div');
-  status.id = 'copilot-status';
-  status.innerHTML = `<i class="codicon codicon-copilot"></i> ${message}`;
+  status.id = 'ai-status';
+  status.dataset.provider = provider;
+  status.innerHTML = `${iconHtml} ${message}`;
   status.style.cssText = `
     position: fixed;
     bottom: 60px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    background: ${gradient};
     color: white;
     padding: 6px 12px;
     border-radius: 16px;
@@ -1995,25 +2058,32 @@ function showCopilotStatus(message) {
     align-items: center;
     gap: 6px;
     z-index: 1000;
-    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
+    box-shadow: 0 4px 12px ${shadow};
     animation: fadeInUp 0.3s ease-out;
+    white-space: nowrap;
   `;
   
   document.body.appendChild(status);
 }
 
 /**
- * Hide the Copilot status indicator
+ * Hide the AI status indicator
  * @param {boolean} success - Whether the operation was successful
+ * @param {string} provider - AI provider ('copilot' or 'openai')
  */
-function hideCopilotStatus(success = true) {
-  const status = document.getElementById('copilot-status');
+function hideAIStatus(success = true, provider = 'copilot') {
+  const status = document.getElementById('ai-status');
   if (status) {
+    const iconHtml = provider === 'openai' 
+      ? OPENAI_ICON_SVG 
+      : '<i class="codicon codicon-copilot"></i>';
+    const providerName = provider === 'openai' ? 'OpenAI' : 'Copilot';
+    
     if (success) {
-      status.innerHTML = `<i class="codicon codicon-copilot"></i> Generated by Copilot ✓`;
+      status.innerHTML = `${iconHtml} Generated by ${providerName} ✓`;
       status.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
     } else {
-      status.innerHTML = `<i class="codicon codicon-copilot"></i> Copilot unavailable`;
+      status.innerHTML = `${iconHtml} ${providerName} unavailable`;
       status.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
     }
     
@@ -2022,6 +2092,15 @@ function hideCopilotStatus(success = true) {
       setTimeout(() => status.remove(), 300);
     }, 1500);
   }
+}
+
+// Legacy functions for backwards compatibility
+function showCopilotStatus(message) {
+  showAIStatus(message, 'copilot');
+}
+
+function hideCopilotStatus(success = true) {
+  hideAIStatus(success, 'copilot');
 }
 
 // Extensions indicator click handler
@@ -2404,6 +2483,11 @@ async function handleMessage(message) {
           updateCopilotButtonVisibility(message.copilotAvailable);
         }
         
+        // Update OpenAI button visibility
+        if (message.openaiAvailable !== undefined) {
+          updateOpenAIButtonVisibility(message.openaiAvailable);
+        }
+        
         // Update environment settings
         stripBlockWhitespace = updateSetting('Strip Blocks', stripBlockWhitespace, message.settings.stripBlockWhitespace !== undefined ? message.settings.stripBlockWhitespace : false);
         
@@ -2581,12 +2665,13 @@ async function handleMessage(message) {
       if (message.text !== undefined) {
         variablesEditor.value = message.text;
         variablesEditor.classList.add('streaming');
+        variablesEditor.classList.add('streaming-copilot');
         
         // Auto-scroll to bottom to show latest content
         variablesEditor.scrollTop = variablesEditor.scrollHeight;
         
         // Update status to show streaming
-        const statusEl = document.getElementById('copilot-status');
+        const statusEl = document.getElementById('ai-status');
         if (statusEl && !message.isDone) {
           statusEl.innerHTML = `<i class="codicon codicon-copilot"></i> Generating...`;
         }
@@ -2599,6 +2684,7 @@ async function handleMessage(message) {
     case 'llmGeneratedData':
       // LLM (Copilot) data generation complete
       variablesEditor.classList.remove('streaming');
+      variablesEditor.classList.remove('streaming-copilot');
       
       const llmGenerateBtnEl = document.getElementById('llm-generate-btn');
       if (llmGenerateBtnEl) {
@@ -2607,13 +2693,13 @@ async function handleMessage(message) {
         if (message.error) {
           // Show error state briefly
           llmGenerateBtnEl.classList.add('error');
-          hideCopilotStatus(false);
+          hideAIStatus(false, 'copilot');
           setTimeout(() => {
             llmGenerateBtnEl.classList.remove('error');
           }, 2000);
         } else {
           llmGenerateBtnEl.classList.add('success');
-          hideCopilotStatus(true);
+          hideAIStatus(true, 'copilot');
           setTimeout(() => {
             llmGenerateBtnEl.classList.remove('success');
           }, 1000);
@@ -2630,6 +2716,69 @@ async function handleMessage(message) {
           await update();
         }
       }
+      break;
+    
+    case 'openaiStreamChunk':
+      // Streaming chunk from OpenAI - update textarea in real-time
+      if (message.text !== undefined) {
+        variablesEditor.value = message.text;
+        variablesEditor.classList.add('streaming');
+        variablesEditor.classList.add('streaming-openai');
+        
+        // Auto-scroll to bottom to show latest content
+        variablesEditor.scrollTop = variablesEditor.scrollHeight;
+        
+        // Update status to show streaming
+        const openaiStatusEl = document.getElementById('ai-status');
+        if (openaiStatusEl && !message.isDone) {
+          openaiStatusEl.innerHTML = `${OPENAI_ICON_SVG} Generating...`;
+        }
+        
+        // Auto-resize as content grows
+        autoResizeVariablesSection();
+      }
+      break;
+    
+    case 'openaiGeneratedData':
+      // OpenAI data generation complete
+      variablesEditor.classList.remove('streaming');
+      variablesEditor.classList.remove('streaming-openai');
+      
+      const openaiGenerateBtnEl = document.getElementById('openai-generate-btn');
+      if (openaiGenerateBtnEl) {
+        openaiGenerateBtnEl.classList.remove('loading');
+        
+        if (message.error) {
+          // Show error state briefly
+          openaiGenerateBtnEl.classList.add('error');
+          hideAIStatus(false, 'openai');
+          setTimeout(() => {
+            openaiGenerateBtnEl.classList.remove('error');
+          }, 2000);
+        } else {
+          openaiGenerateBtnEl.classList.add('success');
+          hideAIStatus(true, 'openai');
+          setTimeout(() => {
+            openaiGenerateBtnEl.classList.remove('success');
+          }, 1000);
+        }
+      }
+      
+      if (message.generatedData) {
+        // Set final formatted JSON
+        variablesEditor.value = JSON.stringify(message.generatedData, null, 2);
+        validateJsonAndShowError();
+        autoResizeVariablesSection();
+        debouncedGhostSave();
+        if (autoRerender) {
+          await update();
+        }
+      }
+      break;
+    
+    case 'openaiKeyUpdated':
+      // Key was added or removed - update UI
+      updateOpenAIButtonVisibility(message.available);
       break;
   }
 }

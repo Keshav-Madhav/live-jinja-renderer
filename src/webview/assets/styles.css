@@ -347,8 +347,14 @@ textarea:focus {
   border-color: var(--vscode-inputValidation-errorBorder, #f14c4c) !important;
 }
 
-/* Streaming state - shows when Copilot is generating */
+/* Streaming state - shows when AI is generating */
 #variables.streaming {
+  background-size: 200% 100%;
+  animation: streaming-bg 1.5s ease-in-out infinite;
+}
+
+/* Copilot streaming - cyan theme */
+#variables.streaming-copilot {
   border-color: #06b6d4 !important;
   background: linear-gradient(
     90deg,
@@ -356,8 +362,17 @@ textarea:focus {
     rgba(6, 182, 212, 0.05) 50%,
     var(--vscode-input-background) 100%
   );
-  background-size: 200% 100%;
-  animation: streaming-bg 1.5s ease-in-out infinite;
+}
+
+/* OpenAI streaming - green theme */
+#variables.streaming-openai {
+  border-color: #10b981 !important;
+  background: linear-gradient(
+    90deg,
+    var(--vscode-input-background) 0%,
+    rgba(16, 185, 129, 0.05) 50%,
+    var(--vscode-input-background) 100%
+  );
 }
 
 @keyframes streaming-bg {
@@ -1532,6 +1547,69 @@ body.detached-active .status-render-time {
 .llm-generate-btn::before {
   animation: shimmer 3s ease-in-out infinite;
   animation-delay: 0.5s;
+}
+
+/* OpenAI Generate Button - Green theme */
+.openai-generate-btn {
+  /* Override gradient with OpenAI-inspired green theme */
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 1px 4px rgba(16, 185, 129, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.openai-generate-btn:hover {
+  box-shadow: 
+    0 2px 8px rgba(16, 185, 129, 0.5),
+    0 0 12px rgba(5, 150, 105, 0.3);
+}
+
+.openai-generate-btn:focus {
+  outline: 2px solid rgba(16, 185, 129, 0.5);
+}
+
+/* OpenAI SVG icon styling */
+.openai-icon {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+
+/* OpenAI button shimmer - different timing */
+.openai-generate-btn::before {
+  animation: shimmer 3.5s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+/* OpenAI Loading state - rotating border */
+.openai-generate-btn.loading {
+  opacity: 1;
+  position: relative;
+}
+
+.openai-generate-btn.loading::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 6px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    #10b981 60deg,
+    #34d399 120deg,
+    transparent 180deg
+  );
+  animation: rotate-border 1s linear infinite;
+  z-index: -1;
+}
+
+.openai-generate-btn.loading::before {
+  animation: none; /* Disable shimmer during loading */
 }
 
 /* Copilot badge/indicator */

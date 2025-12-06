@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.10.2-blue)
+![Version](https://img.shields.io/badge/version-1.10.3-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,23 +10,32 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.10.2
+## 🚀 What's New in v1.10.3
 
-### 🤖 Copilot-Powered Variable Generation
-Generate contextually-aware test data using GitHub Copilot!
+### 🤖 OpenAI API Integration
+Use your own OpenAI API key for AI-powered variable generation!
 
-- **New Copilot button** in Variables header (only appears if Copilot is installed)
-- **Streaming response** - watch values appear in real-time as Copilot generates them
-- **Context-aware** - Copilot understands your template semantically
-- **Visual feedback** - rotating border, toast notifications, animated textarea
+- **OpenAI button** (green) - appears when you configure your API key
+- **Secure storage** - keys encrypted via VS Code's SecretStorage
+- **Streaming response** - watch values appear in real-time
+- **Easy management** - add, view, or remove keys via VS Code's native menu
 
-### Two Generation Modes
+### Setting Up OpenAI
+1. Open the Live Jinja Renderer sidebar panel
+2. Click the **⋮** menu in the panel title bar
+3. Navigate to **Configure AI Keys** → **OpenAI** → **Add / Update OpenAI API Key**
+4. Enter your API key (validated before saving, button appears immediately)
+
+> 🔒 **Security**: Your API key is stored encrypted, never visible in settings. This extension is open-source - verify the code on GitHub.
+
+### Three Generation Modes
 | Button | Method | Best For |
 |--------|--------|----------|
 | ✦ (Purple) | Algorithmic | Fast, offline, pattern-based |
-| (Cyan) | Copilot AI | Context-aware, semantic understanding |
+| (Cyan) | Copilot AI | Requires GitHub Copilot |
+| (Green) | OpenAI API | Requires your own API key |
 
-> 💡 **Previous**: Smart Data Generator (v1.10.0), Go to Definition (v1.9.5), Template Includes (v1.9.0)
+> 💡 **Previous**: Copilot Integration (v1.10.2), Smart Data Generator (v1.10.0), Go to Definition (v1.9.5)
 
 ---
 
@@ -379,11 +388,17 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 
 ## Recent Updates
 
-### 1.10.2 - Copilot-Powered Generation
-- **Copilot integration** - AI-powered variable generation using GitHub Copilot
-- **Streaming response** - Real-time streaming as Copilot generates data
+### 1.10.3 - OpenAI API Integration
+- **OpenAI support** - Use your own API key for AI-powered generation
+- **Secure storage** - Keys encrypted via VS Code SecretStorage
+- **VS Code menu** - Configure AI Keys → OpenAI → Add/View/Remove
+- **Streaming response** - Real-time streaming as AI generates data
+- **Coming soon** - Anthropic Claude, Google Gemini
+
+### 1.10.2 - Copilot Integration
+- **Copilot button** - AI-powered variable generation using GitHub Copilot
+- **Streaming response** - Real-time streaming with visual feedback
 - **Smart visibility** - Button only appears when Copilot is available
-- **Visual feedback** - Rotating border, toast notifications, animated textarea
 
 ### 1.10.1 - UI Cleanup
 - **Cleaner header** - Consolidated 5 buttons into 3 with dropdown menus

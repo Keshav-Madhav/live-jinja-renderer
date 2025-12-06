@@ -3,7 +3,10 @@ const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
 const { handleExportVariables } = require('../commands/importExportCommands');
 const { loadTemplates, getTemplateSummary, watchTemplateChanges, usesExternalTemplates, extractReferencedTemplates } = require('../utils/templateLoader');
 const { generateSmartData, analyzeTemplate } = require('../utils/smartDataGenerator');
-const { generateWithLLMStreaming, isCopilotAvailable } = require('../utils/llmDataGenerator');
+const { generateWithLLMStreaming, isCopilotAvailable, setOpenAIApiKey, isOpenAIConfigured, validateOpenAIKey, generateWithOpenAIStreaming } = require('../utils/llmDataGenerator');
+
+// Secret storage key constant (shared with settingsCommands.js)
+const OPENAI_API_KEY_SECRET = 'liveJinjaRenderer.openai.apiKey';
 
 /**
  * Sets up webview with template rendering capabilities
@@ -224,10 +227,25 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
     // Check if Copilot is available
     const copilotAvailable = await isCopilotAvailable();
     
+    // Check if OpenAI is configured and valid (using SecretStorage)
+    let openaiAvailable = false;
+    try {
+      const storedKey = await context.secrets.get(OPENAI_API_KEY_SECRET);
+      if (storedKey) {
+        // Set the key in llmDataGenerator for use
+        setOpenAIApiKey(storedKey);
+        // Validate the key
+        openaiAvailable = await validateOpenAIKey(storedKey);
+      }
+    } catch (err) {
+      console.error('Error checking OpenAI API key:', err);
+    }
+    
     webview.postMessage({
       type: 'updateSettings',
       settings: settings,
-      copilotAvailable: copilotAvailable
+      copilotAvailable: copilotAvailable,
+      openaiAvailable: openaiAvailable
     });
     
     // Load templates after settings (only if needed)
@@ -756,8 +774,6 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
               type: 'llmGeneratedData',
               generatedData: generatedData
             });
-            
-            vscode.window.showInformationMessage('🤖 AI-powered data generated with Copilot!');
           } catch (err) {
             console.error('LLM data generation failed:', err);
             vscode.window.showErrorMessage(`AI generation failed: ${err.message}`);
@@ -770,6 +786,56 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
             });
           }
           return;
+        
+        case 'openaiGenerateData':
+          // Generate test data using OpenAI API with streaming
+          try {
+            const currentVariables = message.currentVariables || {};
+            const template = message.template || lastTemplate;
+            
+            // Check if OpenAI is configured
+            if (!isOpenAIConfigured()) {
+              vscode.window.showWarningMessage('OpenAI API key not configured. Please add your API key in Settings.');
+              webview.postMessage({
+                type: 'openaiGeneratedData',
+                generatedData: null,
+                error: 'OpenAI not configured'
+              });
+              return;
+            }
+            
+            // Generate data using OpenAI with streaming
+            const generatedData = await generateWithOpenAIStreaming(
+              currentVariables, 
+              template,
+              (partialText, isDone) => {
+                // Send streaming chunks to webview
+                webview.postMessage({
+                  type: 'openaiStreamChunk',
+                  text: partialText,
+                  isDone: isDone
+                });
+              }
+            );
+            
+            // Send final parsed data
+            webview.postMessage({
+              type: 'openaiGeneratedData',
+              generatedData: generatedData
+            });
+          } catch (err) {
+            console.error('OpenAI data generation failed:', err);
+            vscode.window.showErrorMessage(`OpenAI generation failed: ${err.message}`);
+            
+            // Send back error so button can reset
+            webview.postMessage({
+              type: 'openaiGeneratedData',
+              generatedData: null,
+              error: err.message
+            });
+          }
+          return;
+        
         
         case 'goToLine':
           // Navigate to specific line in the editor
