@@ -3,10 +3,11 @@ const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
 const { handleExportVariables } = require('../commands/importExportCommands');
 const { loadTemplates, getTemplateSummary, watchTemplateChanges, usesExternalTemplates, extractReferencedTemplates } = require('../utils/templateLoader');
 const { generateSmartData, analyzeTemplate } = require('../utils/smartDataGenerator');
-const { generateWithLLMStreaming, isCopilotAvailable, setOpenAIApiKey, isOpenAIConfigured, validateOpenAIKey, generateWithOpenAIStreaming } = require('../utils/llmDataGenerator');
+const { generateWithLLMStreaming, isCopilotAvailable, setOpenAIApiKey, isOpenAIConfigured, validateOpenAIKey, generateWithOpenAIStreaming, setGeminiApiKey, isGeminiConfigured, validateGeminiKey, generateWithGeminiStreaming } = require('../utils/llmDataGenerator');
 
-// Secret storage key constant (shared with settingsCommands.js)
+// Secret storage key constants (shared with settingsCommands.js)
 const OPENAI_API_KEY_SECRET = 'liveJinjaRenderer.openai.apiKey';
+const GEMINI_API_KEY_SECRET = 'liveJinjaRenderer.gemini.apiKey';
 
 /**
  * Sets up webview with template rendering capabilities
@@ -241,11 +242,26 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
       console.error('Error checking OpenAI API key:', err);
     }
     
+    // Check if Gemini is configured and valid (using SecretStorage)
+    let geminiAvailable = false;
+    try {
+      const storedGeminiKey = await context.secrets.get(GEMINI_API_KEY_SECRET);
+      if (storedGeminiKey) {
+        // Set the key in llmDataGenerator for use
+        setGeminiApiKey(storedGeminiKey);
+        // Validate the key
+        geminiAvailable = await validateGeminiKey(storedGeminiKey);
+      }
+    } catch (err) {
+      console.error('Error checking Gemini API key:', err);
+    }
+    
     webview.postMessage({
       type: 'updateSettings',
       settings: settings,
       copilotAvailable: copilotAvailable,
-      openaiAvailable: openaiAvailable
+      openaiAvailable: openaiAvailable,
+      geminiAvailable: geminiAvailable
     });
     
     // Load templates after settings (only if needed)
@@ -830,6 +846,55 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
             // Send back error so button can reset
             webview.postMessage({
               type: 'openaiGeneratedData',
+              generatedData: null,
+              error: err.message
+            });
+          }
+          return;
+        
+        case 'geminiGenerateData':
+          // Generate test data using Gemini API with streaming
+          try {
+            const currentVariables = message.currentVariables || {};
+            const template = message.template || lastTemplate;
+            
+            // Check if Gemini is configured
+            if (!isGeminiConfigured()) {
+              vscode.window.showWarningMessage('Gemini API key not configured. Please add your API key via the menu.');
+              webview.postMessage({
+                type: 'geminiGeneratedData',
+                generatedData: null,
+                error: 'Gemini not configured'
+              });
+              return;
+            }
+            
+            // Generate data using Gemini with streaming
+            const generatedData = await generateWithGeminiStreaming(
+              currentVariables, 
+              template,
+              (partialText, isDone) => {
+                // Send streaming chunks to webview
+                webview.postMessage({
+                  type: 'geminiStreamChunk',
+                  text: partialText,
+                  isDone: isDone
+                });
+              }
+            );
+            
+            // Send final parsed data
+            webview.postMessage({
+              type: 'geminiGeneratedData',
+              generatedData: generatedData
+            });
+          } catch (err) {
+            console.error('Gemini data generation failed:', err);
+            vscode.window.showErrorMessage(`Gemini generation failed: ${err.message}`);
+            
+            // Send back error so button can reset
+            webview.postMessage({
+              type: 'geminiGeneratedData',
               generatedData: null,
               error: err.message
             });

@@ -375,6 +375,17 @@ textarea:focus {
   );
 }
 
+/* Gemini streaming - blue theme */
+#variables.streaming-gemini {
+  border-color: #4285f4 !important;
+  background: linear-gradient(
+    90deg,
+    var(--vscode-input-background) 0%,
+    rgba(66, 133, 244, 0.05) 50%,
+    var(--vscode-input-background) 100%
+  );
+}
+
 @keyframes streaming-bg {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
@@ -1609,6 +1620,68 @@ body.detached-active .status-render-time {
 }
 
 .openai-generate-btn.loading::before {
+  animation: none; /* Disable shimmer during loading */
+}
+
+/* Gemini Generate Button - Blue theme */
+.gemini-generate-btn {
+  /* Override gradient with Gemini-inspired blue theme */
+  background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
+  box-shadow: 0 1px 4px rgba(66, 133, 244, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.gemini-generate-btn:hover {
+  box-shadow: 
+    0 2px 8px rgba(66, 133, 244, 0.5),
+    0 0 12px rgba(26, 115, 232, 0.3);
+}
+
+.gemini-generate-btn:focus {
+  outline: 2px solid rgba(66, 133, 244, 0.5);
+}
+
+/* Gemini SVG icon styling */
+.gemini-icon {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+/* Gemini button shimmer - different timing */
+.gemini-generate-btn::before {
+  animation: shimmer 4s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+
+/* Gemini Loading state - rotating border */
+.gemini-generate-btn.loading {
+  opacity: 1;
+  position: relative;
+}
+
+.gemini-generate-btn.loading::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 6px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    #4285f4 60deg,
+    #8ab4f8 120deg,
+    transparent 180deg
+  );
+  animation: rotate-border 1s linear infinite;
+  z-index: -1;
+}
+
+.gemini-generate-btn.loading::before {
   animation: none; /* Disable shimmer during loading */
 }
 

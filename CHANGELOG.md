@@ -4,6 +4,38 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.10.5] - 2025-12-06
+
+### 🤖 NEW - Google Gemini API Integration
+Use your own Gemini API key for AI-powered variable generation!
+
+- **Model**: `gemini-2.0-flash` (Google's latest fast model)
+
+#### Gemini API Integration (Blue Button)
+- **Secure Key Storage**: API keys stored using VS Code's SecretStorage (encrypted)
+- **Easy Key Management**: VS Code's native panel menu (⋮) → Configure AI Keys → Gemini (flash-2.0)
+  - Add/Update Key - securely store your API key
+  - View Key - see masked key with option to copy
+  - Remove Key - delete stored key with confirmation
+- **Streaming Support**: Real-time streaming of generated data
+- **Smart Visibility**: Button only appears when valid API key is configured
+- **Instant UI Updates**: Button appears immediately after adding a valid key
+
+#### Key Management via VS Code Menu
+Access via VS Code's native **⋮** menu in the sidebar panel:
+- Configure AI Keys → Gemini (flash-2.0) → Add/Update Gemini API Key
+- Keys are stored encrypted via VS Code SecretStorage
+
+#### Four Generation Modes
+| Button | Method | Model | Best For |
+|--------|--------|-------|----------|
+| (Purple) | Algorithmic | — | Fast, offline, pattern-based |
+| (Cyan) | Copilot AI | VS Code LM API | Requires GitHub Copilot subscription |
+| (Green) | OpenAI | `gpt-4o-mini` | Requires your own API key |
+| (Blue) | Gemini | `gemini-2.0-flash` | Requires your own API key |
+
+---
+
 ## [1.10.4] - 2025-12-06
 
 ### 🐛 FIX - Boolean Variable Extraction
@@ -37,7 +69,7 @@ Access via VS Code's native **⋮** menu in the sidebar panel:
 #### Three Generation Modes
 | Button | Method | Best For |
 |--------|--------|----------|
-| ✦ (Purple) | Algorithmic | Fast, offline, pattern-based |
+| (Purple) | Algorithmic | Fast, offline, pattern-based |
 | (Cyan) | Copilot AI | Requires GitHub Copilot subscription |
 | (Green) | OpenAI API | Requires your own API key |
 

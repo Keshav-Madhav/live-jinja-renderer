@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with include/extends support, markdown, mermaid diagrams, and IntelliSense",
-  "version": "1.10.4",
+  "version": "1.10.5",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -205,6 +205,24 @@
         "title": "Remove OpenAI API Key",
         "icon": "$(trash)",
         "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.geminiAddKey",
+        "title": "Add / Update Gemini API Key",
+        "icon": "$(key)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.geminiViewKey",
+        "title": "View Gemini API Key",
+        "icon": "$(eye)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.geminiRemoveKey",
+        "title": "Remove Gemini API Key",
+        "icon": "$(trash)",
+        "category": "Jinja"
       }
     ],
     "submenus": [
@@ -218,7 +236,11 @@
       },
       {
         "id": "jinjaOpenAISubmenu",
-        "label": "OpenAI"
+        "label": "OpenAI (gpt-4o-mini)"
+      },
+      {
+        "id": "jinjaGeminiSubmenu",
+        "label": "Gemini (flash-2.0)"
       }
     ],
     "menus": {
@@ -361,6 +383,10 @@
         {
           "submenu": "jinjaOpenAISubmenu",
           "group": "1_providers@1"
+        },
+        {
+          "submenu": "jinjaGeminiSubmenu",
+          "group": "1_providers@2"
         }
       ],
       "jinjaOpenAISubmenu": [
@@ -374,6 +400,20 @@
         },
         {
           "command": "live-jinja-tester.openaiRemoveKey",
+          "group": "2_danger@1"
+        }
+      ],
+      "jinjaGeminiSubmenu": [
+        {
+          "command": "live-jinja-tester.geminiAddKey",
+          "group": "1_manage@1"
+        },
+        {
+          "command": "live-jinja-tester.geminiViewKey",
+          "group": "1_manage@2"
+        },
+        {
+          "command": "live-jinja-tester.geminiRemoveKey",
           "group": "2_danger@1"
         }
       ],

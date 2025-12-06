@@ -424,6 +424,185 @@ async function generateWithOpenAIStreaming(extractedVars, templateContent, onChu
   });
 }
 
+// ============================================================================
+// GEMINI API SUPPORT
+// ============================================================================
+
+// Cache for Gemini API key (managed by extension)
+let _geminiApiKey = null;
+
+/**
+ * Set the Gemini API key (called by webviewManager with key from SecretStorage)
+ * @param {string | null} apiKey - The API key to set
+ */
+function setGeminiApiKey(apiKey) {
+  _geminiApiKey = apiKey && apiKey.trim() !== '' ? apiKey.trim() : null;
+}
+
+/**
+ * Check if Gemini API key is configured
+ * @returns {boolean}
+ */
+function isGeminiConfigured() {
+  return !!_geminiApiKey;
+}
+
+/**
+ * Validate a Gemini API key by making a simple request
+ * @param {string} apiKey - The API key to validate
+ * @returns {Promise<boolean>}
+ */
+async function validateGeminiKey(apiKey) {
+  if (!apiKey) return false;
+  
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'generativelanguage.googleapis.com',
+      path: `/v1beta/models?key=${apiKey}`,
+      method: 'GET',
+      timeout: 5000
+    };
+    
+    const req = https.request(options, (res) => {
+      resolve(res.statusCode === 200);
+    });
+    
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => {
+      req.destroy();
+      resolve(false);
+    });
+    
+    req.end();
+  });
+}
+
+/**
+ * Generate data using Gemini API with streaming
+ * @param {Object} extractedVars - Variables extracted from template
+ * @param {string} templateContent - The template content
+ * @param {Function} onChunk - Callback for each chunk: (partialText, isDone) => void
+ * @returns {Promise<Object>} - Final parsed data
+ */
+async function generateWithGeminiStreaming(extractedVars, templateContent, onChunk) {
+  if (!_geminiApiKey) {
+    throw new Error('Gemini API key not configured');
+  }
+  
+  const apiKey = _geminiApiKey;
+  const { systemPrompt, userPrompt } = buildPrompts(extractedVars, templateContent);
+  
+  return new Promise((resolve, reject) => {
+    const requestBody = JSON.stringify({
+      contents: [{
+        parts: [{
+          text: `${systemPrompt}\n\n${userPrompt}`
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2000
+      }
+    });
+    
+    const options = {
+      hostname: 'generativelanguage.googleapis.com',
+      path: `/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(requestBody)
+      }
+    };
+    
+    const req = https.request(options, (res) => {
+      if (res.statusCode !== 200) {
+        let errorData = '';
+        res.on('data', chunk => errorData += chunk);
+        res.on('end', () => {
+          try {
+            const error = JSON.parse(errorData);
+            reject(new Error(error.error?.message || `API error: ${res.statusCode}`));
+          } catch {
+            reject(new Error(`API error: ${res.statusCode}`));
+          }
+        });
+        return;
+      }
+      
+      let responseText = '';
+      let buffer = '';
+      
+      res.on('data', (chunk) => {
+        buffer += chunk.toString();
+        
+        // Process complete lines
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim();
+            
+            if (data === '[DONE]' || data === '') {
+              continue;
+            }
+            
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+              
+              if (content) {
+                responseText += content;
+                
+                // Clean markdown artifacts for display
+                let displayText = responseText;
+                if (displayText.startsWith('```json\n')) {
+                  displayText = displayText.slice(8);
+                } else if (displayText.startsWith('```json')) {
+                  displayText = displayText.slice(7);
+                } else if (displayText.startsWith('```\n')) {
+                  displayText = displayText.slice(4);
+                } else if (displayText.startsWith('```')) {
+                  displayText = displayText.slice(3);
+                }
+                
+                if (onChunk) {
+                  onChunk(displayText, false);
+                }
+              }
+            } catch (e) {
+              // Skip invalid JSON lines
+            }
+          }
+        }
+      });
+      
+      res.on('end', () => {
+        try {
+          // Final cleanup
+          responseText = cleanResponse(responseText);
+          
+          if (onChunk) {
+            onChunk(responseText, true);
+          }
+          
+          const generatedData = JSON.parse(responseText);
+          resolve(generatedData);
+        } catch (e) {
+          reject(new Error(`Failed to parse response: ${e.message}`));
+        }
+      });
+      
+      res.on('error', reject);
+    });
+    
+    req.on('error', reject);
+    req.write(requestBody);
+    req.end();
+  });
+}
+
 module.exports = {
   isCopilotAvailable,
   generateWithLLM,
@@ -433,5 +612,10 @@ module.exports = {
   setOpenAIApiKey,
   isOpenAIConfigured,
   validateOpenAIKey,
-  generateWithOpenAIStreaming
+  generateWithOpenAIStreaming,
+  // Gemini exports
+  setGeminiApiKey,
+  isGeminiConfigured,
+  validateGeminiKey,
+  generateWithGeminiStreaming
 };

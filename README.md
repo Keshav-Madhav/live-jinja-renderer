@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.10.4-blue)
+![Version](https://img.shields.io/badge/version-1.10.5-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,12 +10,33 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.10.4
+## 🚀 What's New in v1.10.5
 
-### 🐛 Boolean Variable Extraction Fix
-- `{% if variable %}` now correctly infers as `true` instead of `""`
+### 🤖 Google Gemini API Integration
+Use your own Gemini API key for AI-powered variable generation!
 
-> 💡 **Previous**: OpenAI Integration (v1.10.3), Copilot Integration (v1.10.2), Smart Data Generator (v1.10.0)
+- **Gemini button** (blue) - appears when you configure your API key
+- **Model**: `gemini-2.0-flash` (Google's latest fast model)
+- **Secure storage** - keys encrypted via VS Code's SecretStorage
+- **Streaming response** - watch values appear in real-time
+
+### Setting Up Gemini
+1. Open the Live Jinja Renderer sidebar panel
+2. Click the **⋮** menu in the panel title bar
+3. Navigate to **Configure AI Keys** → **Gemini (flash-2.0)** → **Add / Update Gemini API Key**
+4. Enter your API key (validated before saving, button appears immediately)
+
+> 🔒 **Security**: Your API key is stored encrypted, never visible in settings. This extension is open-source - verify the code on GitHub.
+
+### Four Generation Modes
+| Button | Method | Model | Best For |
+|--------|--------|-------|----------|
+| (Purple) | Algorithmic | — | Fast, offline, pattern-based |
+| (Cyan) | Copilot AI | VS Code LM API | Requires GitHub Copilot |
+| (Green) | OpenAI | `gpt-4o-mini` | Requires your own API key |
+| (Blue) | Gemini | `gemini-2.0-flash` | Requires your own API key |
+
+> 💡 **Previous**: Boolean Fix (v1.10.4), OpenAI Integration (v1.10.3), Copilot Integration (v1.10.2)
 
 ---
 
@@ -367,6 +388,11 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 ---
 
 ## Recent Updates
+
+### 1.10.5 - Gemini API Integration
+- **Gemini button** (blue) - `gemini-2.0-flash` model
+- **Secure storage** - keys encrypted via VS Code SecretStorage
+- **Streaming response** - real-time generation
 
 ### 1.10.4 - Boolean Variable Extraction Fix
 - `{% if variable %}` now correctly infers as `true` instead of `""`

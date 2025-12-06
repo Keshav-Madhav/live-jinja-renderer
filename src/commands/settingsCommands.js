@@ -1,9 +1,10 @@
 const vscode = require('vscode');
 const { updateStatusBar } = require('../utils/statusBar');
-const { setOpenAIApiKey, validateOpenAIKey } = require('../utils/llmDataGenerator');
+const { setOpenAIApiKey, validateOpenAIKey, setGeminiApiKey, validateGeminiKey } = require('../utils/llmDataGenerator');
 
 // Secret storage key constants
 const OPENAI_API_KEY_SECRET = 'liveJinjaRenderer.openai.apiKey';
+const GEMINI_API_KEY_SECRET = 'liveJinjaRenderer.gemini.apiKey';
 
 /**
  * Update context keys based on configuration
@@ -61,6 +62,19 @@ function notifyOpenAIKeyChange(available) {
   if (_sidebarProvider && _sidebarProvider._view) {
     _sidebarProvider._view.webview.postMessage({
       type: 'openaiKeyUpdated',
+      available: available
+    });
+  }
+}
+
+/**
+ * Notify webview about Gemini key status change
+ * @param {boolean} available - Whether the key is now available
+ */
+function notifyGeminiKeyChange(available) {
+  if (_sidebarProvider && _sidebarProvider._view) {
+    _sidebarProvider._view.webview.postMessage({
+      type: 'geminiKeyUpdated',
       available: available
     });
   }
@@ -271,6 +285,118 @@ function registerSettingsCommands(context) {
     }
   });
   context.subscriptions.push(openaiRemoveKeyCommand);
+  
+  // ============================================
+  // GEMINI API KEY MANAGEMENT COMMANDS
+  // ============================================
+  
+  // Add/Update Gemini API Key
+  const geminiAddKeyCommand = vscode.commands.registerCommand('live-jinja-tester.geminiAddKey', async () => {
+    try {
+      const newKey = await vscode.window.showInputBox({
+        prompt: 'Enter your Google Gemini API key',
+        placeHolder: 'AI...',
+        password: true,
+        ignoreFocusOut: true,
+        validateInput: (value) => {
+          if (!value || value.trim() === '') {
+            return 'API key cannot be empty';
+          }
+          return null;
+        }
+      });
+      
+      if (newKey) {
+        // Show progress while validating
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: 'Validating Gemini API key...',
+          cancellable: false
+        }, async () => {
+          const isValid = await validateGeminiKey(newKey.trim());
+          
+          if (isValid) {
+            // Store in SecretStorage
+            await context.secrets.store(GEMINI_API_KEY_SECRET, newKey.trim());
+            // Update llmDataGenerator cache
+            setGeminiApiKey(newKey.trim());
+            
+            // Notify webview to show the Gemini button
+            notifyGeminiKeyChange(true);
+            
+            vscode.window.showInformationMessage('✓ Gemini API key saved securely!');
+          } else {
+            vscode.window.showErrorMessage('Invalid Gemini API key. Please check and try again.');
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error adding Gemini key:', err);
+      vscode.window.showErrorMessage(`Failed to save API key: ${err.message}`);
+    }
+  });
+  context.subscriptions.push(geminiAddKeyCommand);
+  
+  // View Gemini API Key
+  const geminiViewKeyCommand = vscode.commands.registerCommand('live-jinja-tester.geminiViewKey', async () => {
+    try {
+      const storedKey = await context.secrets.get(GEMINI_API_KEY_SECRET);
+      
+      if (storedKey) {
+        // Show masked version of the key
+        const maskedKey = storedKey.substring(0, 5) + '...' + storedKey.substring(storedKey.length - 4);
+        
+        const action = await vscode.window.showInformationMessage(
+          `🔑 Gemini API Key: ${maskedKey}`,
+          'Copy Full Key',
+          'Close'
+        );
+        
+        if (action === 'Copy Full Key') {
+          await vscode.env.clipboard.writeText(storedKey);
+          vscode.window.showInformationMessage('API key copied to clipboard!');
+        }
+      } else {
+        vscode.window.showWarningMessage('No Gemini API key configured. Use "Add / Update Gemini API Key" to add one.');
+      }
+    } catch (err) {
+      console.error('Error viewing Gemini key:', err);
+      vscode.window.showErrorMessage(`Failed to view API key: ${err.message}`);
+    }
+  });
+  context.subscriptions.push(geminiViewKeyCommand);
+  
+  // Remove Gemini API Key
+  const geminiRemoveKeyCommand = vscode.commands.registerCommand('live-jinja-tester.geminiRemoveKey', async () => {
+    try {
+      const storedKey = await context.secrets.get(GEMINI_API_KEY_SECRET);
+      
+      if (!storedKey) {
+        vscode.window.showWarningMessage('No Gemini API key to remove.');
+        return;
+      }
+      
+      const confirm = await vscode.window.showWarningMessage(
+        'Are you sure you want to remove your Gemini API key?',
+        { modal: true },
+        'Remove'
+      );
+      
+      if (confirm === 'Remove') {
+        await context.secrets.delete(GEMINI_API_KEY_SECRET);
+        setGeminiApiKey(null);
+        
+        // Notify webview to hide the Gemini button
+        notifyGeminiKeyChange(false);
+        
+        vscode.window.showInformationMessage('Gemini API key removed.');
+      }
+    } catch (err) {
+      console.error('Error removing Gemini key:', err);
+      vscode.window.showErrorMessage(`Failed to remove API key: ${err.message}`);
+    }
+  });
+  context.subscriptions.push(geminiRemoveKeyCommand);
 }
 
 module.exports = {
