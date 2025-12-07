@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with include/extends support, markdown, mermaid diagrams, and IntelliSense",
-  "version": "1.10.5",
+  "version": "1.10.6",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -207,6 +207,24 @@
         "category": "Jinja"
       },
       {
+        "command": "live-jinja-tester.claudeAddKey",
+        "title": "Add / Update Claude API Key",
+        "icon": "$(key)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.claudeViewKey",
+        "title": "View Claude API Key",
+        "icon": "$(eye)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.claudeRemoveKey",
+        "title": "Remove Claude API Key",
+        "icon": "$(trash)",
+        "category": "Jinja"
+      },
+      {
         "command": "live-jinja-tester.geminiAddKey",
         "title": "Add / Update Gemini API Key",
         "icon": "$(key)",
@@ -237,6 +255,10 @@
       {
         "id": "jinjaOpenAISubmenu",
         "label": "OpenAI (gpt-4o-mini)"
+      },
+      {
+        "id": "jinjaClaudeSubmenu",
+        "label": "Claude (claude-sonnet-4)"
       },
       {
         "id": "jinjaGeminiSubmenu",
@@ -385,8 +407,12 @@
           "group": "1_providers@1"
         },
         {
-          "submenu": "jinjaGeminiSubmenu",
+          "submenu": "jinjaClaudeSubmenu",
           "group": "1_providers@2"
+        },
+        {
+          "submenu": "jinjaGeminiSubmenu",
+          "group": "1_providers@3"
         }
       ],
       "jinjaOpenAISubmenu": [
@@ -400,6 +426,20 @@
         },
         {
           "command": "live-jinja-tester.openaiRemoveKey",
+          "group": "2_danger@1"
+        }
+      ],
+      "jinjaClaudeSubmenu": [
+        {
+          "command": "live-jinja-tester.claudeAddKey",
+          "group": "1_manage@1"
+        },
+        {
+          "command": "live-jinja-tester.claudeViewKey",
+          "group": "1_manage@2"
+        },
+        {
+          "command": "live-jinja-tester.claudeRemoveKey",
           "group": "2_danger@1"
         }
       ],

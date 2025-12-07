@@ -425,6 +425,199 @@ async function generateWithOpenAIStreaming(extractedVars, templateContent, onChu
 }
 
 // ============================================================================
+// CLAUDE API SUPPORT
+// ============================================================================
+
+// Cache for Claude API key (managed by extension)
+let _claudeApiKey = null;
+
+/**
+ * Set the Claude API key (called by webviewManager with key from SecretStorage)
+ * @param {string | null} apiKey - The API key to set
+ */
+function setClaudeApiKey(apiKey) {
+  _claudeApiKey = apiKey && apiKey.trim() !== '' ? apiKey.trim() : null;
+}
+
+/**
+ * Check if Claude API key is configured
+ * @returns {boolean}
+ */
+function isClaudeConfigured() {
+  return !!_claudeApiKey;
+}
+
+/**
+ * Validate a Claude API key by making a simple request
+ * @param {string} apiKey - The API key to validate
+ * @returns {Promise<boolean>}
+ */
+async function validateClaudeKey(apiKey) {
+  if (!apiKey) return false;
+  
+  return new Promise((resolve) => {
+    const requestBody = JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1,
+      messages: [{ role: 'user', content: 'Hi' }]
+    });
+    
+    const options = {
+      hostname: 'api.anthropic.com',
+      path: '/v1/messages',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Length': Buffer.byteLength(requestBody)
+      },
+      timeout: 10000
+    };
+    
+    const req = https.request(options, (res) => {
+      // 200 = success, 400 = bad request (but key is valid)
+      resolve(res.statusCode === 200 || res.statusCode === 400);
+    });
+    
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => {
+      req.destroy();
+      resolve(false);
+    });
+    
+    req.write(requestBody);
+    req.end();
+  });
+}
+
+/**
+ * Generate data using Claude API with streaming
+ * @param {Object} extractedVars - Variables extracted from template
+ * @param {string} templateContent - The template content
+ * @param {Function} onChunk - Callback for each chunk: (partialText, isDone) => void
+ * @returns {Promise<Object>} - Final parsed data
+ */
+async function generateWithClaudeStreaming(extractedVars, templateContent, onChunk) {
+  if (!_claudeApiKey) {
+    throw new Error('Claude API key not configured');
+  }
+  
+  const apiKey = _claudeApiKey;
+  const { systemPrompt, userPrompt } = buildPrompts(extractedVars, templateContent);
+  
+  return new Promise((resolve, reject) => {
+    const requestBody = JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      system: systemPrompt,
+      messages: [
+        { role: 'user', content: userPrompt }
+      ],
+      stream: true
+    });
+    
+    const options = {
+      hostname: 'api.anthropic.com',
+      path: '/v1/messages',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Length': Buffer.byteLength(requestBody)
+      }
+    };
+    
+    const req = https.request(options, (res) => {
+      if (res.statusCode !== 200) {
+        let errorData = '';
+        res.on('data', chunk => errorData += chunk);
+        res.on('end', () => {
+          try {
+            const error = JSON.parse(errorData);
+            reject(new Error(error.error?.message || `API error: ${res.statusCode}`));
+          } catch {
+            reject(new Error(`API error: ${res.statusCode}`));
+          }
+        });
+        return;
+      }
+      
+      let responseText = '';
+      let buffer = '';
+      
+      res.on('data', (chunk) => {
+        buffer += chunk.toString();
+        
+        // Process complete lines
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim();
+            
+            if (data === '[DONE]' || data === '') {
+              continue;
+            }
+            
+            try {
+              const parsed = JSON.parse(data);
+              
+              // Claude uses content_block_delta for streaming
+              if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                responseText += parsed.delta.text;
+                
+                // Clean markdown artifacts for display
+                let displayText = responseText;
+                if (displayText.startsWith('```json\n')) {
+                  displayText = displayText.slice(8);
+                } else if (displayText.startsWith('```json')) {
+                  displayText = displayText.slice(7);
+                } else if (displayText.startsWith('```\n')) {
+                  displayText = displayText.slice(4);
+                } else if (displayText.startsWith('```')) {
+                  displayText = displayText.slice(3);
+                }
+                
+                if (onChunk) {
+                  onChunk(displayText, false);
+                }
+              }
+            } catch (e) {
+              // Skip invalid JSON lines
+            }
+          }
+        }
+      });
+      
+      res.on('end', () => {
+        try {
+          // Final cleanup
+          responseText = cleanResponse(responseText);
+          
+          if (onChunk) {
+            onChunk(responseText, true);
+          }
+          
+          const generatedData = JSON.parse(responseText);
+          resolve(generatedData);
+        } catch (e) {
+          reject(new Error(`Failed to parse response: ${e.message}`));
+        }
+      });
+      
+      res.on('error', reject);
+    });
+    
+    req.on('error', reject);
+    req.write(requestBody);
+    req.end();
+  });
+}
+
+// ============================================================================
 // GEMINI API SUPPORT
 // ============================================================================
 
@@ -613,6 +806,11 @@ module.exports = {
   isOpenAIConfigured,
   validateOpenAIKey,
   generateWithOpenAIStreaming,
+  // Claude exports
+  setClaudeApiKey,
+  isClaudeConfigured,
+  validateClaudeKey,
+  generateWithClaudeStreaming,
   // Gemini exports
   setGeminiApiKey,
   isGeminiConfigured,

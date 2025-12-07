@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🤖 NEW: Google Gemini Integration\n• Use gemini-2.0-flash for AI generation\n• Add key via: ⋮ → Configure AI Keys → Gemini`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🤖 NEW: Anthropic Claude Integration\n• Use claude-sonnet-4 for AI generation\n• Add key via: ⋮ → Configure AI Keys → Claude`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

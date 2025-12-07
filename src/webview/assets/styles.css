@@ -375,6 +375,17 @@ textarea:focus {
   );
 }
 
+/* Claude streaming - orange theme */
+#variables.streaming-claude {
+  border-color: #d97706 !important;
+  background: linear-gradient(
+    90deg,
+    var(--vscode-input-background) 0%,
+    rgba(217, 119, 6, 0.05) 50%,
+    var(--vscode-input-background) 100%
+  );
+}
+
 /* Gemini streaming - blue theme */
 #variables.streaming-gemini {
   border-color: #4285f4 !important;
@@ -1620,6 +1631,68 @@ body.detached-active .status-render-time {
 }
 
 .openai-generate-btn.loading::before {
+  animation: none; /* Disable shimmer during loading */
+}
+
+/* Claude Generate Button - Orange theme */
+.claude-generate-btn {
+  /* Override gradient with Claude/Anthropic-inspired orange theme */
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  box-shadow: 0 1px 4px rgba(217, 119, 6, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.claude-generate-btn:hover {
+  box-shadow: 
+    0 2px 8px rgba(217, 119, 6, 0.5),
+    0 0 12px rgba(180, 83, 9, 0.3);
+}
+
+.claude-generate-btn:focus {
+  outline: 2px solid rgba(217, 119, 6, 0.5);
+}
+
+/* Claude SVG icon styling */
+.claude-icon {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+/* Claude button shimmer - different timing */
+.claude-generate-btn::before {
+  animation: shimmer 3.2s ease-in-out infinite;
+  animation-delay: 0.75s;
+}
+
+/* Claude Loading state - rotating border */
+.claude-generate-btn.loading {
+  opacity: 1;
+  position: relative;
+}
+
+.claude-generate-btn.loading::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 6px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    #d97706 60deg,
+    #fbbf24 120deg,
+    transparent 180deg
+  );
+  animation: rotate-border 1s linear infinite;
+  z-index: -1;
+}
+
+.claude-generate-btn.loading::before {
   animation: none; /* Disable shimmer during loading */
 }
 

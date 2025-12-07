@@ -3,10 +3,11 @@ const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
 const { handleExportVariables } = require('../commands/importExportCommands');
 const { loadTemplates, getTemplateSummary, watchTemplateChanges, usesExternalTemplates, extractReferencedTemplates } = require('../utils/templateLoader');
 const { generateSmartData, analyzeTemplate } = require('../utils/smartDataGenerator');
-const { generateWithLLMStreaming, isCopilotAvailable, setOpenAIApiKey, isOpenAIConfigured, validateOpenAIKey, generateWithOpenAIStreaming, setGeminiApiKey, isGeminiConfigured, validateGeminiKey, generateWithGeminiStreaming } = require('../utils/llmDataGenerator');
+const { generateWithLLMStreaming, isCopilotAvailable, setOpenAIApiKey, isOpenAIConfigured, validateOpenAIKey, generateWithOpenAIStreaming, setClaudeApiKey, isClaudeConfigured, validateClaudeKey, generateWithClaudeStreaming, setGeminiApiKey, isGeminiConfigured, validateGeminiKey, generateWithGeminiStreaming } = require('../utils/llmDataGenerator');
 
 // Secret storage key constants (shared with settingsCommands.js)
 const OPENAI_API_KEY_SECRET = 'liveJinjaRenderer.openai.apiKey';
+const CLAUDE_API_KEY_SECRET = 'liveJinjaRenderer.claude.apiKey';
 const GEMINI_API_KEY_SECRET = 'liveJinjaRenderer.gemini.apiKey';
 
 /**
@@ -242,6 +243,20 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
       console.error('Error checking OpenAI API key:', err);
     }
     
+    // Check if Claude is configured and valid (using SecretStorage)
+    let claudeAvailable = false;
+    try {
+      const storedClaudeKey = await context.secrets.get(CLAUDE_API_KEY_SECRET);
+      if (storedClaudeKey) {
+        // Set the key in llmDataGenerator for use
+        setClaudeApiKey(storedClaudeKey);
+        // Validate the key
+        claudeAvailable = await validateClaudeKey(storedClaudeKey);
+      }
+    } catch (err) {
+      console.error('Error checking Claude API key:', err);
+    }
+    
     // Check if Gemini is configured and valid (using SecretStorage)
     let geminiAvailable = false;
     try {
@@ -261,6 +276,7 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
       settings: settings,
       copilotAvailable: copilotAvailable,
       openaiAvailable: openaiAvailable,
+      claudeAvailable: claudeAvailable,
       geminiAvailable: geminiAvailable
     });
     
@@ -846,6 +862,55 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
             // Send back error so button can reset
             webview.postMessage({
               type: 'openaiGeneratedData',
+              generatedData: null,
+              error: err.message
+            });
+          }
+          return;
+        
+        case 'claudeGenerateData':
+          // Generate test data using Claude API with streaming
+          try {
+            const currentVariables = message.currentVariables || {};
+            const template = message.template || lastTemplate;
+            
+            // Check if Claude is configured
+            if (!isClaudeConfigured()) {
+              vscode.window.showWarningMessage('Claude API key not configured. Please add your API key via the menu.');
+              webview.postMessage({
+                type: 'claudeGeneratedData',
+                generatedData: null,
+                error: 'Claude not configured'
+              });
+              return;
+            }
+            
+            // Generate data using Claude with streaming
+            const generatedData = await generateWithClaudeStreaming(
+              currentVariables, 
+              template,
+              (partialText, isDone) => {
+                // Send streaming chunks to webview
+                webview.postMessage({
+                  type: 'claudeStreamChunk',
+                  text: partialText,
+                  isDone: isDone
+                });
+              }
+            );
+            
+            // Send final parsed data
+            webview.postMessage({
+              type: 'claudeGeneratedData',
+              generatedData: generatedData
+            });
+          } catch (err) {
+            console.error('Claude data generation failed:', err);
+            vscode.window.showErrorMessage(`Claude generation failed: ${err.message}`);
+            
+            // Send back error so button can reset
+            webview.postMessage({
+              type: 'claudeGeneratedData',
               generatedData: null,
               error: err.message
             });

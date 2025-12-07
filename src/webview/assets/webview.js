@@ -2015,6 +2015,54 @@ function updateOpenAIButtonVisibility(available) {
   }
 }
 
+// Claude Generate button handler
+const claudeGenerateBtn = document.getElementById('claude-generate-btn');
+let claudeAvailable = false; // Will be set when settings are received
+
+if (claudeGenerateBtn) {
+  // Initially hide the button until we know Claude is available
+  claudeGenerateBtn.style.display = 'none';
+  
+  claudeGenerateBtn.addEventListener('click', () => {
+    if (!claudeAvailable) return;
+    
+    // Add loading state
+    claudeGenerateBtn.classList.add('loading');
+    
+    // Show indicator that Claude is being invoked
+    showAIStatus('Asking Claude...', 'claude');
+    
+    // Get current variables to preserve structure
+    let currentVars = {};
+    try {
+      currentVars = JSON.parse(variablesEditor.value || '{}');
+    } catch {
+      // Invalid JSON, start fresh
+    }
+    
+    // Request Claude data generation from extension
+    vscode.postMessage({
+      type: 'claudeGenerateData',
+      currentVariables: currentVars,
+      template: currentTemplate
+    });
+  });
+  
+  // Add tooltip on hover showing what it does
+  claudeGenerateBtn.title = 'Generate test data using Anthropic Claude API';
+}
+
+/**
+ * Update Claude button visibility based on availability
+ * @param {boolean} available - Whether Claude is available
+ */
+function updateClaudeButtonVisibility(available) {
+  claudeAvailable = available;
+  if (claudeGenerateBtn) {
+    claudeGenerateBtn.style.display = available ? 'inline-flex' : 'none';
+  }
+}
+
 // Gemini Generate button handler
 const geminiGenerateBtn = document.getElementById('gemini-generate-btn');
 let geminiAvailable = false; // Will be set when settings are received
@@ -2066,13 +2114,16 @@ function updateGeminiButtonVisibility(available) {
 // OpenAI SVG icon for status indicators
 const OPENAI_ICON_SVG = `<svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.8956zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.4066-.6898zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>`;
 
+// Claude SVG icon for status indicators
+const CLAUDE_ICON_SVG = `<svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.08v-.79l-.08-.08H2.292A9.967 9.967 0 0 0 12 22c.476 0 .946-.033 1.405-.098l-4.86-4.86a2.5 2.5 0 0 1-3.836-1.087zM2 12c0-.476.033-.946.098-1.405l4.86 4.86a2.5 2.5 0 0 1 1.087-3.836l2.647 4.72.08.08h.79l.08-.08V9.202A9.967 9.967 0 0 0 2 12zm10-10c-.476 0-.946.033-1.405.098l4.86 4.86a2.5 2.5 0 0 1 3.836 1.087l-4.72 2.647-.08.08v.79l.08.08h7.137A9.967 9.967 0 0 0 12 2zm9.902 10.595l-4.86-4.86a2.5 2.5 0 0 1-1.087 3.836l-2.647-4.72-.08-.08h-.79l-.08.08v7.137A9.967 9.967 0 0 0 22 12c0-.476-.033-.946-.098-1.405z"/></svg>`;
+
 // Gemini SVG icon for status indicators
 const GEMINI_ICON_SVG = `<svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z"/></svg>`;
 
 /**
  * Show a temporary AI status indicator
  * @param {string} message - Status message to show
- * @param {string} provider - AI provider ('copilot', 'openai', or 'gemini')
+ * @param {string} provider - AI provider ('copilot', 'openai', 'claude', or 'gemini')
  */
 function showAIStatus(message, provider = 'copilot') {
   // Remove any existing status
@@ -2085,6 +2136,10 @@ function showAIStatus(message, provider = 'copilot') {
     iconHtml = OPENAI_ICON_SVG;
     gradient = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';  // Green
     shadow = 'rgba(16, 185, 129, 0.4)';
+  } else if (provider === 'claude') {
+    iconHtml = CLAUDE_ICON_SVG;
+    gradient = 'linear-gradient(135deg, #d97706 0%, #b45309 100%)';  // Orange
+    shadow = 'rgba(217, 119, 6, 0.4)';
   } else if (provider === 'gemini') {
     iconHtml = GEMINI_ICON_SVG;
     gradient = 'linear-gradient(135deg, #4285f4 0%, #1a73e8 100%)';  // Blue
@@ -2126,7 +2181,7 @@ function showAIStatus(message, provider = 'copilot') {
 /**
  * Hide the AI status indicator
  * @param {boolean} success - Whether the operation was successful
- * @param {string} provider - AI provider ('copilot', 'openai', or 'gemini')
+ * @param {string} provider - AI provider ('copilot', 'openai', 'claude', or 'gemini')
  */
 function hideAIStatus(success = true, provider = 'copilot') {
   const status = document.getElementById('ai-status');
@@ -2136,6 +2191,9 @@ function hideAIStatus(success = true, provider = 'copilot') {
     if (provider === 'openai') {
       iconHtml = OPENAI_ICON_SVG;
       providerName = 'OpenAI';
+    } else if (provider === 'claude') {
+      iconHtml = CLAUDE_ICON_SVG;
+      providerName = 'Claude';
     } else if (provider === 'gemini') {
       iconHtml = GEMINI_ICON_SVG;
       providerName = 'Gemini';
@@ -2553,6 +2611,11 @@ async function handleMessage(message) {
           updateOpenAIButtonVisibility(message.openaiAvailable);
         }
         
+        // Update Claude button visibility
+        if (message.claudeAvailable !== undefined) {
+          updateClaudeButtonVisibility(message.claudeAvailable);
+        }
+        
         // Update Gemini button visibility
         if (message.geminiAvailable !== undefined) {
           updateGeminiButtonVisibility(message.geminiAvailable);
@@ -2849,6 +2912,65 @@ async function handleMessage(message) {
     case 'openaiKeyUpdated':
       // Key was added or removed - update UI
       updateOpenAIButtonVisibility(message.available);
+      break;
+    
+    case 'claudeStreamChunk':
+      // Streaming chunk from Claude - update textarea in real-time
+      if (message.text !== undefined) {
+        variablesEditor.value = message.text;
+        variablesEditor.classList.add('streaming');
+        variablesEditor.classList.add('streaming-claude');
+        
+        // Auto-scroll to bottom to show latest content
+        variablesEditor.scrollTop = variablesEditor.scrollHeight;
+        
+        // Update status to show streaming
+        const claudeStatusEl = document.getElementById('ai-status');
+        if (claudeStatusEl && !message.isDone) {
+          claudeStatusEl.innerHTML = `${CLAUDE_ICON_SVG} Generating...`;
+        }
+        
+        // Auto-resize as content grows
+        autoResizeVariablesSection();
+      }
+      break;
+    
+    case 'claudeGeneratedData':
+      // Claude data generation complete
+      variablesEditor.classList.remove('streaming');
+      variablesEditor.classList.remove('streaming-claude');
+      
+      const claudeGenerateBtnEl = document.getElementById('claude-generate-btn');
+      if (claudeGenerateBtnEl) {
+        claudeGenerateBtnEl.classList.remove('loading');
+        
+        if (message.error) {
+          // Show error state briefly
+          claudeGenerateBtnEl.classList.add('error');
+          hideAIStatus(false, 'claude');
+          setTimeout(() => {
+            claudeGenerateBtnEl.classList.remove('error');
+          }, 2000);
+        } else {
+          claudeGenerateBtnEl.classList.add('success');
+          hideAIStatus(true, 'claude');
+          setTimeout(() => {
+            claudeGenerateBtnEl.classList.remove('success');
+          }, 1000);
+        }
+      }
+      
+      if (message.generatedData) {
+        // Set final formatted JSON
+        variablesEditor.value = JSON.stringify(message.generatedData, null, 2);
+        validateJsonAndShowError();
+        autoResizeVariablesSection();
+      }
+      break;
+    
+    case 'claudeKeyUpdated':
+      // Key was added or removed - update UI
+      updateClaudeButtonVisibility(message.available);
       break;
     
     case 'geminiStreamChunk':

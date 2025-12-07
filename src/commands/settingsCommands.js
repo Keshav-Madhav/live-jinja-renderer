@@ -1,9 +1,10 @@
 const vscode = require('vscode');
 const { updateStatusBar } = require('../utils/statusBar');
-const { setOpenAIApiKey, validateOpenAIKey, setGeminiApiKey, validateGeminiKey } = require('../utils/llmDataGenerator');
+const { setOpenAIApiKey, validateOpenAIKey, setClaudeApiKey, validateClaudeKey, setGeminiApiKey, validateGeminiKey } = require('../utils/llmDataGenerator');
 
 // Secret storage key constants
 const OPENAI_API_KEY_SECRET = 'liveJinjaRenderer.openai.apiKey';
+const CLAUDE_API_KEY_SECRET = 'liveJinjaRenderer.claude.apiKey';
 const GEMINI_API_KEY_SECRET = 'liveJinjaRenderer.gemini.apiKey';
 
 /**
@@ -62,6 +63,19 @@ function notifyOpenAIKeyChange(available) {
   if (_sidebarProvider && _sidebarProvider._view) {
     _sidebarProvider._view.webview.postMessage({
       type: 'openaiKeyUpdated',
+      available: available
+    });
+  }
+}
+
+/**
+ * Notify webview about Claude key status change
+ * @param {boolean} available - Whether the key is now available
+ */
+function notifyClaudeKeyChange(available) {
+  if (_sidebarProvider && _sidebarProvider._view) {
+    _sidebarProvider._view.webview.postMessage({
+      type: 'claudeKeyUpdated',
       available: available
     });
   }
@@ -285,6 +299,121 @@ function registerSettingsCommands(context) {
     }
   });
   context.subscriptions.push(openaiRemoveKeyCommand);
+  
+  // ============================================
+  // CLAUDE API KEY MANAGEMENT COMMANDS
+  // ============================================
+  
+  // Add/Update Claude API Key
+  const claudeAddKeyCommand = vscode.commands.registerCommand('live-jinja-tester.claudeAddKey', async () => {
+    try {
+      const newKey = await vscode.window.showInputBox({
+        prompt: 'Enter your Anthropic Claude API key',
+        placeHolder: 'sk-ant-...',
+        password: true,
+        ignoreFocusOut: true,
+        validateInput: (value) => {
+          if (!value || value.trim() === '') {
+            return 'API key cannot be empty';
+          }
+          if (!value.startsWith('sk-ant-')) {
+            return 'Claude API keys typically start with "sk-ant-"';
+          }
+          return null;
+        }
+      });
+      
+      if (newKey) {
+        // Show progress while validating
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: 'Validating Claude API key...',
+          cancellable: false
+        }, async () => {
+          const isValid = await validateClaudeKey(newKey.trim());
+          
+          if (isValid) {
+            // Store in SecretStorage
+            await context.secrets.store(CLAUDE_API_KEY_SECRET, newKey.trim());
+            // Update llmDataGenerator cache
+            setClaudeApiKey(newKey.trim());
+            
+            // Notify webview to show the Claude button
+            notifyClaudeKeyChange(true);
+            
+            vscode.window.showInformationMessage('✓ Claude API key saved securely!');
+          } else {
+            vscode.window.showErrorMessage('Invalid Claude API key. Please check and try again.');
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error adding Claude key:', err);
+      vscode.window.showErrorMessage(`Failed to save API key: ${err.message}`);
+    }
+  });
+  context.subscriptions.push(claudeAddKeyCommand);
+  
+  // View Claude API Key
+  const claudeViewKeyCommand = vscode.commands.registerCommand('live-jinja-tester.claudeViewKey', async () => {
+    try {
+      const storedKey = await context.secrets.get(CLAUDE_API_KEY_SECRET);
+      
+      if (storedKey) {
+        // Show masked version of the key
+        const maskedKey = storedKey.substring(0, 10) + '...' + storedKey.substring(storedKey.length - 4);
+        
+        const action = await vscode.window.showInformationMessage(
+          `🔑 Claude API Key: ${maskedKey}`,
+          'Copy Full Key',
+          'Close'
+        );
+        
+        if (action === 'Copy Full Key') {
+          await vscode.env.clipboard.writeText(storedKey);
+          vscode.window.showInformationMessage('API key copied to clipboard!');
+        }
+      } else {
+        vscode.window.showWarningMessage('No Claude API key configured. Use "Add / Update Claude API Key" to add one.');
+      }
+    } catch (err) {
+      console.error('Error viewing Claude key:', err);
+      vscode.window.showErrorMessage(`Failed to view API key: ${err.message}`);
+    }
+  });
+  context.subscriptions.push(claudeViewKeyCommand);
+  
+  // Remove Claude API Key
+  const claudeRemoveKeyCommand = vscode.commands.registerCommand('live-jinja-tester.claudeRemoveKey', async () => {
+    try {
+      const storedKey = await context.secrets.get(CLAUDE_API_KEY_SECRET);
+      
+      if (!storedKey) {
+        vscode.window.showWarningMessage('No Claude API key to remove.');
+        return;
+      }
+      
+      const confirm = await vscode.window.showWarningMessage(
+        'Are you sure you want to remove your Claude API key?',
+        { modal: true },
+        'Remove'
+      );
+      
+      if (confirm === 'Remove') {
+        await context.secrets.delete(CLAUDE_API_KEY_SECRET);
+        setClaudeApiKey(null);
+        
+        // Notify webview to hide the Claude button
+        notifyClaudeKeyChange(false);
+        
+        vscode.window.showInformationMessage('Claude API key removed.');
+      }
+    } catch (err) {
+      console.error('Error removing Claude key:', err);
+      vscode.window.showErrorMessage(`Failed to remove API key: ${err.message}`);
+    }
+  });
+  context.subscriptions.push(claudeRemoveKeyCommand);
   
   // ============================================
   // GEMINI API KEY MANAGEMENT COMMANDS
