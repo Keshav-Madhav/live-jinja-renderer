@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with include/extends support, markdown, mermaid diagrams, and IntelliSense",
-  "version": "1.10.6",
+  "version": "1.11.0",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -241,6 +241,18 @@
         "title": "Remove Gemini API Key",
         "icon": "$(trash)",
         "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.showDependencyGraph",
+        "title": "Show Template Dependency Graph",
+        "icon": "$(graph)",
+        "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.showVariableInspector",
+        "title": "Open Variable Inspector",
+        "icon": "$(symbol-variable)",
+        "category": "Jinja"
       }
     ],
     "submenus": [
@@ -292,6 +304,16 @@
         {
           "command": "live-jinja-tester.reextractVariables",
           "group": "jinja@3",
+          "when": "resourceExtname == '.txt' || resourceExtname == '.jinja' || resourceExtname == '.j2' || editorLangId == 'plaintext' || editorLangId == 'jinja'"
+        },
+        {
+          "command": "live-jinja-tester.showDependencyGraph",
+          "group": "jinja@4",
+          "when": "resourceExtname == '.txt' || resourceExtname == '.jinja' || resourceExtname == '.j2' || editorLangId == 'plaintext' || editorLangId == 'jinja'"
+        },
+        {
+          "command": "live-jinja-tester.showVariableInspector",
+          "group": "jinja@5",
           "when": "resourceExtname == '.txt' || resourceExtname == '.jinja' || resourceExtname == '.j2' || editorLangId == 'plaintext' || editorLangId == 'jinja'"
         }
       ],

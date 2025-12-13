@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.10.6-blue)
+![Version](https://img.shields.io/badge/version-1.11.0-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,34 +10,22 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.10.6
+## 🚀 What's New in v1.11.0
 
-### 🤖 Anthropic Claude API Integration
-Use your own Claude API key for AI-powered variable generation!
+### 🌈 JSON Editor Upgrade (CodeMirror)
+- Syntax-highlighted JSON editor with matching brackets and active-line highlight
+- Smarter selection colors that respect the current VS Code theme
+- Better readability for large payloads; renders like a real JSON editor
 
-- **Claude button** (orange) - appears when you configure your API key
-- **Model**: `claude-sonnet-4` (Anthropic's latest model)
-- **Secure storage** - keys encrypted via VS Code's SecretStorage
-- **Streaming response** - watch values appear in real-time
+### 🔄 Live Variable Tree Sync (Main + Detached)
+- Edits in the variable tree now update the JSON editor instantly
+- Detached output windows stay in sync with tree edits via ghost-save broadcasts
+- Unified getter ensures both panes read the same variable state
 
-### Setting Up Claude
-1. Open the Live Jinja Renderer sidebar panel
-2. Click the **⋮** menu in the panel title bar
-3. Navigate to **Configure AI Keys** → **Claude (claude-sonnet-4)** → **Add / Update Claude API Key**
-4. Enter your API key (validated before saving, button appears immediately)
-
-> 🔒 **Security**: Your API key is stored encrypted, never visible in settings. This extension is open-source - verify the code on GitHub.
-
-### Five Generation Modes
-| Button | Method | Model | Best For |
-|--------|--------|-------|----------|
-| (Purple) | Algorithmic | — | Fast, offline, pattern-based |
-| (Cyan) | Copilot AI | VS Code LM API | Requires GitHub Copilot |
-| (Green) | OpenAI | `gpt-4o-mini` | Requires your own API key |
-| (Orange) | Claude | `claude-sonnet-4` | Requires your own API key |
-| (Blue) | Gemini | `gemini-2.0-flash` | Requires your own API key |
-
-> 💡 **Previous**: Gemini (v1.10.5), Boolean Fix (v1.10.4), OpenAI (v1.10.3), Copilot (v1.10.2)
+### 🎯 Usability Polishing
+- More balanced active-line brightness for CodeMirror
+- Subtle selection tint for clearer focus without glare
+- General stability and stream handling tweaks
 
 ---
 
@@ -389,6 +377,11 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 ---
 
 ## Recent Updates
+
+### 1.11.0 - JSON Editor Upgrade
+- CodeMirror-powered JSON editor with syntax highlighting, matching brackets, active-line
+- Softer selection/active-line colors that respect your VS Code theme
+- Variable tree edits now live-sync to main and detached views
 
 ### 1.10.6 - Claude API Integration
 - **Claude button** (orange) - `claude-sonnet-4` model

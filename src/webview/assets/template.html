@@ -12,6 +12,15 @@
     <script src="https://cdn.jsdelivr.net/npm/marked@11.1.0/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
     
+    <!-- CodeMirror for JSON editing -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/theme/eclipse.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/selection/active-line.min.js"></script>
+
     <!-- VS Code Codicons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.35/dist/codicon.css">
     
@@ -61,6 +70,12 @@
                         </button>
                         <button class="icon-button" id="load-variables-btn" title="Load / Import Variables">
                             <i class="codicon codicon-folder-opened"></i>
+                        </button>
+                        <button class="icon-button" id="show-inspector-btn" title="Open Variable Inspector">
+                            <i class="codicon codicon-symbol-variable"></i>
+                        </button>
+                        <button class="icon-button" id="show-graph-btn" title="Show Template Dependency Graph">
+                            <i class="codicon codicon-graph"></i>
                         </button>
                     </div>
                 </div>
@@ -121,6 +136,44 @@
                 <div class="template-dropdown" id="template-dropdown" style="display: none;"></div>
             </div>
             <div class="whitespace-indicators" id="whitespace-indicators" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Template Dependency Graph Panel -->
+    <div class="dependency-graph-panel" id="dependency-graph-panel">
+        <div class="graph-header">
+            <div class="graph-title">
+                <i class="codicon codicon-graph"></i> Template Dependency Graph
+            </div>
+            <button class="graph-close-btn" id="close-graph-btn">
+                <i class="codicon codicon-close"></i> Close
+            </button>
+        </div>
+        <div class="graph-container" id="graph-container">
+            <!-- Graph content will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Variable Inspector Panel -->
+    <div class="variable-inspector-panel" id="variable-inspector-panel">
+        <div class="inspector-header">
+            <div class="inspector-title">
+                <i class="codicon codicon-symbol-variable"></i> Variable Inspector
+            </div>
+            <div class="inspector-actions">
+                <button class="icon-button" id="collapse-all-btn" title="Collapse All">
+                    <i class="codicon codicon-collapse-all"></i>
+                </button>
+                <button class="icon-button" id="expand-all-btn" title="Expand All">
+                    <i class="codicon codicon-expand-all"></i>
+                </button>
+                <button class="icon-button" id="close-inspector-btn" title="Close">
+                    <i class="codicon codicon-close"></i>
+                </button>
+            </div>
+        </div>
+        <div class="inspector-tree" id="inspector-tree">
+            <!-- Tree will be populated by JavaScript -->
         </div>
     </div>
 

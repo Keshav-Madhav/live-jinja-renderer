@@ -77,8 +77,38 @@ function registerActionCommands(context, sidebarProvider, getCurrentPanel) {
     }
   });
   context.subscriptions.push(updateForCurrentFileCommand);
+  
+  // Show Dependency Graph
+  const showDependencyGraphCommand = vscode.commands.registerCommand('live-jinja-tester.showDependencyGraph', () => {
+    const currentPanel = getCurrentPanel();
+    
+    if (sidebarProvider && sidebarProvider._view && sidebarProvider._view.visible) {
+      sidebarProvider._view.webview.postMessage({ type: 'requestDependencyGraph' });
+    } else if (currentPanel) {
+      currentPanel.webview.postMessage({ type: 'requestDependencyGraph' });
+    } else {
+      vscode.window.showWarningMessage('Jinja Renderer view is not active. Please open the sidebar or panel first.');
+    }
+  });
+  context.subscriptions.push(showDependencyGraphCommand);
+  
+  // Show Variable Inspector
+  const showVariableInspectorCommand = vscode.commands.registerCommand('live-jinja-tester.showVariableInspector', () => {
+    const currentPanel = getCurrentPanel();
+    
+    // Send message to webview to open inspector
+    if (sidebarProvider && sidebarProvider._view && sidebarProvider._view.visible) {
+      sidebarProvider._view.webview.postMessage({ type: 'showVariableInspector' });
+    } else if (currentPanel) {
+      currentPanel.webview.postMessage({ type: 'showVariableInspector' });
+    } else {
+      vscode.window.showWarningMessage('Jinja Renderer view is not active. Please open the sidebar or panel first.');
+    }
+  });
+  context.subscriptions.push(showVariableInspectorCommand);
 }
 
 module.exports = {
   registerActionCommands
 };
+

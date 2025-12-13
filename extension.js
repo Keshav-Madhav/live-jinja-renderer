@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🤖 NEW: Anthropic Claude Integration\n• Use claude-sonnet-4 for AI generation\n• Add key via: ⋮ → Configure AI Keys → Claude`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🌈 JSON editor is now CodeMirror-powered\n• Syntax highlighting, bracket matching, softer active-line\n• Variable tree edits live-sync to main + detached views`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

@@ -78,6 +78,108 @@ let pyodide = null;
 let isInitialized = false;
 let messageQueue = []; // Queue for messages received before initialization
 
+// JSON editor (CodeMirror) state
+let variablesCodeMirror = null;
+let suppressCodeMirrorInputEvent = false;
+const mirroredEditorClasses = [
+  'json-error',
+  'streaming',
+  'streaming-copilot',
+  'streaming-openai',
+  'streaming-claude',
+  'streaming-gemini'
+];
+
+function mirrorEditorClassesToCodeMirror() {
+  if (!variablesCodeMirror || !variablesEditor) return;
+  const wrapper = variablesCodeMirror.getWrapperElement();
+  if (!wrapper) return;
+  mirroredEditorClasses.forEach(cls => {
+    wrapper.classList.toggle(cls, variablesEditor.classList.contains(cls));
+  });
+}
+
+function initializeVariablesEditor() {
+  if (!variablesEditor) return;
+  if (typeof CodeMirror === 'undefined') {
+    setupJsonEditor(variablesEditor);
+    return;
+  }
+
+  variablesCodeMirror = CodeMirror.fromTextArea(variablesEditor, {
+    mode: { name: 'javascript', json: true },
+    lineNumbers: true,
+    lineWrapping: true,
+    indentUnit: 2,
+    tabSize: 2,
+    indentWithTabs: false,
+    matchBrackets: true,
+    autoCloseBrackets: true,
+    styleActiveLine: true,
+    viewportMargin: Infinity,
+    theme: 'default'
+  });
+
+  variablesCodeMirror.setSize('100%', '100%');
+
+  variablesCodeMirror.on('change', () => {
+    if (suppressCodeMirrorInputEvent) return;
+    const value = variablesCodeMirror.getValue();
+    variablesEditor.value = value;
+    const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+    variablesEditor.dispatchEvent(inputEvent);
+  });
+
+  // Mirror classes applied to the hidden textarea so visual states stay in sync
+  const classObserver = new MutationObserver(mirrorEditorClassesToCodeMirror);
+  classObserver.observe(variablesEditor, { attributes: true, attributeFilter: ['class'] });
+  mirrorEditorClassesToCodeMirror();
+
+  const nativeFocus = variablesEditor.focus.bind(variablesEditor);
+  variablesEditor.focus = () => {
+    if (variablesCodeMirror) {
+      variablesCodeMirror.focus();
+    } else {
+      nativeFocus();
+    }
+  };
+}
+
+function getVariablesText() {
+  if (variablesCodeMirror) {
+    return variablesCodeMirror.getValue();
+  }
+  return variablesEditor ? variablesEditor.value : '';
+}
+
+function setVariablesText(value, options = {}) {
+  const suppressInputEvent = options.suppressInputEvent !== undefined ? options.suppressInputEvent : true;
+  const emitInputEvent = options.emitInputEvent !== undefined ? options.emitInputEvent : false;
+  if (variablesCodeMirror) {
+    suppressCodeMirrorInputEvent = suppressInputEvent;
+    variablesCodeMirror.setValue(value);
+    variablesEditor.value = value;
+    suppressCodeMirrorInputEvent = false;
+    variablesCodeMirror.refresh();
+  } else if (variablesEditor) {
+    variablesEditor.value = value;
+  }
+
+  if (emitInputEvent && variablesEditor) {
+    const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+    variablesEditor.dispatchEvent(inputEvent);
+  }
+}
+
+function scrollVariablesEditorToBottom() {
+  if (variablesCodeMirror) {
+    const info = variablesCodeMirror.getScrollInfo();
+    variablesCodeMirror.scrollTo(info.left, info.height);
+  } else if (variablesEditor) {
+    variablesEditor.scrollTop = variablesEditor.scrollHeight;
+  }
+}
+
 // Set body class based on mode for styling
 if (isSidebarMode) {
   document.body.classList.add('sidebar-mode');
@@ -685,6 +787,7 @@ function updateExtensionsIndicator() {
 function updateTemplateIndicator() {
   const templateIndicator = document.getElementById('template-indicator');
   const templateList = document.getElementById('template-list');
+  const showGraphBtn = document.getElementById('show-graph-btn');
   
   // In detached mode, we don't show the indicator (CSS hides status-footer)
   if (isDetachedMode) return;
@@ -699,6 +802,16 @@ function updateTemplateIndicator() {
   
   // Count used templates
   const usedCount = allPaths.filter(p => isTemplateUsed(p, usedTemplates)).length;
+  
+  // Show/hide graph button based on template usage
+  if (showGraphBtn) {
+    if (usedTemplates.length > 0) {
+      showGraphBtn.style.display = 'inline-flex';
+      showGraphBtn.title = 'Show Template Dependency Graph';
+    } else {
+      showGraphBtn.style.display = 'none';
+    }
+  }
   
   let tooltip = `Templates available for {% include %} and {% extends %}:\n\n`;
   
@@ -1092,7 +1205,7 @@ async function update() {
 
   // In detached mode, variablesEditor might be hidden but still exists
   try {
-    context = JSON.parse(variablesEditor.value || '{}');
+    context = JSON.parse(getVariablesText() || '{}');
   } catch (e) {
     if (!isDetachedMode) {
       outputDisplay.textContent = `Error in variables:\n${e.message}`;
@@ -1556,7 +1669,7 @@ function ghostSaveVariables() {
   }
   
   try {
-    const variables = JSON.parse(variablesEditor.value || '{}');
+    const variables = JSON.parse(getVariablesText() || '{}');
     vscode.postMessage({
       type: 'ghostSaveVariables',
       fileUri: currentFileUri,
@@ -1576,7 +1689,7 @@ function autoResizeVariablesSection() {
     return;
   }
   
-  const text = variablesEditor.value;
+  const text = getVariablesText();
   const lines = text.split('\n');
   const lineCount = lines.length;
   
@@ -1600,6 +1713,10 @@ function autoResizeVariablesSection() {
   
   outputSection.style.flex = '1';
   outputSection.style.height = 'auto';
+
+  if (variablesCodeMirror) {
+    variablesCodeMirror.refresh();
+  }
 }
 
 function setupJsonEditor(textarea) {
@@ -1743,8 +1860,8 @@ if (isSidebarMode && autoRerenderToggle) {
   updateAutoRerenderToggle();
 }
 
-// Initialize JSON editor features
-setupJsonEditor(variablesEditor);
+// Initialize JSON editor features (CodeMirror with fallback)
+initializeVariablesEditor();
 
 // JSON error indicator elements
 const jsonErrorIndicator = document.getElementById('json-error-indicator');
@@ -1755,7 +1872,7 @@ const jsonErrorMessage = document.getElementById('json-error-message');
  * Shows inline error with line/column info when JSON is invalid
  */
 function validateJsonAndShowError() {
-  const value = variablesEditor.value.trim();
+  const value = getVariablesText().trim();
   
   // Empty is valid (will default to {})
   if (!value) {
@@ -2422,7 +2539,7 @@ const detachOutputBtn = document.getElementById('detach-output-btn');
 if (detachOutputBtn) {
     detachOutputBtn.addEventListener('click', () => {
         // Gather current state
-        const variables = JSON.parse(variablesEditor.value || '{}');
+    const variables = JSON.parse(getVariablesText() || '{}');
         
         vscode.postMessage({
             type: 'detachOutput',
@@ -2527,7 +2644,7 @@ async function handleMessage(message) {
           }
         }
         
-        variablesEditor.value = JSON.stringify(mergedVars, null, 2);
+        setVariablesText(JSON.stringify(mergedVars, null, 2));
         autoResizeVariablesSection();
         hideLoading();
       }
@@ -2553,7 +2670,7 @@ async function handleMessage(message) {
         
         // In detached mode, just use the variables directly without merging logic
         if (isDetachedMode) {
-          variablesEditor.value = JSON.stringify(message.extractedVariables, null, 2);
+          setVariablesText(JSON.stringify(message.extractedVariables, null, 2));
         } else {
           // Normal mode: merge with existing
           for (const varName of extractedVarNames) {
@@ -2573,7 +2690,7 @@ async function handleMessage(message) {
             }
           }
           
-          variablesEditor.value = JSON.stringify(mergedVars, null, 2);
+          setVariablesText(JSON.stringify(mergedVars, null, 2));
         }
         
         autoResizeVariablesSection();
@@ -2700,7 +2817,7 @@ async function handleMessage(message) {
     
     case 'loadVariables':
       if (message.variables) {
-        variablesEditor.value = JSON.stringify(message.variables, null, 2);
+        setVariablesText(JSON.stringify(message.variables, null, 2));
         autoResizeVariablesSection();
         await update();
       }
@@ -2783,7 +2900,7 @@ async function handleMessage(message) {
       }
       
       if (message.generatedData) {
-        variablesEditor.value = JSON.stringify(message.generatedData, null, 2);
+        setVariablesText(JSON.stringify(message.generatedData, null, 2));
         validateJsonAndShowError();
         autoResizeVariablesSection();
         debouncedGhostSave();
@@ -2796,12 +2913,12 @@ async function handleMessage(message) {
     case 'llmStreamChunk':
       // Streaming chunk from Copilot - update textarea in real-time
       if (message.text !== undefined) {
-        variablesEditor.value = message.text;
+        setVariablesText(message.text);
         variablesEditor.classList.add('streaming');
         variablesEditor.classList.add('streaming-copilot');
         
         // Auto-scroll to bottom to show latest content
-        variablesEditor.scrollTop = variablesEditor.scrollHeight;
+        scrollVariablesEditorToBottom();
         
         // Update status to show streaming
         const statusEl = document.getElementById('ai-status');
@@ -2841,7 +2958,7 @@ async function handleMessage(message) {
       
       if (message.generatedData) {
         // Set final formatted JSON
-        variablesEditor.value = JSON.stringify(message.generatedData, null, 2);
+        setVariablesText(JSON.stringify(message.generatedData, null, 2));
         validateJsonAndShowError();
         autoResizeVariablesSection();
         debouncedGhostSave();
@@ -2854,12 +2971,12 @@ async function handleMessage(message) {
     case 'openaiStreamChunk':
       // Streaming chunk from OpenAI - update textarea in real-time
       if (message.text !== undefined) {
-        variablesEditor.value = message.text;
+        setVariablesText(message.text);
         variablesEditor.classList.add('streaming');
         variablesEditor.classList.add('streaming-openai');
         
         // Auto-scroll to bottom to show latest content
-        variablesEditor.scrollTop = variablesEditor.scrollHeight;
+        scrollVariablesEditorToBottom();
         
         // Update status to show streaming
         const openaiStatusEl = document.getElementById('ai-status');
@@ -2899,7 +3016,7 @@ async function handleMessage(message) {
       
       if (message.generatedData) {
         // Set final formatted JSON
-        variablesEditor.value = JSON.stringify(message.generatedData, null, 2);
+        setVariablesText(JSON.stringify(message.generatedData, null, 2));
         validateJsonAndShowError();
         autoResizeVariablesSection();
         debouncedGhostSave();
@@ -2917,12 +3034,12 @@ async function handleMessage(message) {
     case 'claudeStreamChunk':
       // Streaming chunk from Claude - update textarea in real-time
       if (message.text !== undefined) {
-        variablesEditor.value = message.text;
+        setVariablesText(message.text);
         variablesEditor.classList.add('streaming');
         variablesEditor.classList.add('streaming-claude');
         
         // Auto-scroll to bottom to show latest content
-        variablesEditor.scrollTop = variablesEditor.scrollHeight;
+        scrollVariablesEditorToBottom();
         
         // Update status to show streaming
         const claudeStatusEl = document.getElementById('ai-status');
@@ -2962,7 +3079,7 @@ async function handleMessage(message) {
       
       if (message.generatedData) {
         // Set final formatted JSON
-        variablesEditor.value = JSON.stringify(message.generatedData, null, 2);
+        setVariablesText(JSON.stringify(message.generatedData, null, 2));
         validateJsonAndShowError();
         autoResizeVariablesSection();
       }
@@ -2976,12 +3093,12 @@ async function handleMessage(message) {
     case 'geminiStreamChunk':
       // Streaming chunk from Gemini - update textarea in real-time
       if (message.text !== undefined) {
-        variablesEditor.value = message.text;
+        setVariablesText(message.text);
         variablesEditor.classList.add('streaming');
         variablesEditor.classList.add('streaming-gemini');
         
         // Auto-scroll to bottom to show latest content
-        variablesEditor.scrollTop = variablesEditor.scrollHeight;
+        scrollVariablesEditorToBottom();
         
         // Update status to show streaming
         const geminiStatusEl = document.getElementById('ai-status');
@@ -3021,7 +3138,7 @@ async function handleMessage(message) {
       
       if (message.generatedData) {
         // Set final formatted JSON
-        variablesEditor.value = JSON.stringify(message.generatedData, null, 2);
+        setVariablesText(JSON.stringify(message.generatedData, null, 2));
         validateJsonAndShowError();
         autoResizeVariablesSection();
         debouncedGhostSave();
@@ -3035,8 +3152,646 @@ async function handleMessage(message) {
       // Key was added or removed - update UI
       updateGeminiButtonVisibility(message.available);
       break;
+    
+    case 'showVariableInspector':
+      // Open the variable inspector panel
+      if (inspectorPanel) {
+        inspectorPanel.classList.add('active');
+        refreshInspectorTree();
+      }
+      break;
+    
+    case 'dependencyGraphData':
+      // Received dependency graph data from extension
+      if (message.graph) {
+        showDependencyGraph(message.graph);
+      }
+      break;
   }
 }
+
+/* ===== TEMPLATE DEPENDENCY GRAPH ===== */
+
+function showDependencyGraph(graph) {
+  const panel = document.getElementById('dependency-graph-panel');
+  const container = document.getElementById('graph-container');
+  
+  if (!panel || !container) return;
+  
+  panel.classList.add('active');
+  
+  // Build HTML for graph
+  let html = '';
+  
+  if (graph.hasCircularDeps) {
+    html += `
+      <div class="graph-warning">
+        <i class="codicon codicon-warning"></i>
+        <span><strong>Warning:</strong> Circular dependencies detected!</span>
+      </div>
+    `;
+  }
+  
+  if (graph.nodes.length === 0) {
+    html += '<div style="color: var(--vscode-descriptionForeground); padding: 20px; text-align: center;">No template dependencies found.</div>';
+  } else {
+    // Group nodes by depth
+    const byDepth = new Map();
+    for (const node of graph.nodes) {
+      if (!byDepth.has(node.depth)) {
+        byDepth.set(node.depth, []);
+      }
+      byDepth.get(node.depth).push(node);
+    }
+    
+    // Sort by depth
+    const depths = Array.from(byDepth.keys()).sort((a, b) => a - b);
+    
+    for (const depth of depths) {
+      const nodes = byDepth.get(depth);
+      const levelLabel = depth === 0 ? 'Root Template' : `Level ${depth}`;
+      
+      html += `<div class="graph-level">`;
+      html += `<div class="graph-level-label">${levelLabel}</div>`;
+      
+      for (const node of nodes) {
+        const nodeClass = depth === 0 ? 'graph-node root' : (node.exists ? 'graph-node' : 'graph-node missing');
+        const icon = node.exists ? 'file' : 'error';
+        
+        html += `
+          <div class="${nodeClass}" data-template="${node.id}">
+            <i class="codicon codicon-${icon}"></i>
+            <span>${node.label}</span>
+          </div>
+        `;
+        
+        // Show outgoing edges
+        const outgoingEdges = graph.edges.filter(e => e.from === node.id);
+        if (outgoingEdges.length > 0) {
+          for (const edge of outgoingEdges) {
+            html += `
+              <div class="graph-edge">
+                <i class="codicon codicon-arrow-right"></i>
+                <span class="graph-edge-type">${edge.type}</span>
+                ${edge.to}
+              </div>
+            `;
+          }
+        }
+      }
+      
+      html += `</div>`;
+    }
+  }
+  
+  container.innerHTML = html;
+  
+  // Add click handlers to navigate to templates
+  const templateNodes = container.querySelectorAll('.graph-node');
+  templateNodes.forEach(node => {
+    const templateName = node.getAttribute('data-template');
+    if (templateName && templateName !== 'main') {
+      node.addEventListener('click', () => {
+        vscode.postMessage({
+          type: 'openTemplate',
+          templateName: templateName
+        });
+      });
+    }
+  });
+}
+
+const showGraphBtn = document.getElementById('show-graph-btn');
+const closeGraphBtn = document.getElementById('close-graph-btn');
+const graphPanel = document.getElementById('dependency-graph-panel');
+
+if (showGraphBtn) {
+  showGraphBtn.addEventListener('click', () => {
+    vscode.postMessage({ type: 'requestDependencyGraph' });
+  });
+}
+
+if (closeGraphBtn) {
+  closeGraphBtn.addEventListener('click', () => {
+    if (graphPanel) graphPanel.classList.remove('active');
+  });
+}
+
+/* ===== VARIABLE INSPECTOR ===== */
+
+let expandedPaths = new Set();
+
+function buildVariableTree(obj, path = '', parentIsArray = false) {
+  const tree = [];
+  
+  if (obj === null || obj === undefined) {
+    return tree;
+  }
+  
+  if (typeof obj !== 'object') {
+    return tree;
+  }
+  
+  if (Array.isArray(obj)) {
+    obj.forEach((item, index) => {
+      const itemPath = path ? `${path}[${index}]` : `[${index}]`;
+      tree.push({
+        key: `[${index}]`,
+        value: item,
+        type: getValueType(item),
+        path: itemPath,
+        isExpandable: typeof item === 'object' && item !== null,
+        isArrayItem: true,
+        arrayIndex: index,
+        children: buildVariableTree(item, itemPath, true)
+      });
+    });
+  } else {
+    Object.keys(obj).forEach(key => {
+      const itemPath = path ? `${path}.${key}` : key;
+      tree.push({
+        key: key,
+        value: obj[key],
+        type: getValueType(obj[key]),
+        path: itemPath,
+        isExpandable: typeof obj[key] === 'object' && obj[key] !== null,
+        isArrayItem: false,
+        children: buildVariableTree(obj[key], itemPath, false)
+      });
+    });
+  }
+  
+  return tree;
+}
+
+function getValueType(value) {
+  if (value === null) return 'null';
+  if (Array.isArray(value)) return `Array[${value.length}]`;
+  if (typeof value === 'object') return `Object{${Object.keys(value).length}}`;
+  return typeof value;
+}
+
+function getValuePreview(value) {
+  if (value === null) return 'null';
+  if (value === undefined) return 'undefined';
+  if (typeof value === 'string') return `"${value.substring(0, 50)}${value.length > 50 ? '...' : ''}"`;
+  if (typeof value === 'number') return value.toString();
+  if (typeof value === 'boolean') return value.toString();
+  if (Array.isArray(value)) return `[${value.length} items]`;
+  if (typeof value === 'object') return `{${Object.keys(value).length} props}`;
+  return String(value);
+}
+
+function renderTreeNode(node, depth = 0) {
+  const isExpanded = expandedPaths.has(node.path);
+  const indent = depth * 16;
+  const isArray = Array.isArray(node.value);
+  
+  let html = `
+    <div class="tree-node" data-path="${node.path}">
+      <div class="tree-node-header" style="padding-left: ${indent}px;">
+        ${node.isExpandable ? `
+          <i class="codicon codicon-chevron-right tree-expand-icon ${isExpanded ? 'expanded' : ''}"></i>
+        ` : '<span class="tree-indent"></span>'}
+        <div class="tree-node-label">
+          <span class="tree-node-key">${node.key}</span>
+          <span class="tree-node-type">${node.type}</span>
+          ${!node.isExpandable ? `<span class="tree-node-value ${node.type}">${getValuePreview(node.value)}</span>` : ''}
+        </div>
+        <div class="tree-node-actions">
+          ${isArray ? `
+            <button class="tree-action-btn tree-array-add-btn" title="Add item to array">
+              <i class="codicon codicon-add"></i>
+            </button>
+          ` : ''}
+          ${node.isArrayItem ? `
+            <button class="tree-action-btn tree-delete-btn" title="Delete from array">
+              <i class="codicon codicon-trash"></i>
+            </button>
+          ` : ''}
+          ${!node.isExpandable ? `
+            <button class="tree-action-btn tree-edit-btn" title="Edit value">
+              <i class="codicon codicon-edit"></i>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+  `;
+  
+  if (node.isExpandable && node.children) {
+    html += `<div class="tree-children ${isExpanded ? 'expanded' : ''}">`;
+    node.children.forEach(child => {
+      html += renderTreeNode(child, depth + 1);
+    });
+    html += `</div>`;
+  }
+  
+  html += `</div>`;
+  return html;
+}
+
+function refreshInspectorTree() {
+  const inspectorTree = document.getElementById('inspector-tree');
+  if (!inspectorTree) return;
+  
+  let variables = {};
+  try {
+    variables = JSON.parse(variablesEditor.value || '{}');
+  } catch (e) {
+    inspectorTree.innerHTML = `
+      <div style="color: var(--vscode-errorForeground); padding: 16px; text-align: center;">
+        <i class="codicon codicon-error"></i> Invalid JSON
+      </div>
+    `;
+    return;
+  }
+  
+  const tree = buildVariableTree(variables);
+  
+  if (tree.length === 0) {
+    inspectorTree.innerHTML = `
+      <div style="color: var(--vscode-descriptionForeground); padding: 16px; text-align: center;">
+        No variables defined
+      </div>
+    `;
+    return;
+  }
+  
+  // Auto-expand all nodes on first render if expandedPaths is empty
+  if (expandedPaths.size === 0) {
+    const expandAll = (nodes) => {
+      nodes.forEach(node => {
+        if (node.isExpandable) {
+          expandedPaths.add(node.path);
+          if (node.children) {
+            expandAll(node.children);
+          }
+        }
+      });
+    };
+    expandAll(tree);
+  }
+  
+  let html = '';
+  tree.forEach(node => {
+    html += renderTreeNode(node, 0);
+  });
+  
+  inspectorTree.innerHTML = html;
+  
+  // Add event listeners
+  attachTreeEventListeners();
+}
+
+function attachTreeEventListeners() {
+  const inspectorTree = document.getElementById('inspector-tree');
+  if (!inspectorTree) return;
+  
+  // Expand/collapse
+  inspectorTree.querySelectorAll('.tree-expand-icon').forEach(icon => {
+    icon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const node = icon.closest('.tree-node');
+      const path = node.getAttribute('data-path');
+      
+      if (expandedPaths.has(path)) {
+        expandedPaths.delete(path);
+      } else {
+        expandedPaths.add(path);
+      }
+      
+      refreshInspectorTree();
+    });
+  });
+  
+  // Add item to array
+  inspectorTree.querySelectorAll('.tree-array-add-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const node = btn.closest('.tree-node');
+      const path = node.getAttribute('data-path');
+      
+      const currentArray = getValueAtPath(path);
+      if (!Array.isArray(currentArray)) return;
+      
+      // Determine default value based on array type
+      let newValue = '';
+      if (currentArray.length > 0) {
+        const lastItem = currentArray[currentArray.length - 1];
+        if (typeof lastItem === 'number') newValue = 0;
+        else if (typeof lastItem === 'boolean') newValue = false;
+        else if (typeof lastItem === 'object' && lastItem !== null) {
+          newValue = Array.isArray(lastItem) ? [] : {};
+        }
+      }
+      
+      currentArray.push(newValue);
+      setValueAtPath(path, currentArray);
+      
+      // Update variables editor
+      const variables = JSON.parse(getVariablesText() || '{}');
+      setVariablesText(JSON.stringify(variables, null, 2), { emitInputEvent: true });
+      debouncedGhostSave();
+      autoResizeVariablesSection();
+      
+      // Expand the array to show new item
+      expandedPaths.add(path);
+      refreshInspectorTree();
+      
+      if (autoRerender) {
+        update();
+      }
+    });
+  });
+
+  // Delete item from array
+  inspectorTree.querySelectorAll('.tree-delete-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const node = btn.closest('.tree-node');
+      const path = node.getAttribute('data-path');
+      
+      // Extract parent path and index
+      const match = path.match(/^(.+)\[(\d+)\]$/);
+      if (!match) return;
+      
+      const parentPath = match[1];
+      const index = parseInt(match[2]);
+      
+      const parentArray = getValueAtPath(parentPath);
+      if (!Array.isArray(parentArray)) return;
+      
+      // Remove item
+      parentArray.splice(index, 1);
+      setValueAtPath(parentPath, parentArray);
+      
+      // Update variables editor
+      const variables = JSON.parse(getVariablesText() || '{}');
+      setVariablesText(JSON.stringify(variables, null, 2), { emitInputEvent: true });
+      debouncedGhostSave();
+      autoResizeVariablesSection();
+      
+      refreshInspectorTree();
+      
+      if (autoRerender) {
+        update();
+      }
+    });
+  });
+  
+  // Edit value (supports primitives and JSON editing for objects)
+  inspectorTree.querySelectorAll('.tree-edit-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const node = btn.closest('.tree-node');
+      const path = node.getAttribute('data-path');
+      const header = node.querySelector('.tree-node-header');
+      
+      // Get indent from header padding
+      const headerStyle = window.getComputedStyle(header);
+      const indent = parseInt(headerStyle.paddingLeft) || 0;
+      
+      const currentValue = getValueAtPath(path);
+      const isObject = typeof currentValue === 'object' && currentValue !== null;
+      
+      // Create edit container
+      const editContainer = document.createElement('div');
+      editContainer.className = 'tree-edit-container';
+      editContainer.style.cssText = `
+        padding: 8px ${indent + 16}px;
+        background: var(--vscode-input-background);
+        border: 1px solid var(--vscode-input-border);
+        margin: 4px 0;
+      `;
+      
+      if (isObject) {
+        // Multi-line textarea for objects/arrays
+        const textarea = document.createElement('textarea');
+        textarea.className = 'tree-edit-input';
+        textarea.style.cssText = `
+          width: 100%;
+          min-height: 100px;
+          font-family: var(--vscode-editor-font-family);
+          font-size: var(--vscode-editor-font-size);
+          background: var(--vscode-input-background);
+          color: var(--vscode-input-foreground);
+          border: none;
+          outline: none;
+          resize: vertical;
+        `;
+        textarea.value = JSON.stringify(currentValue, null, 2);
+        editContainer.appendChild(textarea);
+        
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = 'display: flex; gap: 8px; margin-top: 8px;';
+        
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = 'Save';
+        saveBtn.className = 'button-primary';
+        saveBtn.style.cssText = 'flex: 1;';
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.className = 'button-secondary';
+        cancelBtn.style.cssText = 'flex: 1;';
+        
+        buttonContainer.appendChild(saveBtn);
+        buttonContainer.appendChild(cancelBtn);
+        editContainer.appendChild(buttonContainer);
+        
+        // Hide children while editing to avoid confusion
+        const childrenContainer = node.querySelector('.tree-children');
+        if (childrenContainer) {
+          childrenContainer.style.display = 'none';
+        }
+        
+        header.after(editContainer);
+        textarea.focus();
+        
+        const saveEdit = () => {
+          try {
+            const newValue = JSON.parse(textarea.value);
+            setValueAtPath(path, newValue);
+            
+            // Update variables editor
+            const variables = JSON.parse(getVariablesText() || '{}');
+            setVariablesText(JSON.stringify(variables, null, 2), { emitInputEvent: true });
+            debouncedGhostSave();
+            autoResizeVariablesSection();
+            
+            refreshInspectorTree();
+            
+            if (autoRerender) {
+              update();
+            }
+          } catch (err) {
+            textarea.style.borderColor = 'var(--vscode-inputValidation-errorBorder)';
+            textarea.title = `Invalid JSON: ${err.message}`;
+          }
+        };
+        
+        saveBtn.addEventListener('click', saveEdit);
+        cancelBtn.addEventListener('click', () => {
+          editContainer.remove();
+          if (childrenContainer) {
+            childrenContainer.style.display = '';
+          }
+        });
+        
+      } else {
+        // Single-line input for primitives
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'tree-edit-input';
+        input.style.cssText = `
+          width: 100%;
+          font-family: var(--vscode-editor-font-family);
+          background: var(--vscode-input-background);
+          color: var(--vscode-input-foreground);
+          border: none;
+          outline: none;
+          padding: 4px;
+        `;
+        input.value = typeof currentValue === 'string' ? currentValue : JSON.stringify(currentValue);
+        
+        editContainer.appendChild(input);
+        header.after(editContainer);
+        input.focus();
+        input.select();
+        
+        const saveEdit = () => {
+          let newValue = input.value;
+          
+          // Try to parse as JSON for numbers, booleans, etc.
+          try {
+            newValue = JSON.parse(newValue);
+          } catch {
+            // Keep as string if not valid JSON
+          }
+          
+          setValueAtPath(path, newValue);
+          
+          // Update variables editor
+          const variables = JSON.parse(getVariablesText() || '{}');
+          setVariablesText(JSON.stringify(variables, null, 2), { emitInputEvent: true });
+          debouncedGhostSave();
+          autoResizeVariablesSection();
+          
+          refreshInspectorTree();
+          
+          if (autoRerender) {
+            update();
+          }
+        };
+        
+        input.addEventListener('blur', saveEdit);
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            saveEdit();
+          } else if (e.key === 'Escape') {
+            editContainer.remove();
+          }
+        });
+      }
+    });
+  });
+}
+
+function getValueAtPath(path) {
+  let variables = {};
+  try {
+    variables = JSON.parse(getVariablesText() || '{}');
+  } catch {
+    return undefined;
+  }
+  
+  const parts = path.split(/\.|\[|\]/).filter(p => p);
+  let current = variables;
+  
+  for (const part of parts) {
+    if (current === null || current === undefined) return undefined;
+    current = current[part];
+  }
+  
+  return current;
+}
+
+function setValueAtPath(path, value) {
+  let variables = {};
+  try {
+    variables = JSON.parse(getVariablesText() || '{}');
+  } catch {
+    variables = {};
+  }
+  
+  const parts = path.split(/\.|\[|\]/).filter(p => p);
+  let current = variables;
+  
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i];
+    if (!(part in current)) {
+      current[part] = {};
+    }
+    current = current[part];
+  }
+  
+  current[parts[parts.length - 1]] = value;
+  setVariablesText(JSON.stringify(variables, null, 2), { emitInputEvent: true });
+  debouncedGhostSave();
+}
+
+const showInspectorBtn = document.getElementById('show-inspector-btn');
+const closeInspectorBtn = document.getElementById('close-inspector-btn');
+const inspectorPanel = document.getElementById('variable-inspector-panel');
+const collapseAllBtn = document.getElementById('collapse-all-btn');
+const expandAllBtn = document.getElementById('expand-all-btn');
+
+if (showInspectorBtn) {
+  showInspectorBtn.addEventListener('click', () => {
+    if (inspectorPanel) {
+      inspectorPanel.classList.add('active');
+      refreshInspectorTree();
+    }
+  });
+}
+
+if (closeInspectorBtn) {
+  closeInspectorBtn.addEventListener('click', () => {
+    if (inspectorPanel) inspectorPanel.classList.remove('active');
+  });
+}
+
+if (collapseAllBtn) {
+  collapseAllBtn.addEventListener('click', () => {
+    expandedPaths.clear();
+    refreshInspectorTree();
+  });
+}
+
+if (expandAllBtn) {
+  expandAllBtn.addEventListener('click', () => {
+    // Expand all paths
+    const inspectorTree = document.getElementById('inspector-tree');
+    if (inspectorTree) {
+      inspectorTree.querySelectorAll('.tree-node').forEach(node => {
+        const path = node.getAttribute('data-path');
+        if (path) expandedPaths.add(path);
+      });
+      refreshInspectorTree();
+    }
+  });
+}
+
+// Refresh inspector when variables change
+variablesEditor.addEventListener('input', () => {
+  if (inspectorPanel && inspectorPanel.classList.contains('active')) {
+    // Debounce the refresh
+    clearTimeout(variablesEditor.inspectorRefreshTimeout);
+    variablesEditor.inspectorRefreshTimeout = setTimeout(() => {
+      refreshInspectorTree();
+    }, 500);
+  }
+});
 
 // Listen for messages from the extension
 window.addEventListener('message', async event => {

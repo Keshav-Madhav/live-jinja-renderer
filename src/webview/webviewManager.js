@@ -4,6 +4,8 @@ const { handleExportVariables } = require('../commands/importExportCommands');
 const { loadTemplates, getTemplateSummary, watchTemplateChanges, usesExternalTemplates, extractReferencedTemplates } = require('../utils/templateLoader');
 const { generateSmartData, analyzeTemplate } = require('../utils/smartDataGenerator');
 const { generateWithLLMStreaming, isCopilotAvailable, setOpenAIApiKey, isOpenAIConfigured, validateOpenAIKey, generateWithOpenAIStreaming, setClaudeApiKey, isClaudeConfigured, validateClaudeKey, generateWithClaudeStreaming, setGeminiApiKey, isGeminiConfigured, validateGeminiKey, generateWithGeminiStreaming } = require('../utils/llmDataGenerator');
+const { buildDependencyGraph, graphToText } = require('../utils/templateDependencyGraph');
+const path = require('path');
 
 // Secret storage key constants (shared with settingsCommands.js)
 const OPENAI_API_KEY_SECRET = 'liveJinjaRenderer.openai.apiKey';
@@ -690,6 +692,142 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
           return;
         
         case 'reloadTemplates':
+          // Reload templates for includes/extends (force-check if needed)
+          try {
+            await loadAndSendTemplates(true);
+            ensureTemplateWatcher();
+          } catch (err) {
+            console.error('Failed to reload templates:', err);
+          }
+          return;
+        
+        case 'requestDependencyGraph':
+          // Build and send dependency graph for current template
+          try {
+            const currentFilePath = editor.document.fileName;
+            const templateResult = await loadTemplates(currentFilePath);
+            const templateContent = selectionRange && selectionRange.startLine !== undefined && selectionRange.endLine !== undefined
+              ? (() => {
+                  const doc = editor.document;
+                  const startPos = new vscode.Position(selectionRange.startLine, 0);
+                  const endLine = Math.min(selectionRange.endLine, doc.lineCount - 1);
+                  const endPos = new vscode.Position(endLine, doc.lineAt(endLine).text.length);
+                  const range = new vscode.Range(startPos, endPos);
+                  return doc.getText(range);
+                })()
+              : editor.document.getText();
+            
+            const graph = buildDependencyGraph(
+              templateContent,
+              templateResult.templates,
+              'main'
+            );
+            
+            webview.postMessage({
+              type: 'dependencyGraphData',
+              graph: graph
+            });
+          } catch (err) {
+            console.error('Failed to build dependency graph:', err);
+            vscode.window.showErrorMessage(`Failed to build dependency graph: ${err.message}`);
+          }
+          return;
+        
+        case 'openTemplate':
+          // Open a template file from the dependency graph
+          try {
+            const templateName = message.templateName;
+            if (!templateName) return;
+            
+            // Try to find the template file
+            const currentFilePath = editor.document.fileName;
+            const currentDir = path.dirname(currentFilePath);
+            const workspaceFolders = vscode.workspace.workspaceFolders;
+            
+            // Search for template file
+            const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+            const searchPaths = config.get('templates.searchPaths', []);
+            const filePatterns = config.get('templates.filePatterns', ['**/*.jinja', '**/*.jinja2', '**/*.j2', '**/*.html', '**/*.txt']);
+            
+            let templatePath = null;
+            
+            // Try direct path relative to current file
+            const directPath = path.join(currentDir, templateName);
+            try {
+              await vscode.workspace.fs.stat(vscode.Uri.file(directPath));
+              templatePath = directPath;
+            } catch {
+              // File not found, continue searching
+            }
+            
+            // Search in configured paths if not found
+            if (!templatePath && searchPaths.length > 0) {
+              for (const searchPath of searchPaths) {
+                let searchDir;
+                if (searchPath === '.' || searchPath === './') {
+                  searchDir = currentDir;
+                } else if (searchPath.startsWith('./') || searchPath.startsWith('../') || searchPath === '..') {
+                  searchDir = path.resolve(currentDir, searchPath);
+                } else if (path.isAbsolute(searchPath)) {
+                  searchDir = searchPath;
+                } else if (workspaceFolders && workspaceFolders.length > 0) {
+                  searchDir = path.join(workspaceFolders[0].uri.fsPath, searchPath);
+                }
+                
+                if (searchDir) {
+                  const candidatePath = path.join(searchDir, templateName);
+                  try {
+                    await vscode.workspace.fs.stat(vscode.Uri.file(candidatePath));
+                    templatePath = candidatePath;
+                    break;
+                  } catch {
+                    // Continue searching
+                  }
+                }
+              }
+            }
+            
+            // Search in workspace if still not found
+            if (!templatePath && workspaceFolders && workspaceFolders.length > 0) {
+              const pattern = new vscode.RelativePattern(workspaceFolders[0], `**/${templateName}`);
+              const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**', 1);
+              if (files.length > 0) {
+                templatePath = files[0].fsPath;
+              }
+            }
+            
+            if (templatePath) {
+              const document = await vscode.workspace.openTextDocument(templatePath);
+              await vscode.window.showTextDocument(document, {
+                preview: false,
+                viewColumn: vscode.ViewColumn.One
+              });
+            } else {
+              vscode.window.showWarningMessage(`Template file not found: ${templateName}`);
+            }
+          } catch (err) {
+            console.error('Failed to open template:', err);
+            vscode.window.showErrorMessage(`Failed to open template: ${err.message}`);
+          }
+          return;
+        
+        case 'showError':
+          // Show error message from webview
+          vscode.window.showErrorMessage(message.message || 'An error occurred');
+          return;
+        
+        case 'executeCommand':
+          // Execute a VS Code command from webview
+          if (message.command) {
+            try {
+              await vscode.commands.executeCommand(message.command);
+            } catch (err) {
+              console.error('Failed to execute command:', message.command, err);
+            }
+          }
+          return;
+        
+        case 'reloadTemplates_old':
           // Reload templates for includes/extends (force-check if needed)
           try {
             await loadAndSendTemplates(true);

@@ -347,14 +347,91 @@ textarea:focus {
   border-color: var(--vscode-inputValidation-errorBorder, #f14c4c) !important;
 }
 
+/* CodeMirror JSON editor */
+.variables-section .CodeMirror {
+  flex: 1;
+  height: auto;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 2px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font-family: var(--vscode-editor-font-family);
+  font-size: var(--vscode-editor-font-size);
+  line-height: 1.4;
+}
+
+.variables-section .CodeMirror-scroll {
+  min-height: 120px;
+}
+
+.variables-section .CodeMirror-focused {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+  border-color: var(--vscode-focusBorder);
+}
+
+.variables-section .CodeMirror-gutters {
+  background: var(--vscode-editor-background);
+  border-right: 1px solid var(--vscode-panel-border);
+  color: var(--vscode-editorLineNumber-foreground);
+}
+
+.variables-section .CodeMirror-linenumber {
+  color: var(--vscode-editorLineNumber-foreground);
+}
+
+.variables-section .CodeMirror-cursor {
+  border-left: 1px solid var(--vscode-editorCursor-foreground);
+}
+
+.variables-section .CodeMirror-activeline-background {
+  background: var(--vscode-editor-selectionHighlightBackground, rgba(255, 255, 255, 0.07));
+}
+
+.variables-section .CodeMirror-selected {
+  background: var(--vscode-editor-selectionBackground, rgba(128, 189, 255, 0.25)) !important;
+}
+
+.variables-section .CodeMirror-focused .CodeMirror-selected {
+  background: var(--vscode-editor-selectionBackground, rgba(128, 189, 255, 0.35)) !important;
+}
+
+.variables-section .CodeMirror-matchingbracket {
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-selectionBackground);
+}
+
+.variables-section .cm-property {
+  color: #9cdcfe;
+}
+
+.variables-section .cm-string {
+  color: #ce9178;
+}
+
+.variables-section .cm-number {
+  color: #b5cea8;
+}
+
+.variables-section .cm-atom {
+  color: #4fc1ff;
+}
+
+.variables-section .CodeMirror.json-error {
+  border-color: var(--vscode-inputValidation-errorBorder, #f14c4c) !important;
+  box-shadow: 0 0 0 1px var(--vscode-inputValidation-errorBorder, #f14c4c);
+}
+
 /* Streaming state - shows when AI is generating */
-#variables.streaming {
+#variables.streaming,
+.CodeMirror.streaming {
   background-size: 200% 100%;
   animation: streaming-bg 1.5s ease-in-out infinite;
 }
 
 /* Copilot streaming - cyan theme */
-#variables.streaming-copilot {
+#variables.streaming-copilot,
+.CodeMirror.streaming-copilot {
   border-color: #06b6d4 !important;
   background: linear-gradient(
     90deg,
@@ -365,7 +442,8 @@ textarea:focus {
 }
 
 /* OpenAI streaming - green theme */
-#variables.streaming-openai {
+#variables.streaming-openai,
+.CodeMirror.streaming-openai {
   border-color: #10b981 !important;
   background: linear-gradient(
     90deg,
@@ -376,7 +454,8 @@ textarea:focus {
 }
 
 /* Claude streaming - orange theme */
-#variables.streaming-claude {
+#variables.streaming-claude,
+.CodeMirror.streaming-claude {
   border-color: #d97706 !important;
   background: linear-gradient(
     90deg,
@@ -387,7 +466,8 @@ textarea:focus {
 }
 
 /* Gemini streaming - blue theme */
-#variables.streaming-gemini {
+#variables.streaming-gemini,
+.CodeMirror.streaming-gemini {
   border-color: #4285f4 !important;
   background: linear-gradient(
     90deg,
@@ -1790,4 +1870,334 @@ body.detached-active .status-render-time {
   align-items: center;
   gap: 4px;
 }
+
+/* ===== Template Dependency Graph Styles ===== */
+.dependency-graph-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--vscode-editor-background);
+  z-index: 2000;
+  display: none;
+  flex-direction: column;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.dependency-graph-panel.active {
+  display: flex;
+}
+
+.graph-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.graph-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.graph-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--vscode-icon-foreground);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.graph-close-btn:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.graph-container {
+  flex: 1;
+  overflow: auto;
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  padding: 16px;
+  position: relative;
+}
+
+.graph-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  margin: 4px 8px;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.graph-node:hover {
+  background: var(--vscode-button-hoverBackground);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.graph-node.root {
+  background: var(--vscode-activityBarBadge-background);
+  color: var(--vscode-activityBarBadge-foreground);
+  font-weight: 600;
+}
+
+.graph-node.missing {
+  background: var(--vscode-inputValidation-errorBackground);
+  border-color: var(--vscode-inputValidation-errorBorder);
+  color: var(--vscode-inputValidation-errorForeground);
+}
+
+.graph-edge {
+  display: block;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  margin-left: 20px;
+  padding: 2px 0;
+}
+
+.graph-edge-type {
+  display: inline-block;
+  padding: 1px 6px;
+  margin: 0 4px;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.graph-warning {
+  padding: 8px 12px;
+  background: var(--vscode-inputValidation-warningBackground);
+  border-left: 3px solid var(--vscode-inputValidation-warningBorder);
+  color: var(--vscode-inputValidation-warningForeground);
+  margin-bottom: 12px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.graph-level {
+  margin: 8px 0;
+}
+
+.graph-level-label {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+/* ===== Variable Inspector Styles ===== */
+.variable-inspector-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(400px, 90vw);
+  max-width: 600px;
+  bottom: 0;
+  background: var(--vscode-sideBar-background);
+  z-index: 2000;
+  display: none;
+  flex-direction: column;
+  border-left: 1px solid var(--vscode-panel-border);
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive width for smaller screens */
+@media (max-width: 800px) {
+  .variable-inspector-panel {
+    width: min(350px, 95vw);
+  }
+}
+
+@media (max-width: 500px) {
+  .variable-inspector-panel {
+    width: 100vw;
+    max-width: 100vw;
+  }
+}
+
+.variable-inspector-panel.active {
+  display: flex;
+}
+
+.inspector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-sideBar-background);
+}
+
+.inspector-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.inspector-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.inspector-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.tree-node {
+  user-select: none;
+}
+
+.tree-node-header {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.tree-node-header:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.tree-node-header.selected {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+}
+
+.tree-indent {
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.tree-expand-icon {
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+  color: var(--vscode-icon-foreground);
+  font-size: 14px;
+  transition: transform 0.2s ease;
+}
+
+.tree-expand-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.tree-node-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.tree-node-key {
+  color: var(--vscode-symbolIcon-variableForeground);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.tree-node-type {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.7;
+}
+
+.tree-node-value {
+  color: var(--vscode-debugTokenExpression-string);
+  font-family: var(--vscode-editor-font-family);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.tree-node-value.number {
+  color: var(--vscode-debugTokenExpression-number);
+}
+
+.tree-node-value.boolean {
+  color: var(--vscode-debugTokenExpression-boolean);
+}
+
+.tree-node-value.null {
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+}
+
+.tree-node-actions {
+  display: none;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.tree-node-header:hover .tree-node-actions {
+  display: flex;
+}
+
+.tree-action-btn {
+  padding: 2px 6px;
+  background: transparent;
+  border: none;
+  color: var(--vscode-icon-foreground);
+  cursor: pointer;
+  border-radius: 2px;
+  font-size: 12px;
+}
+
+.tree-action-btn:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.tree-children {
+  display: none;
+}
+
+.tree-children.expanded {
+  display: block;
+}
+
+.tree-edit-input {
+  flex: 1;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  padding: 2px 6px;
+  font-size: 11px;
+  font-family: var(--vscode-editor-font-family);
+  border-radius: 2px;
+  max-width: 200px;
+}
+
+.tree-edit-input:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+}
+
 

@@ -4,6 +4,22 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.11.0] - 2025-12-13
+
+### 🌈 NEW - JSON Editor Upgrade (CodeMirror)
+- Syntax-highlighted JSON variables editor with bracket matching and active-line highlight
+- Selection/active-line colors tuned to follow VS Code themes for better readability
+- Feels like a real JSON editor when working with large payloads
+
+### 🔄 Live Variable Tree Sync (Main + Detached)
+- Variable tree edits now emit input events to keep the JSON editor in sync
+- Detached output windows receive ghost-save broadcasts so they stay updated
+- Unified variable getter for consistent state across main and detached panes
+
+### 🎯 Usability & Stability
+- Softer active-line brightness and improved selection tint
+- Minor streaming/responsiveness tweaks across the webview
+
 ## [1.10.6] - 2025-12-07
 
 ### 🤖 NEW - Anthropic Claude API Integration
