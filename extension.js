@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🌈 JSON editor is now CodeMirror-powered\n• Syntax highlighting, bracket matching, softer active-line\n• Variable tree edits live-sync to main + detached views`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🤖 Debug with AI - Analyze template errors with AI assistance\n• Root cause analysis, fix suggestions, null safety tips\n• Apply Fix & Go to Line quick actions`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

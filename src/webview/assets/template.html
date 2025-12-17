@@ -98,8 +98,8 @@
                     <button class="icon-button" id="detach-output-btn" title="Detach Output Window">
                         <i class="codicon codicon-link-external"></i>
                     </button>
-                    <button id="error-goto-button" class="error-line-link" style="display: none;" title="Jump to error line in editor">
-                        <i class="codicon codicon-go-to-file"></i> View Error
+                    <button id="ai-debug-btn" class="ai-debug-btn" style="display: none;" title="Debug with AI - Analyze error and suggest fixes">
+                        <i class="codicon codicon-lightbulb-sparkle"></i> Debug with AI
                     </button>
                     {{AUTO_RERENDER_TOGGLE}}
                 </div>
@@ -119,6 +119,20 @@
                     Suggested Extensions:
                 </div>
                 <div id="extension-suggestions-list" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
+            </div>
+            <div class="ai-debug-panel" id="ai-debug-panel" style="display: none;">
+                <div class="ai-debug-header">
+                    <div class="ai-debug-title">
+                        <i class="codicon codicon-lightbulb-sparkle"></i>
+                        <span>AI Debug Analysis</span>
+                    </div>
+                    <button class="ai-debug-close" id="ai-debug-close" title="Close">
+                        <i class="codicon codicon-close"></i>
+                    </button>
+                </div>
+                <div class="ai-debug-content" id="ai-debug-content">
+                    <!-- Debug content will be populated here -->
+                </div>
             </div>
             {{OUTPUT_FOOTER}}
         </div>

@@ -796,6 +796,458 @@ async function generateWithGeminiStreaming(extractedVars, templateContent, onChu
   });
 }
 
+// ============================================================================
+// AI DEBUG ERROR ANALYSIS
+// ============================================================================
+
+/**
+ * Add line numbers to template content for better AI analysis
+ * @param {string} template - The template content
+ * @returns {string} Template with line numbers
+ */
+function addLineNumbers(template) {
+  const lines = template.split('\n');
+  return lines.map((line, i) => `${String(i + 1).padStart(3, ' ')}| ${line}`).join('\n');
+}
+
+/**
+ * Build the prompts for AI error debugging
+ * @param {string} errorMessage - The error message from Jinja2
+ * @param {string} templateContent - The template content
+ * @param {Object} variables - The current variables
+ * @returns {{systemPrompt: string, userPrompt: string}}
+ */
+function buildDebugPrompts(errorMessage, templateContent, variables) {
+  const systemPrompt = `You are an expert Jinja2 template debugger. Your task is to analyze template errors and provide clear, actionable fix recommendations.
+
+CRITICAL: The template is shown with line numbers in the format "  N| code". Use these EXACT line numbers in your response. Count carefully - every line including blank lines has a number.
+
+Guidelines:
+- Identify the root cause of the error
+- Consider both the template syntax AND the variable data
+- Templates should ideally work with empty/null variables (null-safe handling)
+- Provide EXACT line numbers from the numbered template
+- Explain WHY the error occurred
+- Suggest defensive coding practices (like using 'default' filter, 'is defined' checks)
+
+Response Format (MUST be valid JSON):
+{
+  "errorType": "Brief error category (e.g., 'UndefinedVariable', 'SyntaxError', 'TypeError')",
+  "errorLocation": {
+    "line": <EXACT line number from the numbered template>,
+    "description": "Brief description of where the error is"
+  },
+  "rootCause": "Clear explanation of why this error occurred",
+  "fixes": [
+    {
+      "type": "template" | "variables" | "both",
+      "priority": "high" | "medium" | "low",
+      "title": "Short title for the fix",
+      "description": "Detailed explanation of the fix",
+      "templateChange": {
+        "before": "Original code snippet (if applicable)",
+        "after": "Fixed code snippet (if applicable)",
+        "line": <EXACT line number from the numbered template>
+      },
+      "variableChange": {
+        "before": "Original variable structure (if applicable)",
+        "after": "Fixed variable structure (if applicable)"
+      }
+    }
+  ],
+  "nullSafetyTips": [
+    "Suggestions for making the template more robust against missing/null variables"
+  ]
+}
+
+IMPORTANT: 
+1. Return ONLY valid JSON, no explanation or markdown formatting.
+2. Use the EXACT line numbers shown in the template (e.g., if error is on line "11| {{ buton(...) }}", the line number is 11).`;
+
+  // Add line numbers to template for accurate line reference
+  const numberedTemplate = addLineNumbers(templateContent);
+
+  const userPrompt = `I have a Jinja2 template error that I need help debugging.
+
+## Error Message:
+\`\`\`
+${errorMessage}
+\`\`\`
+
+## Template Content (with line numbers):
+\`\`\`
+${numberedTemplate.substring(0, 5000)}${numberedTemplate.length > 5000 ? '\n... (truncated)' : ''}
+\`\`\`
+
+## Current Variables:
+\`\`\`json
+${JSON.stringify(variables, null, 2).substring(0, 2000)}
+\`\`\`
+
+Please analyze this error and provide fix recommendations. 
+IMPORTANT: Use the EXACT line numbers shown above (the numbers before the | character).
+
+Consider:
+1. Does the template handle missing/null variables gracefully?
+2. Is there a syntax error in the template?
+3. Are the variable types correct for how they're being used?
+4. Would the template work with empty variables (null-safety)?
+
+Return ONLY the JSON response.`;
+
+  return { systemPrompt, userPrompt };
+}
+
+/**
+ * Debug template error using Copilot
+ * @param {string} errorMessage - The error message
+ * @param {string} templateContent - The template content
+ * @param {Object} variables - Current variables
+ * @param {Function} onChunk - Streaming callback
+ * @returns {Promise<Object>} - Debug analysis result
+ */
+async function debugWithCopilotStreaming(errorMessage, templateContent, variables, onChunk) {
+  try {
+    const models = await vscode.lm.selectChatModels({ 
+      vendor: 'copilot',
+      family: 'gpt-4o'
+    });
+    
+    if (!models || models.length === 0) {
+      const fallbackModels = await vscode.lm.selectChatModels({ vendor: 'copilot' });
+      if (!fallbackModels || fallbackModels.length === 0) {
+        throw new Error('No Copilot model available. Please ensure GitHub Copilot is installed and activated.');
+      }
+      models.push(...fallbackModels);
+    }
+    
+    const model = models[0];
+    const { systemPrompt, userPrompt } = buildDebugPrompts(errorMessage, templateContent, variables);
+    
+    const messages = [
+      vscode.LanguageModelChatMessage.User(systemPrompt),
+      vscode.LanguageModelChatMessage.User(userPrompt)
+    ];
+    
+    const response = await model.sendRequest(messages, {}, new vscode.CancellationTokenSource().token);
+    
+    let responseText = '';
+    for await (const chunk of response.text) {
+      responseText += chunk;
+      if (onChunk) {
+        onChunk(responseText, false);
+      }
+    }
+    
+    responseText = cleanResponse(responseText);
+    
+    if (onChunk) {
+      onChunk(responseText, true);
+    }
+    
+    const debugResult = JSON.parse(responseText);
+    return debugResult;
+  } catch (error) {
+    console.error('Copilot debug error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Debug template error using OpenAI
+ * @param {string} errorMessage - The error message
+ * @param {string} templateContent - The template content
+ * @param {Object} variables - Current variables
+ * @param {Function} onChunk - Streaming callback
+ * @returns {Promise<Object>} - Debug analysis result
+ */
+async function debugWithOpenAIStreaming(errorMessage, templateContent, variables, onChunk) {
+  if (!_openaiApiKey) {
+    throw new Error('OpenAI API key not configured');
+  }
+  
+  const { systemPrompt, userPrompt } = buildDebugPrompts(errorMessage, templateContent, variables);
+  
+  return new Promise((resolve, reject) => {
+    const requestBody = JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      stream: true,
+      temperature: 0.3,
+      max_tokens: 3000
+    });
+    
+    const options = {
+      hostname: 'api.openai.com',
+      path: '/v1/chat/completions',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${_openaiApiKey}`,
+        'Content-Length': Buffer.byteLength(requestBody)
+      }
+    };
+    
+    const req = https.request(options, (res) => {
+      if (res.statusCode !== 200) {
+        let errorData = '';
+        res.on('data', chunk => errorData += chunk);
+        res.on('end', () => {
+          try {
+            const error = JSON.parse(errorData);
+            reject(new Error(error.error?.message || `API error: ${res.statusCode}`));
+          } catch {
+            reject(new Error(`API error: ${res.statusCode}`));
+          }
+        });
+        return;
+      }
+      
+      let responseText = '';
+      let buffer = '';
+      
+      res.on('data', (chunk) => {
+        buffer += chunk.toString();
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim();
+            if (data === '[DONE]') continue;
+            
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                responseText += content;
+                if (onChunk) {
+                  onChunk(cleanResponse(responseText), false);
+                }
+              }
+            } catch (e) { /* Skip invalid lines */ }
+          }
+        }
+      });
+      
+      res.on('end', () => {
+        try {
+          responseText = cleanResponse(responseText);
+          if (onChunk) onChunk(responseText, true);
+          const debugResult = JSON.parse(responseText);
+          resolve(debugResult);
+        } catch (e) {
+          reject(new Error(`Failed to parse response: ${e.message}`));
+        }
+      });
+      
+      res.on('error', reject);
+    });
+    
+    req.on('error', reject);
+    req.write(requestBody);
+    req.end();
+  });
+}
+
+/**
+ * Debug template error using Claude
+ * @param {string} errorMessage - The error message
+ * @param {string} templateContent - The template content
+ * @param {Object} variables - Current variables
+ * @param {Function} onChunk - Streaming callback
+ * @returns {Promise<Object>} - Debug analysis result
+ */
+async function debugWithClaudeStreaming(errorMessage, templateContent, variables, onChunk) {
+  if (!_claudeApiKey) {
+    throw new Error('Claude API key not configured');
+  }
+  
+  const { systemPrompt, userPrompt } = buildDebugPrompts(errorMessage, templateContent, variables);
+  
+  return new Promise((resolve, reject) => {
+    const requestBody = JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 3000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+      stream: true
+    });
+    
+    const options = {
+      hostname: 'api.anthropic.com',
+      path: '/v1/messages',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': _claudeApiKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Length': Buffer.byteLength(requestBody)
+      }
+    };
+    
+    const req = https.request(options, (res) => {
+      if (res.statusCode !== 200) {
+        let errorData = '';
+        res.on('data', chunk => errorData += chunk);
+        res.on('end', () => {
+          try {
+            const error = JSON.parse(errorData);
+            reject(new Error(error.error?.message || `API error: ${res.statusCode}`));
+          } catch {
+            reject(new Error(`API error: ${res.statusCode}`));
+          }
+        });
+        return;
+      }
+      
+      let responseText = '';
+      let buffer = '';
+      
+      res.on('data', (chunk) => {
+        buffer += chunk.toString();
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim();
+            if (data === '[DONE]' || data === '') continue;
+            
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                responseText += parsed.delta.text;
+                if (onChunk) {
+                  onChunk(cleanResponse(responseText), false);
+                }
+              }
+            } catch (e) { /* Skip invalid lines */ }
+          }
+        }
+      });
+      
+      res.on('end', () => {
+        try {
+          responseText = cleanResponse(responseText);
+          if (onChunk) onChunk(responseText, true);
+          const debugResult = JSON.parse(responseText);
+          resolve(debugResult);
+        } catch (e) {
+          reject(new Error(`Failed to parse response: ${e.message}`));
+        }
+      });
+      
+      res.on('error', reject);
+    });
+    
+    req.on('error', reject);
+    req.write(requestBody);
+    req.end();
+  });
+}
+
+/**
+ * Debug template error using Gemini
+ * @param {string} errorMessage - The error message
+ * @param {string} templateContent - The template content
+ * @param {Object} variables - Current variables
+ * @param {Function} onChunk - Streaming callback
+ * @returns {Promise<Object>} - Debug analysis result
+ */
+async function debugWithGeminiStreaming(errorMessage, templateContent, variables, onChunk) {
+  if (!_geminiApiKey) {
+    throw new Error('Gemini API key not configured');
+  }
+  
+  const { systemPrompt, userPrompt } = buildDebugPrompts(errorMessage, templateContent, variables);
+  
+  return new Promise((resolve, reject) => {
+    const requestBody = JSON.stringify({
+      contents: [{
+        parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
+      }],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 3000
+      }
+    });
+    
+    const options = {
+      hostname: 'generativelanguage.googleapis.com',
+      path: `/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${_geminiApiKey}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(requestBody)
+      }
+    };
+    
+    const req = https.request(options, (res) => {
+      if (res.statusCode !== 200) {
+        let errorData = '';
+        res.on('data', chunk => errorData += chunk);
+        res.on('end', () => {
+          try {
+            const error = JSON.parse(errorData);
+            reject(new Error(error.error?.message || `API error: ${res.statusCode}`));
+          } catch {
+            reject(new Error(`API error: ${res.statusCode}`));
+          }
+        });
+        return;
+      }
+      
+      let responseText = '';
+      let buffer = '';
+      
+      res.on('data', (chunk) => {
+        buffer += chunk.toString();
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim();
+            if (data === '[DONE]' || data === '') continue;
+            
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (content) {
+                responseText += content;
+                if (onChunk) {
+                  onChunk(cleanResponse(responseText), false);
+                }
+              }
+            } catch (e) { /* Skip invalid lines */ }
+          }
+        }
+      });
+      
+      res.on('end', () => {
+        try {
+          responseText = cleanResponse(responseText);
+          if (onChunk) onChunk(responseText, true);
+          const debugResult = JSON.parse(responseText);
+          resolve(debugResult);
+        } catch (e) {
+          reject(new Error(`Failed to parse response: ${e.message}`));
+        }
+      });
+      
+      res.on('error', reject);
+    });
+    
+    req.on('error', reject);
+    req.write(requestBody);
+    req.end();
+  });
+}
+
 module.exports = {
   isCopilotAvailable,
   generateWithLLM,
@@ -815,5 +1267,10 @@ module.exports = {
   setGeminiApiKey,
   isGeminiConfigured,
   validateGeminiKey,
-  generateWithGeminiStreaming
+  generateWithGeminiStreaming,
+  // AI Debug exports
+  debugWithCopilotStreaming,
+  debugWithOpenAIStreaming,
+  debugWithClaudeStreaming,
+  debugWithGeminiStreaming
 };

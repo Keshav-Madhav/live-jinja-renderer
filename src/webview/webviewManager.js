@@ -3,7 +3,7 @@ const { extractVariablesFromTemplate } = require('../utils/variableExtractor');
 const { handleExportVariables } = require('../commands/importExportCommands');
 const { loadTemplates, getTemplateSummary, watchTemplateChanges, usesExternalTemplates, extractReferencedTemplates } = require('../utils/templateLoader');
 const { generateSmartData, analyzeTemplate } = require('../utils/smartDataGenerator');
-const { generateWithLLMStreaming, isCopilotAvailable, setOpenAIApiKey, isOpenAIConfigured, validateOpenAIKey, generateWithOpenAIStreaming, setClaudeApiKey, isClaudeConfigured, validateClaudeKey, generateWithClaudeStreaming, setGeminiApiKey, isGeminiConfigured, validateGeminiKey, generateWithGeminiStreaming } = require('../utils/llmDataGenerator');
+const { generateWithLLMStreaming, isCopilotAvailable, setOpenAIApiKey, isOpenAIConfigured, validateOpenAIKey, generateWithOpenAIStreaming, setClaudeApiKey, isClaudeConfigured, validateClaudeKey, generateWithClaudeStreaming, setGeminiApiKey, isGeminiConfigured, validateGeminiKey, generateWithGeminiStreaming, debugWithCopilotStreaming, debugWithOpenAIStreaming, debugWithClaudeStreaming, debugWithGeminiStreaming } = require('../utils/llmDataGenerator');
 const { buildDependencyGraph, graphToText } = require('../utils/templateDependencyGraph');
 const path = require('path');
 
@@ -1104,6 +1104,209 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
           }
           return;
         
+        case 'aiDebugError':
+          // Debug template error using AI
+          try {
+            const errorMessage = message.errorMessage || '';
+            const template = message.template || lastTemplate;
+            const variables = message.variables || {};
+            const provider = message.provider || 'copilot';
+            
+            let debugResult;
+            
+            // Choose the appropriate AI provider
+            if (provider === 'openai') {
+              if (!isOpenAIConfigured()) {
+                webview.postMessage({
+                  type: 'aiDebugResult',
+                  result: null,
+                  error: 'OpenAI not configured'
+                });
+                return;
+              }
+              
+              debugResult = await debugWithOpenAIStreaming(
+                errorMessage,
+                template,
+                variables,
+                (partialText, isDone) => {
+                  webview.postMessage({
+                    type: 'aiDebugStreamChunk',
+                    text: partialText,
+                    isDone: isDone,
+                    provider: 'openai'
+                  });
+                }
+              );
+            } else if (provider === 'claude') {
+              if (!isClaudeConfigured()) {
+                webview.postMessage({
+                  type: 'aiDebugResult',
+                  result: null,
+                  error: 'Claude not configured'
+                });
+                return;
+              }
+              
+              debugResult = await debugWithClaudeStreaming(
+                errorMessage,
+                template,
+                variables,
+                (partialText, isDone) => {
+                  webview.postMessage({
+                    type: 'aiDebugStreamChunk',
+                    text: partialText,
+                    isDone: isDone,
+                    provider: 'claude'
+                  });
+                }
+              );
+            } else if (provider === 'gemini') {
+              if (!isGeminiConfigured()) {
+                webview.postMessage({
+                  type: 'aiDebugResult',
+                  result: null,
+                  error: 'Gemini not configured'
+                });
+                return;
+              }
+              
+              debugResult = await debugWithGeminiStreaming(
+                errorMessage,
+                template,
+                variables,
+                (partialText, isDone) => {
+                  webview.postMessage({
+                    type: 'aiDebugStreamChunk',
+                    text: partialText,
+                    isDone: isDone,
+                    provider: 'gemini'
+                  });
+                }
+              );
+            } else {
+              // Default to Copilot
+              const copilotAvailable = await isCopilotAvailable();
+              if (!copilotAvailable) {
+                webview.postMessage({
+                  type: 'aiDebugResult',
+                  result: null,
+                  error: 'Copilot not available'
+                });
+                return;
+              }
+              
+              debugResult = await debugWithCopilotStreaming(
+                errorMessage,
+                template,
+                variables,
+                (partialText, isDone) => {
+                  webview.postMessage({
+                    type: 'aiDebugStreamChunk',
+                    text: partialText,
+                    isDone: isDone,
+                    provider: 'copilot'
+                  });
+                }
+              );
+            }
+            
+            // Send final result
+            webview.postMessage({
+              type: 'aiDebugResult',
+              result: debugResult,
+              provider: provider
+            });
+          } catch (err) {
+            console.error('AI debug failed:', err);
+            webview.postMessage({
+              type: 'aiDebugResult',
+              result: null,
+              error: err.message
+            });
+          }
+          return;
+        
+        case 'applyTemplateFix':
+          // Apply a template fix by replacing text in the editor
+          try {
+            const fileUri = message.fileUri;
+            const beforeText = message.before;
+            const afterText = message.after;
+            const targetLine = message.line;
+            
+            if (!fileUri || !beforeText || !afterText) {
+              vscode.window.showErrorMessage('Invalid fix data');
+              return;
+            }
+            
+            // Parse the URI and open the document
+            const documentUri = vscode.Uri.parse(fileUri);
+            const document = await vscode.workspace.openTextDocument(documentUri);
+            const activeEditor = await vscode.window.showTextDocument(document, {
+              viewColumn: vscode.ViewColumn.One,
+              preserveFocus: false
+            });
+            
+            // Find the text to replace
+            const fullText = document.getText();
+            const beforeTextNormalized = beforeText.trim();
+            
+            // Try to find the exact match first
+            let startIndex = fullText.indexOf(beforeTextNormalized);
+            
+            // If not found, try line-by-line search with more flexibility
+            if (startIndex === -1 && targetLine) {
+              // Adjust for selection range offset
+              const lineOffset = (lastSelectionRange && lastSelectionRange.startLine !== undefined) 
+                ? lastSelectionRange.startLine 
+                : 0;
+              const actualLine = targetLine - 1; // Convert to 0-indexed
+              
+              if (actualLine >= 0 && actualLine < document.lineCount) {
+                const line = document.lineAt(actualLine);
+                const lineText = line.text;
+                
+                // Check if the before text is contained in this line
+                if (lineText.includes(beforeTextNormalized) || beforeTextNormalized.includes(lineText.trim())) {
+                  startIndex = document.offsetAt(line.range.start) + lineText.indexOf(beforeTextNormalized.split('\n')[0]);
+                }
+              }
+            }
+            
+            if (startIndex === -1) {
+              // Still not found - show message and copy to clipboard instead
+              vscode.window.showWarningMessage('Could not find exact match in template. Fixed code copied to clipboard.');
+              await vscode.env.clipboard.writeText(afterText);
+              return;
+            }
+            
+            // Calculate the range to replace
+            const startPos = document.positionAt(startIndex);
+            const endPos = document.positionAt(startIndex + beforeTextNormalized.length);
+            const range = new vscode.Range(startPos, endPos);
+            
+            // Apply the edit
+            const edit = new vscode.WorkspaceEdit();
+            edit.replace(documentUri, range, afterText);
+            const success = await vscode.workspace.applyEdit(edit);
+            
+            if (success) {
+              vscode.window.showInformationMessage('✅ Fix applied successfully!');
+              
+              // Notify the webview that the fix was applied
+              webview.postMessage({
+                type: 'templateFixApplied',
+                success: true
+              });
+            } else {
+              vscode.window.showErrorMessage('Failed to apply fix');
+            }
+          } catch (err) {
+            console.error('Failed to apply template fix:', err);
+            vscode.window.showErrorMessage(`Failed to apply fix: ${err.message}`);
+          }
+          return;
         
         case 'goToLine':
           // Navigate to specific line in the editor

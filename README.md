@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.11.0-blue)
+![Version](https://img.shields.io/badge/version-1.11.1-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,22 +10,16 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.11.0
+## 🚀 What's New in v1.11.1
 
-### 🌈 JSON Editor Upgrade (CodeMirror)
-- Syntax-highlighted JSON editor with matching brackets and active-line highlight
-- Smarter selection colors that respect the current VS Code theme
-- Better readability for large payloads; renders like a real JSON editor
+### 🤖 Debug with AI
+AI-powered error analysis for Jinja2 templates! When a template error occurs, click the "Debug with AI" button to get:
+- **Root Cause Analysis**: AI identifies the exact issue in your template
+- **Fix Suggestions**: Before/after code diffs with priority indicators
+- **Null Safety Tips**: Recommendations for robust null handling
+- **Quick Actions**: Apply Fix and Go to Line buttons for instant fixes
 
-### 🔄 Live Variable Tree Sync (Main + Detached)
-- Edits in the variable tree now update the JSON editor instantly
-- Detached output windows stay in sync with tree edits via ghost-save broadcasts
-- Unified getter ensures both panes read the same variable state
-
-### 🎯 Usability Polishing
-- More balanced active-line brightness for CodeMirror
-- Subtle selection tint for clearer focus without glare
-- General stability and stream handling tweaks
+Works with GitHub Copilot, OpenAI, Claude, and Gemini!
 
 ---
 
@@ -377,6 +371,11 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 ---
 
 ## Recent Updates
+
+### 1.11.1 - Debug with AI
+- **Debug with AI** - Analyze template errors with AI assistance (Copilot, OpenAI, Claude, Gemini)
+- **Root cause analysis** with fix suggestions and null safety tips
+- **Apply Fix & Go to Line** quick action buttons
 
 ### 1.11.0 - JSON Editor Upgrade
 - CodeMirror-powered JSON editor with syntax highlighting, matching brackets, active-line

@@ -4,6 +4,31 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.11.1] - 2025-12-17
+
+### 🤖 NEW - Debug with AI
+AI-powered error analysis for Jinja2 templates! When a template error occurs, click the "Debug with AI" button to get intelligent assistance.
+
+#### AI Error Analysis Features
+- **Root Cause Identification**: AI analyzes the error in context of your template and variables
+- **Fix Suggestions**: Prioritized recommendations with before/after code diffs
+- **Null Safety Tips**: Suggestions for making your template more robust with null handling
+- **Line Number Accuracy**: Template content is sent with line numbers for precise error localization
+
+#### Quick Action Buttons
+- **Apply Fix**: One-click to apply the suggested template fix directly to your editor
+- **Go to Line X**: Jump directly to the error location in your template
+
+#### Supported AI Providers
+| Button | Provider | Model |
+|--------|----------|-------|
+| Copilot | GitHub Copilot | VS Code LM API |
+| OpenAI | OpenAI | gpt-4o-mini |
+| Claude | Anthropic | claude-sonnet-4 |
+| Gemini | Google | gemini-2.0-flash |
+
+---
+
 ## [1.11.0] - 2025-12-13
 
 ### 🌈 NEW - JSON Editor Upgrade (CodeMirror)

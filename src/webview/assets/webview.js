@@ -537,43 +537,6 @@ async function renderPureMermaid(text) {
   }
 }
 
-function updateErrorButton(container) {
-  const errorButton = document.getElementById('error-goto-button');
-  if (!errorButton) {
-    console.warn('Error button not found');
-    return;
-  }
-  
-  const text = container.textContent || container.innerText;
-  
-  const lineMatches = [
-    ...text.matchAll(/📍 Line (\d+)/g),
-    ...text.matchAll(/line (\d+)/gi)
-  ];
-  
-  if (lineMatches.length === 0) {
-    errorButton.style.display = 'none';
-    return;
-  }
-  
-  const lineNumbers = Array.from(new Set(lineMatches.map(match => parseInt(match[1]))));
-  
-  if (lineNumbers.length > 0) {
-    const lineNumber = lineNumbers[0];
-    
-    errorButton.style.display = 'flex';
-    errorButton.onclick = () => {
-      vscode.postMessage({
-        type: 'goToLine',
-        line: lineNumber,
-        fileUri: currentFileUri,
-        selectionRange: currentSelectionRange
-      });
-    };
-  } else {
-    errorButton.style.display = 'none';
-  }
-}
 
 function isDefaultValue(userValue, extractedValue) {
   if (JSON.stringify(userValue) === JSON.stringify(extractedValue)) {
@@ -1570,16 +1533,16 @@ result
                      cleanResult.includes('Error on') ||
                      cleanResult.includes('Error\n');
       
+      // Update AI Debug button visibility based on error state
+      updateAiDebugButton(isError, cleanResult);
+      
       if (showWhitespace) {
         // renderWhitespace now handles parsing markers and culling
         outputDisplay.innerHTML = renderWhitespace(result);
         if (isError) {
           outputDisplay.classList.add('error');
-          updateErrorButton(outputDisplay);
         } else {
           outputDisplay.classList.remove('error');
-          const errorButton = document.getElementById('error-goto-button');
-          if (errorButton) errorButton.style.display = 'none';
         }
       } else {
         // For no-whitespace mode, we still use renderWhitespace but maybe CSS hides symbols?
@@ -1624,11 +1587,8 @@ result
         
         if (isError) {
           outputDisplay.classList.add('error');
-          updateErrorButton(outputDisplay);
         } else {
           outputDisplay.classList.remove('error');
-          const errorButton = document.getElementById('error-goto-button');
-          if (errorButton) errorButton.style.display = 'none';
         }
       }
     }
@@ -2226,6 +2186,371 @@ function updateGeminiButtonVisibility(available) {
   if (geminiGenerateBtn) {
     geminiGenerateBtn.style.display = available ? 'inline-flex' : 'none';
   }
+}
+
+// ============================================================================
+// AI DEBUG FEATURE - Error Analysis and Fix Suggestions
+// ============================================================================
+
+// AI Debug Button and Panel elements
+const aiDebugBtn = document.getElementById('ai-debug-btn');
+const aiDebugPanel = document.getElementById('ai-debug-panel');
+const aiDebugContent = document.getElementById('ai-debug-content');
+const aiDebugClose = document.getElementById('ai-debug-close');
+
+// Track current error message for debugging
+let currentErrorMessage = '';
+let isAiDebugAvailable = false;
+
+/**
+ * Show/hide the AI Debug button based on error state and AI availability
+ * @param {boolean} hasError - Whether there's an error to debug
+ * @param {string} errorMsg - The error message
+ */
+function updateAiDebugButton(hasError, errorMsg = '') {
+  if (!aiDebugBtn) return;
+  
+  currentErrorMessage = errorMsg;
+  
+  // Check if any AI provider is available
+  isAiDebugAvailable = copilotAvailable || openaiAvailable || claudeAvailable || geminiAvailable;
+  
+  if (hasError && isAiDebugAvailable) {
+    aiDebugBtn.style.display = 'inline-flex';
+  } else {
+    aiDebugBtn.style.display = 'none';
+    // Also hide the panel if no error
+    if (aiDebugPanel) {
+      aiDebugPanel.style.display = 'none';
+    }
+  }
+}
+
+/**
+ * Get the best available AI provider for debugging
+ * @returns {string} Provider name ('copilot', 'openai', 'claude', 'gemini')
+ */
+function getBestDebugProvider() {
+  // Prefer Copilot, then Claude, then OpenAI, then Gemini
+  if (copilotAvailable) return 'copilot';
+  if (claudeAvailable) return 'claude';
+  if (openaiAvailable) return 'openai';
+  if (geminiAvailable) return 'gemini';
+  return 'copilot'; // Fallback
+}
+
+/**
+ * Render the debug analysis result in the panel
+ * @param {Object} result - The debug analysis result from AI
+ */
+function renderDebugResult(result) {
+  if (!aiDebugContent || !result) return;
+  
+  // Store result for apply handlers
+  aiDebugContent._debugResult = result;
+  
+  let html = '';
+  
+  // Quick Actions Bar at the top - collect all actionable fixes
+  const hasTemplateFix = result.fixes && result.fixes.some(f => f.templateChange && f.templateChange.after);
+  const hasVariableFix = result.fixes && result.fixes.some(f => f.variableChange && f.variableChange.after);
+  const errorLine = result.errorLocation && result.errorLocation.line;
+  
+  if (hasTemplateFix || hasVariableFix || errorLine) {
+    html += `<div class="ai-debug-quick-actions">`;
+    
+    // Apply Template Fix button (applies the first/highest priority template fix)
+    if (hasTemplateFix) {
+      const templateFixIndex = result.fixes.findIndex(f => f.templateChange && f.templateChange.after);
+      html += `<button class="ai-debug-action-btn primary" data-action="apply-template" data-fix-index="${templateFixIndex}">
+        <i class="codicon codicon-check"></i>
+        Apply Fix
+      </button>`;
+    }
+    
+    // Apply Variable Fix button
+    if (hasVariableFix) {
+      const varFixIndex = result.fixes.findIndex(f => f.variableChange && f.variableChange.after);
+      html += `<button class="ai-debug-action-btn" data-action="apply-variables" data-fix-index="${varFixIndex}">
+        <i class="codicon codicon-json"></i>
+        Apply Variable Fix
+      </button>`;
+    }
+    
+    // Go to Error Line button
+    if (errorLine) {
+      html += `<button class="ai-debug-action-btn" data-action="goto-line" data-line="${errorLine}">
+        <i class="codicon codicon-go-to-file"></i>
+        Go to Line ${errorLine}
+      </button>`;
+    }
+    
+    html += `</div>`;
+  }
+  
+  // Error Location info
+  if (result.errorLocation && result.errorLocation.line) {
+    html += `<div class="ai-debug-location" data-line="${result.errorLocation.line}">
+      <i class="codicon codicon-location"></i>
+      <span>Line ${result.errorLocation.line}: ${escapeHtml(result.errorLocation.description || '')}</span>
+    </div>`;
+  }
+  
+  // Root Cause
+  if (result.rootCause) {
+    html += `<div class="ai-debug-section">
+      <div class="ai-debug-section-title">
+        <i class="codicon codicon-search"></i>
+        Root Cause
+      </div>
+      <div class="ai-debug-root-cause">${escapeHtml(result.rootCause)}</div>
+    </div>`;
+  }
+  
+  // Fix Suggestions - show code changes
+  if (result.fixes && result.fixes.length > 0) {
+    html += `<div class="ai-debug-section">
+      <div class="ai-debug-section-title">
+        <i class="codicon codicon-tools"></i>
+        Suggested Fixes
+      </div>`;
+    
+    result.fixes.forEach((fix, index) => {
+      const priorityClass = fix.priority || 'medium';
+      html += `<div class="ai-debug-fix" data-fix-index="${index}">
+        <div class="ai-debug-fix-header">
+          <div class="ai-debug-fix-title">
+            <i class="codicon codicon-${fix.type === 'template' ? 'file-code' : fix.type === 'variables' ? 'json' : 'files'}"></i>
+            ${escapeHtml(fix.title || 'Fix ' + (index + 1))}
+          </div>
+          <span class="ai-debug-fix-priority ${priorityClass}">${priorityClass}</span>
+        </div>
+        <div class="ai-debug-fix-body">
+          <div class="ai-debug-fix-description">${escapeHtml(fix.description || '')}</div>`;
+      
+      // Template change
+      if (fix.templateChange && (fix.templateChange.before || fix.templateChange.after)) {
+        html += `<div class="ai-debug-code-change">
+          <div class="ai-debug-code-label">Template Change${fix.templateChange.line ? ' (Line ' + fix.templateChange.line + ')' : ''}</div>`;
+        
+        if (fix.templateChange.before) {
+          html += `<div class="ai-debug-code-before">${escapeHtml(fix.templateChange.before)}</div>`;
+        }
+        if (fix.templateChange.after) {
+          html += `<div class="ai-debug-code-after">${escapeHtml(fix.templateChange.after)}</div>`;
+        }
+        html += `</div>`;
+      }
+      
+      // Variable change
+      if (fix.variableChange && (fix.variableChange.before || fix.variableChange.after)) {
+        html += `<div class="ai-debug-code-change">
+          <div class="ai-debug-code-label">Variable Change</div>`;
+        
+        if (fix.variableChange.before) {
+          const beforeStr = typeof fix.variableChange.before === 'object' 
+            ? JSON.stringify(fix.variableChange.before, null, 2) 
+            : fix.variableChange.before;
+          html += `<div class="ai-debug-code-before">${escapeHtml(beforeStr)}</div>`;
+        }
+        if (fix.variableChange.after) {
+          const afterStr = typeof fix.variableChange.after === 'object' 
+            ? JSON.stringify(fix.variableChange.after, null, 2) 
+            : fix.variableChange.after;
+          html += `<div class="ai-debug-code-after">${escapeHtml(afterStr)}</div>`;
+        }
+        html += `</div>`;
+      }
+      
+      html += `</div></div>`;
+    });
+    
+    html += `</div>`;
+  }
+  
+  // Null Safety Tips
+  if (result.nullSafetyTips && result.nullSafetyTips.length > 0) {
+    html += `<div class="ai-debug-section">
+      <div class="ai-debug-tips">
+        <div class="ai-debug-tips-title">
+          <i class="codicon codicon-shield"></i>
+          Null Safety Tips
+        </div>
+        <ul class="ai-debug-tips-list">`;
+    
+    result.nullSafetyTips.forEach(tip => {
+      html += `<li>${escapeHtml(tip)}</li>`;
+    });
+    
+    html += `</ul></div></div>`;
+  }
+  
+  aiDebugContent.innerHTML = html;
+  aiDebugContent.classList.remove('loading', 'streaming');
+  
+  // Add click handlers for location links
+  const locationEl = aiDebugContent.querySelector('.ai-debug-location');
+  if (locationEl) {
+    locationEl.addEventListener('click', () => {
+      const line = parseInt(locationEl.dataset.line, 10);
+      if (line) {
+        vscode.postMessage({
+          type: 'goToLine',
+          line: line,
+          fileUri: currentFileUri,
+          selectionRange: currentSelectionRange,
+          selectWholeLine: true
+        });
+      }
+    });
+  }
+  
+  // Add click handlers for quick action buttons
+  const actionBtns = aiDebugContent.querySelectorAll('.ai-debug-action-btn');
+  actionBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.action;
+      const fixIndex = parseInt(btn.dataset.fixIndex, 10);
+      const line = parseInt(btn.dataset.line, 10);
+      
+      if (action === 'apply-template' && result.fixes && result.fixes[fixIndex]) {
+        const fix = result.fixes[fixIndex];
+        if (fix.templateChange && fix.templateChange.before && fix.templateChange.after) {
+          // Request the extension to apply the template fix
+          vscode.postMessage({
+            type: 'applyTemplateFix',
+            fileUri: currentFileUri,
+            before: fix.templateChange.before,
+            after: fix.templateChange.after,
+            line: fix.templateChange.line || null
+          });
+          
+          // Visual feedback
+          const originalHtml = btn.innerHTML;
+          btn.innerHTML = '<i class="codicon codicon-check"></i> Applied!';
+          btn.classList.add('success');
+          setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.classList.remove('success');
+          }, 2000);
+        }
+      } else if (action === 'apply-variables' && result.fixes && result.fixes[fixIndex]) {
+        const fix = result.fixes[fixIndex];
+        if (fix.variableChange && fix.variableChange.after) {
+          applyVariableFix(fix.variableChange.after, btn);
+        }
+      } else if (action === 'goto-line' && line) {
+        vscode.postMessage({
+          type: 'goToLine',
+          line: line,
+          fileUri: currentFileUri,
+          selectionRange: currentSelectionRange,
+          selectWholeLine: true
+        });
+      }
+    });
+  });
+}
+
+/**
+ * Apply a variable fix from AI debug
+ * @param {Object|string} newVars - New variables to apply
+ * @param {HTMLElement} btn - Button element for visual feedback
+ */
+function applyVariableFix(newVars, btn) {
+  try {
+    const varsToApply = typeof newVars === 'object' ? newVars : JSON.parse(newVars);
+    const currentVars = JSON.parse(variablesEditor.value || '{}');
+    const mergedVars = { ...currentVars, ...varsToApply };
+    variablesEditor.value = JSON.stringify(mergedVars, null, 2);
+    validateJsonAndShowError();
+    autoResizeVariablesSection();
+    debouncedGhostSave();
+    
+    // Re-render
+    if (autoRerender) {
+      update();
+    }
+    
+    // Visual feedback
+    if (btn) {
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="codicon codicon-check"></i> Applied!';
+      btn.classList.add('success');
+      setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        btn.classList.remove('success');
+      }, 2000);
+    }
+  } catch (e) {
+    console.error('Failed to apply variable fix:', e);
+  }
+}
+
+/**
+ * Escape HTML to prevent XSS
+ * @param {string} str - String to escape
+ * @returns {string} Escaped string
+ */
+function escapeHtml(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// AI Debug Button click handler
+if (aiDebugBtn) {
+  aiDebugBtn.addEventListener('click', () => {
+    if (!isAiDebugAvailable) return;
+    
+    // Show loading state
+    aiDebugBtn.classList.add('loading');
+    
+    // Show the debug panel with loading state
+    if (aiDebugPanel) {
+      aiDebugPanel.style.display = 'block';
+    }
+    if (aiDebugContent) {
+      aiDebugContent.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--vscode-descriptionForeground);"><div style="margin-bottom: 8px;">Analyzing error...</div></div>';
+      aiDebugContent.classList.add('loading');
+    }
+    
+    // Get current variables
+    let currentVars = {};
+    try {
+      currentVars = JSON.parse(variablesEditor.value || '{}');
+    } catch {
+      currentVars = {};
+    }
+    
+    // Get the best available provider
+    const provider = getBestDebugProvider();
+    
+    // Show status
+    showAIStatus(`Debugging with ${provider === 'copilot' ? 'Copilot' : provider === 'claude' ? 'Claude' : provider === 'openai' ? 'OpenAI' : 'Gemini'}...`, provider);
+    
+    // Request AI debug
+    vscode.postMessage({
+      type: 'aiDebugError',
+      errorMessage: currentErrorMessage,
+      template: currentTemplate,
+      variables: currentVars,
+      provider: provider
+    });
+  });
+}
+
+// AI Debug Close button handler
+if (aiDebugClose) {
+  aiDebugClose.addEventListener('click', () => {
+    if (aiDebugPanel) {
+      aiDebugPanel.style.display = 'none';
+    }
+  });
 }
 
 // OpenAI SVG icon for status indicators
@@ -3151,6 +3476,40 @@ async function handleMessage(message) {
     case 'geminiKeyUpdated':
       // Key was added or removed - update UI
       updateGeminiButtonVisibility(message.available);
+      break;
+    
+    case 'aiDebugStreamChunk':
+      // Streaming chunk from AI debug - show in panel
+      if (message.text !== undefined && aiDebugContent) {
+        aiDebugContent.innerHTML = `<pre style="white-space: pre-wrap; word-break: break-word; margin: 0; font-family: var(--vscode-editor-font-family); font-size: 11px; color: var(--vscode-descriptionForeground);">${escapeHtml(message.text)}</pre>`;
+        aiDebugContent.classList.add('streaming');
+        aiDebugContent.classList.remove('loading');
+      }
+      break;
+    
+    case 'aiDebugResult':
+      // AI debug analysis complete
+      const aiDebugBtnEl = document.getElementById('ai-debug-btn');
+      if (aiDebugBtnEl) {
+        aiDebugBtnEl.classList.remove('loading');
+      }
+      
+      if (message.error) {
+        // Show error in panel
+        hideAIStatus(false, message.provider || 'copilot');
+        if (aiDebugContent) {
+          aiDebugContent.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--vscode-errorForeground);">
+            <i class="codicon codicon-error" style="font-size: 24px; margin-bottom: 8px;"></i>
+            <div>Failed to analyze error</div>
+            <div style="font-size: 11px; margin-top: 4px; opacity: 0.8;">${escapeHtml(message.error)}</div>
+          </div>`;
+          aiDebugContent.classList.remove('loading', 'streaming');
+        }
+      } else if (message.result) {
+        // Show success and render result
+        hideAIStatus(true, message.provider || 'copilot');
+        renderDebugResult(message.result);
+      }
       break;
     
     case 'showVariableInspector':

@@ -1871,6 +1871,516 @@ body.detached-active .status-render-time {
   gap: 4px;
 }
 
+/* ============================================================================
+   AI DEBUG PANEL - Error Analysis and Fix Suggestions
+   ============================================================================ */
+
+/* Debug with AI Button - Appears when there's an error */
+.ai-debug-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(245, 158, 11, 0.3);
+}
+
+.ai-debug-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.5);
+}
+
+.ai-debug-btn:active {
+  transform: scale(0.98);
+}
+
+.ai-debug-btn.loading {
+  pointer-events: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-debug-btn.loading::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: debug-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes debug-shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.ai-debug-btn.loading .codicon {
+  animation: spin 1s linear infinite;
+}
+
+.ai-debug-btn .codicon {
+  font-size: 14px;
+}
+
+/* AI Debug Panel - Shows analysis results */
+.ai-debug-panel {
+  margin-top: 8px;
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-debug-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%);
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.ai-debug-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.ai-debug-title .codicon {
+  color: #f59e0b;
+  font-size: 16px;
+}
+
+.ai-debug-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--vscode-icon-foreground);
+  opacity: 0.7;
+  transition: all 0.1s ease;
+}
+
+.ai-debug-close:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+  opacity: 1;
+}
+
+.ai-debug-content {
+  padding: 12px;
+  max-height: 50vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Loading state for debug panel */
+.ai-debug-content.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.ai-debug-content.loading::before {
+  content: '';
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--vscode-panel-border);
+  border-top-color: #f59e0b;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 8px;
+}
+
+/* Error Type Badge */
+.ai-debug-error-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--vscode-inputValidation-errorBackground);
+  border: 1px solid var(--vscode-inputValidation-errorBorder);
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--vscode-errorForeground);
+  margin-bottom: 8px;
+}
+
+/* Quick Actions Bar - Top action buttons */
+.ai-debug-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  margin: -12px -12px 12px -12px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.ai-debug-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid var(--vscode-button-border);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ai-debug-action-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+  transform: translateY(-1px);
+}
+
+.ai-debug-action-btn:active {
+  transform: translateY(0);
+}
+
+.ai-debug-action-btn.primary {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
+}
+
+.ai-debug-action-btn.primary:hover {
+  box-shadow: 0 4px 8px rgba(34, 197, 94, 0.4);
+}
+
+.ai-debug-action-btn.success {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.ai-debug-action-btn .codicon {
+  font-size: 14px;
+}
+
+/* Error Location */
+.ai-debug-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--vscode-editorWidget-background);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--vscode-foreground);
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.ai-debug-location:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.ai-debug-location .codicon {
+  color: var(--vscode-textLink-foreground);
+}
+
+/* Root Cause Section */
+.ai-debug-section {
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.ai-debug-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.ai-debug-section-title .codicon {
+  font-size: 14px;
+}
+
+.ai-debug-root-cause {
+  padding: 10px;
+  background: var(--vscode-textBlockQuote-background);
+  border-left: 3px solid var(--vscode-textBlockQuote-border);
+  border-radius: 0 3px 3px 0;
+  color: var(--vscode-foreground);
+  font-style: italic;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Fix Suggestions */
+.ai-debug-fix {
+  margin-bottom: 12px;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ai-debug-fix-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--vscode-sideBarSectionHeader-background);
+  border-bottom: 1px solid var(--vscode-editorWidget-border);
+}
+
+.ai-debug-fix-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: var(--vscode-foreground);
+}
+
+.ai-debug-fix-priority {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.ai-debug-fix-priority.high {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.ai-debug-fix-priority.medium {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.ai-debug-fix-priority.low {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.ai-debug-fix-body {
+  padding: 10px;
+}
+
+.ai-debug-fix-description {
+  margin-bottom: 10px;
+  color: var(--vscode-foreground);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Code Change Display */
+.ai-debug-code-change {
+  margin-top: 8px;
+}
+
+.ai-debug-code-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--vscode-descriptionForeground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.ai-debug-code-before,
+.ai-debug-code-after {
+  padding: 8px;
+  border-radius: 3px;
+  font-family: var(--vscode-editor-font-family);
+  font-size: var(--vscode-editor-font-size);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 6px;
+}
+
+.ai-debug-code-before {
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid #ef4444;
+}
+
+.ai-debug-code-after {
+  background: rgba(34, 197, 94, 0.1);
+  border-left: 3px solid #22c55e;
+}
+
+/* Apply Fix Button Container */
+.ai-debug-apply-container {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* Apply Fix Button */
+.ai-debug-apply-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  margin-top: 8px;
+}
+
+.ai-debug-apply-btn:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.ai-debug-apply-btn .codicon {
+  font-size: 12px;
+}
+
+.ai-debug-apply-btn.template-fix {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid var(--vscode-button-border);
+}
+
+.ai-debug-apply-btn.template-fix:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* Copy button for template fixes */
+.ai-debug-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid var(--vscode-button-border);
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.ai-debug-copy-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.ai-debug-copy-btn .codicon {
+  font-size: 12px;
+}
+
+/* Null Safety Tips */
+.ai-debug-tips {
+  padding: 10px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ai-debug-tips-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #3b82f6;
+  margin-bottom: 8px;
+}
+
+.ai-debug-tips-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.ai-debug-tips-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 4px 0;
+  color: var(--vscode-foreground);
+  font-size: 11px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.ai-debug-tips-list li::before {
+  content: '💡';
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* Streaming state for debug panel */
+.ai-debug-content.streaming {
+  background: linear-gradient(
+    90deg,
+    var(--vscode-editor-background) 0%,
+    rgba(245, 158, 11, 0.05) 50%,
+    var(--vscode-editor-background) 100%
+  );
+  background-size: 200% 100%;
+  animation: streaming-bg 1.5s ease-in-out infinite;
+}
+
 /* ===== Template Dependency Graph Styles ===== */
 .dependency-graph-panel {
   position: fixed;
