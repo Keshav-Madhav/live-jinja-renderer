@@ -4,6 +4,14 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.11.2] - 2026-01-31
+
+### 🐛 Bug Fixes
+- Fixed Mermaid diagram zoom to center on mouse cursor position
+- Added more language IDs for snippet compatibility with Cursor editor
+
+---
+
 ## [1.11.1] - 2025-12-17
 
 ### 🤖 NEW - Debug with AI

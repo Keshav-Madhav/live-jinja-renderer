@@ -462,14 +462,22 @@ function makeMermaidInteractive() {
       
       // Limit zoom range
       if (newScale >= 0.3 && newScale <= 3) {
-        const rect = svg.getBoundingClientRect();
-        const offsetX = wheelEvent.clientX - rect.left;
-        const offsetY = wheelEvent.clientY - rect.top;
+        const rect = mermaidDiv.getBoundingClientRect();
+        // Get mouse position relative to the container
+        const mouseX = wheelEvent.clientX - rect.left;
+        const mouseY = wheelEvent.clientY - rect.top;
         
-        // Zoom towards mouse position
-        translateX = offsetX - (offsetX - translateX) * delta;
-        translateY = offsetY - (offsetY - translateY) * delta;
+        // Calculate the point in the untransformed coordinate space
+        // This is where the mouse is pointing in the original SVG coordinates
+        const pointX = (mouseX - translateX) / scale;
+        const pointY = (mouseY - translateY) / scale;
+        
+        // Update scale
         scale = newScale;
+        
+        // Adjust translation so that the point under the mouse stays fixed
+        translateX = mouseX - pointX * scale;
+        translateY = mouseY - pointY * scale;
         
         applyTransform();
       }

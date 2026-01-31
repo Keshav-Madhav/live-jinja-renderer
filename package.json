@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with include/extends support, markdown, mermaid diagrams, and IntelliSense",
-  "version": "1.11.1",
+  "version": "1.11.2",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -644,6 +644,26 @@
       },
       {
         "language": "jinja-html",
+        "path": "./snippets/jinja.json"
+      },
+      {
+        "language": "jinja2",
+        "path": "./snippets/jinja.json"
+      },
+      {
+        "language": "j2",
+        "path": "./snippets/jinja.json"
+      },
+      {
+        "language": "html",
+        "path": "./snippets/jinja.json"
+      },
+      {
+        "language": "django-html",
+        "path": "./snippets/jinja.json"
+      },
+      {
+        "language": "django-txt",
         "path": "./snippets/jinja.json"
       },
       {

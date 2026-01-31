@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.11.1-blue)
+![Version](https://img.shields.io/badge/version-1.11.2-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,16 +10,9 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.11.1
+## 🚀 What's New in v1.11.2
 
-### 🤖 Debug with AI
-AI-powered error analysis for Jinja2 templates! When a template error occurs, click the "Debug with AI" button to get:
-- **Root Cause Analysis**: AI identifies the exact issue in your template
-- **Fix Suggestions**: Before/after code diffs with priority indicators
-- **Null Safety Tips**: Recommendations for robust null handling
-- **Quick Actions**: Apply Fix and Go to Line buttons for instant fixes
-
-Works with GitHub Copilot, OpenAI, Claude, and Gemini!
+Bug fixes for Mermaid zoom behavior and snippet compatibility.
 
 ---
 
