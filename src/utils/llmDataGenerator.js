@@ -92,7 +92,7 @@ async function generateWithLLM(extractedVars, templateContent) {
     // Select the Copilot model
     const models = await vscode.lm.selectChatModels({ 
       vendor: 'copilot',
-      family: 'gpt-4o'
+      family: 'gpt-5.2'
     });
     
     if (!models || models.length === 0) {
@@ -145,7 +145,7 @@ async function generateWithLLMStreaming(extractedVars, templateContent, onChunk)
     // Select the Copilot model
     const models = await vscode.lm.selectChatModels({ 
       vendor: 'copilot',
-      family: 'gpt-4o'
+      family: 'gpt-5.2'
     });
     
     if (!models || models.length === 0) {
@@ -315,14 +315,14 @@ async function generateWithOpenAIStreaming(extractedVars, templateContent, onChu
   
   return new Promise((resolve, reject) => {
     const requestBody = JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.2',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
       stream: true,
       temperature: 0.7,
-      max_tokens: 2000
+      max_completion_tokens: 2000
     });
     
     const options = {
@@ -457,7 +457,7 @@ async function validateClaudeKey(apiKey) {
   
   return new Promise((resolve) => {
     const requestBody = JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-opus-4-20250514',
       max_tokens: 1,
       messages: [{ role: 'user', content: 'Hi' }]
     });
@@ -508,7 +508,7 @@ async function generateWithClaudeStreaming(extractedVars, templateContent, onChu
   
   return new Promise((resolve, reject) => {
     const requestBody = JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-opus-4-20250514',
       max_tokens: 2000,
       system: systemPrompt,
       messages: [
@@ -700,7 +700,7 @@ async function generateWithGeminiStreaming(extractedVars, templateContent, onChu
     
     const options = {
       hostname: 'generativelanguage.googleapis.com',
-      path: `/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
+      path: `/v1beta/models/gemini-2.5-pro:streamGenerateContent?alt=sse&key=${apiKey}`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -818,26 +818,47 @@ function addLineNumbers(template) {
  * @returns {{systemPrompt: string, userPrompt: string}}
  */
 function buildDebugPrompts(errorMessage, templateContent, variables) {
-  const systemPrompt = `You are an expert Jinja2 template debugger. Your task is to analyze template errors and provide clear, actionable fix recommendations.
+  const systemPrompt = `You are an expert Jinja2 template debugger specializing in identifying the TRUE ROOT CAUSE of template errors.
 
-CRITICAL: The template is shown with line numbers in the format "  N| code". Use these EXACT line numbers in your response. Count carefully - every line including blank lines has a number.
+CRITICAL RULES FOR SYNTAX ERROR ANALYSIS:
 
-Guidelines:
-- Identify the root cause of the error
-- Consider both the template syntax AND the variable data
-- Templates should ideally work with empty/null variables (null-safe handling)
-- Provide EXACT line numbers from the numbered template
-- Explain WHY the error occurred
-- Suggest defensive coding practices (like using 'default' filter, 'is defined' checks)
+1. **ALWAYS CHECK JINJA DELIMITERS FIRST** - Before analyzing ANY content, scan for:
+   - Unclosed block tags: \`{% ... \` missing \`%}\`
+   - Unclosed variable tags: \`{{ ... \` missing \`}}\`
+   - Unclosed comment tags: \`{# ... \` missing \`#}\`
+   - Missing opening/closing braces in \`{% set x = {...} %}\`
+   
+2. **DO NOT BE FOOLED BY CONTENT AFTER SYNTAX ERRORS** - When a Jinja delimiter is unclosed:
+   - Everything after it becomes "content" that looks like an error
+   - Example: \`{% set x = "value" %\` (missing \`}\`) will cause ALL subsequent text to look malformed
+   - The error message may point to text AFTER the real issue - always trace back to find unclosed delimiters
+   
+3. **COMMON MISDIAGNOSIS TO AVOID**:
+   - Text like \`**bold**\` or markdown after an unclosed tag is NOT the error - it's a symptom
+   - Random text appearing as "invalid syntax" usually means an earlier delimiter is unclosed
+   - If error says "unexpected 'X'" - look for unclosed delimiters BEFORE that point
+
+4. **DELIMITER MATCHING CHECKLIST**:
+   - Every \`{%\` must have a matching \`%}\`
+   - Every \`{{\` must have a matching \`}}\`
+   - Every \`{#\` must have a matching \`#}\`
+   - Nested braces in set statements: \`{% set x = {"key": "value"} %}\` needs proper \`}\` count
+
+5. **LINE NUMBER ACCURACY**: Template is shown as "  N| code". Use these EXACT line numbers.
 
 Response Format (MUST be valid JSON):
 {
-  "errorType": "Brief error category (e.g., 'UndefinedVariable', 'SyntaxError', 'TypeError')",
+  "errorType": "Brief error category (e.g., 'UnclosedDelimiter', 'MissingBrace', 'UndefinedVariable', 'SyntaxError', 'TypeError')",
   "errorLocation": {
-    "line": <EXACT line number from the numbered template>,
-    "description": "Brief description of where the error is"
+    "line": <EXACT line number where the ACTUAL error is - not where symptoms appear>,
+    "description": "Brief description of where the TRUE error is"
   },
-  "rootCause": "Clear explanation of why this error occurred",
+  "rootCause": "Clear explanation - distinguish between the ACTUAL syntax error vs. SYMPTOMS that appear later",
+  "syntaxAnalysis": {
+    "foundUnclosedDelimiter": true | false,
+    "delimiterType": "block_tag | variable_tag | comment_tag | brace | none",
+    "symptomVsRootCause": "Explain if error message points to a symptom rather than root cause"
+  },
   "fixes": [
     {
       "type": "template" | "variables" | "both",
@@ -845,9 +866,9 @@ Response Format (MUST be valid JSON):
       "title": "Short title for the fix",
       "description": "Detailed explanation of the fix",
       "templateChange": {
-        "before": "Original code snippet (if applicable)",
-        "after": "Fixed code snippet (if applicable)",
-        "line": <EXACT line number from the numbered template>
+        "before": "Original code snippet showing the ACTUAL broken syntax",
+        "after": "Fixed code snippet",
+        "line": <EXACT line number of the ACTUAL error>
       },
       "variableChange": {
         "before": "Original variable structure (if applicable)",
@@ -856,13 +877,15 @@ Response Format (MUST be valid JSON):
     }
   ],
   "nullSafetyTips": [
-    "Suggestions for making the template more robust against missing/null variables"
+    "Suggestions for making the template more robust"
   ]
 }
 
 IMPORTANT: 
 1. Return ONLY valid JSON, no explanation or markdown formatting.
-2. Use the EXACT line numbers shown in the template (e.g., if error is on line "11| {{ buton(...) }}", the line number is 11).`;
+2. ALWAYS identify the TRUE root cause, not symptoms that appear after an unclosed delimiter.
+3. If the error mentions random text/markdown, CHECK FOR UNCLOSED DELIMITERS FIRST.
+4. In the root cause and other explanations. Be to the point and only explain what went wrong.`;
 
   // Add line numbers to template for accurate line reference
   const numberedTemplate = addLineNumbers(templateContent);
@@ -884,14 +907,18 @@ ${numberedTemplate.substring(0, 5000)}${numberedTemplate.length > 5000 ? '\n... 
 ${JSON.stringify(variables, null, 2).substring(0, 2000)}
 \`\`\`
 
-Please analyze this error and provide fix recommendations. 
-IMPORTANT: Use the EXACT line numbers shown above (the numbers before the | character).
+Please analyze this error and provide fix recommendations.
 
-Consider:
-1. Does the template handle missing/null variables gracefully?
-2. Is there a syntax error in the template?
-3. Are the variable types correct for how they're being used?
-4. Would the template work with empty variables (null-safety)?
+CRITICAL ANALYSIS STEPS (follow in order):
+1. **FIRST**: Scan ALL Jinja delimiters for unclosed tags (\`{% %}\`, \`{{ }}\`, \`{# #}\`)
+2. **SECOND**: Check if the error message points to text AFTER an unclosed delimiter (this means the real error is earlier)
+3. **THIRD**: Only after ruling out delimiter issues, check for variable/type errors
+4. **FOURTH**: Consider null-safety improvements
+
+IMPORTANT: 
+- Use the EXACT line numbers shown above (numbers before the | character)
+- If error mentions strange text like "**text**" or random words, CHECK FOR UNCLOSED DELIMITERS BEFORE THAT LINE
+- The ROOT CAUSE is often lines BEFORE where the error appears
 
 Return ONLY the JSON response.`;
 
@@ -910,7 +937,7 @@ async function debugWithCopilotStreaming(errorMessage, templateContent, variable
   try {
     const models = await vscode.lm.selectChatModels({ 
       vendor: 'copilot',
-      family: 'gpt-4o'
+      family: 'gpt-5.2'
     });
     
     if (!models || models.length === 0) {
@@ -970,14 +997,14 @@ async function debugWithOpenAIStreaming(errorMessage, templateContent, variables
   
   return new Promise((resolve, reject) => {
     const requestBody = JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.2',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
       stream: true,
       temperature: 0.3,
-      max_tokens: 3000
+      max_completion_tokens: 4000
     });
     
     const options = {
@@ -1070,8 +1097,8 @@ async function debugWithClaudeStreaming(errorMessage, templateContent, variables
   
   return new Promise((resolve, reject) => {
     const requestBody = JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 3000,
+      model: 'claude-opus-4-20250514',
+      max_tokens: 4000,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
       stream: true
@@ -1178,7 +1205,7 @@ async function debugWithGeminiStreaming(errorMessage, templateContent, variables
     
     const options = {
       hostname: 'generativelanguage.googleapis.com',
-      path: `/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${_geminiApiKey}`,
+      path: `/v1beta/models/gemini-2.5-pro:streamGenerateContent?alt=sse&key=${_geminiApiKey}`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

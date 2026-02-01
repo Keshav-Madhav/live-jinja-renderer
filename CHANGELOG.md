@@ -4,6 +4,41 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.11.3] - 2026-02-01
+
+### 🧠 Enhanced AI Debugger - Smarter Models & Better UX
+
+#### Upgraded AI Models
+| Provider | New Model | Improvement |
+|----------|-----------|-------------|
+| OpenAI | `gpt-5.2` | OpenAI's flagship model for coding tasks |
+| Claude | `claude-opus-4.5` | Anthropic's most capable model |
+| Gemini | `gemini-2.5-pro` | Google's advanced reasoning model |
+| Copilot | `gpt-5.2` family | Latest model via VS Code LM API |
+
+#### Choose Your Debug Provider
+- **New provider selection UI**: "Debug with:" label followed by 4 provider icons
+- **Click your preferred provider**: Copilot (purple), OpenAI (green), Claude (orange), or Gemini (blue)
+- **Buttons only appear** when the provider is available (API key configured)
+
+#### Smarter Error Analysis
+- **Root cause detection**: AI now focuses on finding the TRUE root cause, not symptoms
+- **Jinja delimiter checking**: Prioritizes unclosed `{% %}`, `{{ }}`, `{# #}` detection
+- **Symptom vs root cause distinction**: Won't be fooled by content after unclosed delimiters
+- **Example**: `{% set x = "value" %` (missing `}`) - AI correctly identifies the missing brace, not the text that appears malformed after it
+
+#### Individual Fix Actions
+- **Per-fix buttons**: Each suggested fix now has its own "Apply Fix" and "Go to Line" buttons
+- **Multiple fixes supported**: If AI suggests 3 fixes, you get 3 separate cards with individual actions
+- **Removed buggy variable fix**: Variable issues now shown as informational only with "add manually" hint
+
+#### UI Improvements
+- **Scrollable debug panel**: Fixed overflow issue - debug results now properly scrollable
+- **Max height constraint**: Debug panel limited to 60vh for better usability
+- **Styled scrollbars**: Custom scrollbar styling matching VS Code theme
+
+---
+
 ## [1.11.2] - 2026-01-31
 
 ### 🐛 Bug Fixes
@@ -14,7 +49,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [1.11.1] - 2025-12-17
 
-### 🤖 NEW - Debug with AI
+### 🤖 Debug with AI (Initial Release)
 AI-powered error analysis for Jinja2 templates! When a template error occurs, click the "Debug with AI" button to get intelligent assistance.
 
 #### AI Error Analysis Features
@@ -22,18 +57,6 @@ AI-powered error analysis for Jinja2 templates! When a template error occurs, cl
 - **Fix Suggestions**: Prioritized recommendations with before/after code diffs
 - **Null Safety Tips**: Suggestions for making your template more robust with null handling
 - **Line Number Accuracy**: Template content is sent with line numbers for precise error localization
-
-#### Quick Action Buttons
-- **Apply Fix**: One-click to apply the suggested template fix directly to your editor
-- **Go to Line X**: Jump directly to the error location in your template
-
-#### Supported AI Providers
-| Button | Provider | Model |
-|--------|----------|-------|
-| Copilot | GitHub Copilot | VS Code LM API |
-| OpenAI | OpenAI | gpt-4o-mini |
-| Claude | Anthropic | claude-sonnet-4 |
-| Gemini | Google | gemini-2.0-flash |
 
 ---
 

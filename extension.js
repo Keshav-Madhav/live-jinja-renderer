@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🤖 Debug with AI - Analyze template errors with AI assistance\n• Root cause analysis, fix suggestions, null safety tips\n• Apply Fix & Go to Line quick actions`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🧠 Enhanced AI Debugger\n• Upgraded models: GPT-5.2, Claude Opus 4.5, Gemini 2.5-pro\n• Choose your debug provider (Copilot/OpenAI/Claude/Gemini)\n• Smarter root cause detection for Jinja syntax errors\n• Individual Apply Fix buttons for each suggestion`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

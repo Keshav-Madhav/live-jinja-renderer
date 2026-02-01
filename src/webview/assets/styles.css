@@ -560,7 +560,8 @@ textarea:focus {
   flex-direction: column;
   min-height: 150px; /* Reduced to allow more space for footer */
   flex: 1;
-  overflow: hidden; /* Ensure content doesn't overflow */
+  overflow-y: auto; /* Allow scrolling when debug panel is open */
+  overflow-x: hidden;
 }
 
 /* Output Container */
@@ -1875,7 +1876,105 @@ body.detached-active .status-render-time {
    AI DEBUG PANEL - Error Analysis and Fix Suggestions
    ============================================================================ */
 
-/* Debug with AI Button - Appears when there's an error */
+/* Debug with AI Container - Appears when there's an error */
+.ai-debug-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-debug-label {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  font-weight: 500;
+}
+
+.ai-debug-provider-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--vscode-button-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ai-debug-provider-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ai-debug-provider-btn .codicon {
+  font-size: 14px;
+}
+
+/* Copilot debug button */
+.copilot-debug-btn {
+  background: linear-gradient(135deg, rgba(136, 87, 229, 0.15) 0%, rgba(136, 87, 229, 0.25) 100%);
+  color: #a78bfa;
+  border-color: rgba(136, 87, 229, 0.4);
+}
+
+.copilot-debug-btn:hover {
+  background: linear-gradient(135deg, rgba(136, 87, 229, 0.25) 0%, rgba(136, 87, 229, 0.35) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(136, 87, 229, 0.3);
+}
+
+/* OpenAI debug button */
+.openai-debug-btn {
+  background: linear-gradient(135deg, rgba(16, 163, 127, 0.15) 0%, rgba(16, 163, 127, 0.25) 100%);
+  color: #10a37f;
+  border-color: rgba(16, 163, 127, 0.4);
+}
+
+.openai-debug-btn:hover {
+  background: linear-gradient(135deg, rgba(16, 163, 127, 0.25) 0%, rgba(16, 163, 127, 0.35) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(16, 163, 127, 0.3);
+}
+
+/* Claude debug button */
+.claude-debug-btn {
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.15) 0%, rgba(217, 119, 6, 0.25) 100%);
+  color: #d97706;
+  border-color: rgba(217, 119, 6, 0.4);
+}
+
+.claude-debug-btn:hover {
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.25) 0%, rgba(217, 119, 6, 0.35) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
+}
+
+/* Gemini debug button */
+.gemini-debug-btn {
+  background: linear-gradient(135deg, rgba(66, 133, 244, 0.15) 0%, rgba(66, 133, 244, 0.25) 100%);
+  color: #4285f4;
+  border-color: rgba(66, 133, 244, 0.4);
+}
+
+.gemini-debug-btn:hover {
+  background: linear-gradient(135deg, rgba(66, 133, 244, 0.25) 0%, rgba(66, 133, 244, 0.35) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(66, 133, 244, 0.3);
+}
+
+/* Loading state for debug buttons */
+.ai-debug-provider-btn.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.ai-debug-provider-btn.loading .codicon,
+.ai-debug-provider-btn.loading svg {
+  animation: spin 1s linear infinite;
+}
+
+/* Legacy single debug button - keeping for backward compatibility */
 .ai-debug-btn {
   display: inline-flex;
   align-items: center;
@@ -1947,6 +2046,10 @@ body.detached-active .status-render-time {
   border: 1px solid var(--vscode-panel-border);
   border-left: 3px solid #f59e0b;
   border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  max-height: 60vh;
   overflow: hidden;
   animation: slideDown 0.2s ease-out;
 }
@@ -1969,6 +2072,7 @@ body.detached-active .status-render-time {
   padding: 8px 12px;
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%);
   border-bottom: 1px solid var(--vscode-panel-border);
+  flex-shrink: 0;
 }
 
 .ai-debug-title {
@@ -2008,11 +2112,32 @@ body.detached-active .status-render-time {
 
 .ai-debug-content {
   padding: 12px;
-  max-height: 50vh;
+  flex: 1;
+  min-height: 0;
+  max-height: calc(60vh - 50px);
   overflow-y: auto;
   overflow-x: hidden;
   font-size: 12px;
   line-height: 1.5;
+  scrollbar-width: thin;
+  scrollbar-color: var(--vscode-scrollbarSlider-background) transparent;
+}
+
+.ai-debug-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ai-debug-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ai-debug-content::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background);
+  border-radius: 4px;
+}
+
+.ai-debug-content::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode-scrollbarSlider-hoverBackground);
 }
 
 /* Loading state for debug panel */
@@ -2215,6 +2340,16 @@ body.detached-active .status-render-time {
 
 .ai-debug-fix-body {
   padding: 10px;
+}
+
+/* Action buttons within each fix */
+.ai-debug-fix-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--vscode-panel-border);
 }
 
 .ai-debug-fix-description {

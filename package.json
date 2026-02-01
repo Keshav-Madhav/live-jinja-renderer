@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with include/extends support, markdown, mermaid diagrams, and IntelliSense",
-  "version": "1.11.2",
+  "version": "1.11.3",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -49,6 +49,43 @@
   ],
   "main": "./extension.js",
   "contributes": {
+    "configurationDefaults": {
+      "[plaintext]": {
+        "editor.quickSuggestions": {
+          "other": "on",
+          "comments": "off",
+          "strings": "off"
+        },
+        "editor.snippetSuggestions": "top"
+      }
+    },
+    "languages": [
+      {
+        "id": "jinja",
+        "aliases": ["Jinja"],
+        "extensions": [".jinja", ".j2"]
+      },
+      {
+        "id": "jinja-html",
+        "aliases": ["Jinja HTML"],
+        "extensions": [".jinja.html"]
+      },
+      {
+        "id": "jinja2",
+        "aliases": ["Jinja2"],
+        "extensions": [".jinja2"]
+      },
+      {
+        "id": "django-html",
+        "aliases": ["Django HTML"],
+        "extensions": [".django.html"]
+      },
+      {
+        "id": "django-txt",
+        "aliases": ["Django Text"],
+        "extensions": [".django.txt"]
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -266,15 +303,15 @@
       },
       {
         "id": "jinjaOpenAISubmenu",
-        "label": "OpenAI (gpt-4o-mini)"
+        "label": "OpenAI (gpt-5.2)"
       },
       {
         "id": "jinjaClaudeSubmenu",
-        "label": "Claude (claude-sonnet-4)"
+        "label": "Claude (opus-4.5)"
       },
       {
         "id": "jinjaGeminiSubmenu",
-        "label": "Gemini (flash-2.0)"
+        "label": "Gemini (2.5-pro)"
       }
     ],
     "menus": {

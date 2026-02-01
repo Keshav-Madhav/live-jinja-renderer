@@ -1,0 +1,122 @@
+
+
+<h1>{{ title }} - v{{ version }}</h1>
+
+{# Conditional rendering #}
+{% if is_production %}
+<div class="badge production">Production Mode</div>
+{% else %}
+<div class="badge development">Development Mode</div>
+{% endif %}
+
+{# Loop through features #}
+<h2>Features</h2>
+<ul>
+{% for feature in features %}
+    <li>{{ loop.index }}. {{ feature }}</li>
+{% endfor %}
+</ul>
+
+{# Loop with conditionals #}
+<h2>Team Members</h2>
+<table>
+    <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Role</th>
+        <th>Status</th>
+    </tr>
+{% for user in users %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ user.name }}</td>
+        <td>{{ user.role }}</td>
+        <td>
+            {% if user.active %}
+                <span class="status active">Active</span>
+            {% else %}
+                <span class="status inactive">Inactive</span>
+            {% endif %}
+        </td>
+    </tr>
+{% endfor %}
+</table>
+
+{# Counting with loop #}
+{% set active_count = users | selectattr("active") | list | length %}
+<p>Active users: {{ active_count }} / {{ users | length }}</p>
+
+{# Nested conditionals #}
+{% if active_count > 3 %}
+    <p class="info">Great team engagement!</p>
+{% elif active_count > 1 %}
+    <p class="warning">Moderate team activity</p>
+{% else %}
+    <p class="alert">Low team activity - check in with members</p>
+{% endif %}
+
+{# ========== Mermaid Diagram ========== #}
+
+<h2>System Architecture</h2>
+
+```mermaid
+graph TD
+    A[User] -->|Request| B(Load Balancer)
+    B --> C{Route Decision}
+    C -->|API| D[API Server]
+    C -->|Static| E[CDN]
+    D --> F[(Database)]
+    D --> G[(Cache)]
+    
+    subgraph Backend Services
+        D
+        F
+        G
+    end
+    
+    subgraph Frontend
+        E
+        H[Web App]
+    end
+    
+    E --> H
+    D -->|Response| H
+```
+
+<h2>User Flow</h2>
+
+```mermaid
+flowchart LR
+    Start([Start]) --> Login[Login Page]
+    Login --> Auth{Authenticated?}
+    Auth -->|Yes| Dashboard[Dashboard]
+    Auth -->|No| Error[Error Message]
+    Error --> Login
+    Dashboard --> Actions[User Actions]
+    Actions --> Logout[Logout]
+    Logout --> End([End])
+```
+
+<h2>Data Model</h2>
+
+```mermaid
+erDiagram
+    USER ||--o{ ORDER : places
+    USER {
+        int id PK
+        string name
+        string email
+        boolean active
+    }
+    ORDER ||--|{ ITEM : contains
+    ORDER {
+        int id PK
+        date created_at
+        string status
+    }
+    ITEM {
+        int id PK
+        string name
+        float price
+    }
+```

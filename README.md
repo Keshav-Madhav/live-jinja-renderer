@@ -10,9 +10,18 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.11.2
+## 🚀 What's New in v1.11.3
 
-Bug fixes for Mermaid zoom behavior and snippet compatibility.
+### 🧠 Enhanced AI Debugger
+Smarter AI models and better debugging experience for Jinja2 templates!
+
+- **Upgraded Models**: GPT-5.2, Claude Opus 4.5, Gemini 2.5-pro for superior error analysis
+- **Choose Your Provider**: Click the AI icon you prefer - Copilot, OpenAI, Claude, or Gemini
+- **Smarter Root Cause Detection**: AI focuses on TRUE root causes, not symptoms
+  - Prioritizes Jinja syntax errors (unclosed `{% %}`, `{{ }}`, `{# #}`)
+  - Won't be fooled by content after syntax errors
+- **Individual Fix Actions**: Each suggested fix has its own "Apply Fix" and "Go to Line" buttons
+- **Scrollable Debug Panel**: Fixed overflow issues for better usability
 
 ---
 
@@ -365,8 +374,8 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 
 ## Recent Updates
 
-### 1.11.1 - Debug with AI
-- **Debug with AI** - Analyze template errors with AI assistance (Copilot, OpenAI, Claude, Gemini)
+### 1.11.1 - Debug with AI (Initial)
+- **Debug with AI** - Initial AI-powered error analysis feature
 - **Root cause analysis** with fix suggestions and null safety tips
 - **Apply Fix & Go to Line** quick action buttons
 
@@ -375,13 +384,20 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 - Softer selection/active-line colors that respect your VS Code theme
 - Variable tree edits now live-sync to main and detached views
 
+### 1.11.3 - Enhanced AI Debugger
+- **Upgraded models** - GPT-5.2, Claude Opus 4.5, Gemini 2.5-pro
+- **Provider selection** - Choose which AI to debug with (Copilot/OpenAI/Claude/Gemini)
+- **Smarter root cause detection** - Focuses on Jinja syntax errors, not symptoms
+- **Individual fix actions** - Each fix has its own "Apply Fix" and "Go to Line" buttons
+- **Scrollable debug panel** - Fixed overflow issues
+
 ### 1.10.6 - Claude API Integration
-- **Claude button** (orange) - `claude-sonnet-4` model
+- **Claude button** (orange) - `claude-opus-4.5` model
 - **Secure storage** - keys encrypted via VS Code SecretStorage
 - **Streaming response** - real-time generation
 
 ### 1.10.5 - Gemini API Integration
-- **Gemini button** (blue) - `gemini-2.0-flash` model
+- **Gemini button** (blue) - `gemini-2.5-pro` model
 
 ### 1.10.4 - Boolean Variable Extraction Fix
 - `{% if variable %}` now correctly infers as `true` instead of `""`
