@@ -74,6 +74,11 @@ function registerRenderCommand(context, intelliSenseManager = null, sidebarProvi
       notifyDetachedPanels(fileUri, { type: 'replaceVariables', extractedVariables: variables });
   }));
   
+  // Command to notify detached panels about cursor scroll (internal use)
+  context.subscriptions.push(vscode.commands.registerCommand('live-jinja-tester.notifyDetachedScroll', (fileUri, line) => {
+      notifyDetachedPanels(fileUri, { type: 'scrollToOutputLine', line: line });
+  }));
+  
   // Command to close detached panels for a specific file (internal use)
   context.subscriptions.push(vscode.commands.registerCommand('live-jinja-tester.closeDetachedForFile', (fileUri) => {
       closeDetachedPanels(fileUri);

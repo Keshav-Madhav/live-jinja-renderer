@@ -1,12 +1,27 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.11.2-blue)
+![Version](https://img.shields.io/badge/version-1.11.4-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 A powerful VS Code extension for **real-time Jinja2 template preview** with authentic Python Jinja2 (via Pyodide). Edit templates and variables side-by-side with instant rendering, **template includes/extends**, markdown support, mermaid diagrams, intelligent whitespace management, smart error navigation, and **full IntelliSense with autocomplete**.
 
 > 🎯 **Perfect for**: Python developers, DevOps engineers, Ansible users, prompt engineering, configuration management, and anyone working with Jinja2 templates.
+
+---
+
+## 🚀 What's New in v1.11.4
+
+### 🐛 Critical Bug Fixes
+- **Fixed output window scroll**: Output scrolling now works properly (broken in v1.11.3)
+- **Fixed detached window commands**: "Update for Current File" now works with detached windows
+- **Fixed stuck loading indicators**: Variable extraction popup no longer hangs indefinitely
+
+### ✨ New Feature: Cursor-to-Output Sync
+- **Auto-scroll output**: Output window automatically scrolls to show the line at your cursor position
+- **Works everywhere**: Sidebar, panel, and detached windows all stay synchronized with your cursor
+- **Visual feedback**: Subtle highlight shows which line(s) correspond to your cursor
+- **Configurable**: Enable/disable via `Sync Cursor To Output` setting
 
 ---
 

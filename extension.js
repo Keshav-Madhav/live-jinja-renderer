@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🧠 Enhanced AI Debugger\n• Upgraded models: GPT-5.2, Claude Opus 4.5, Gemini 2.5-pro\n• Choose your debug provider (Copilot/OpenAI/Claude/Gemini)\n• Smarter root cause detection for Jinja syntax errors\n• Individual Apply Fix buttons for each suggestion`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🐛 Bug Fixes\n• Fixed output window scroll (broken in v1.11.3)\n• Fixed "Update for Current File" with detached windows\n• Fixed stuck loading indicators\n\n✨ New: Cursor-to-Output Sync\n• Output auto-scrolls to your cursor position\n• Works in sidebar, panel, and detached windows`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

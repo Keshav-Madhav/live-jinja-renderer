@@ -101,6 +101,47 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
     }
   });
   
+  // Listen for cursor/selection changes to scroll output to corresponding line
+  let scrollDebounceTimer = null;
+  const selectionChangeSubscription = vscode.window.onDidChangeTextEditorSelection(e => {
+    // Check if sync cursor to output is enabled
+    const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+    const syncCursorToOutput = config.get('rendering.syncCursorToOutput', true);
+    
+    if (!syncCursorToOutput) {
+      return;
+    }
+    
+    // Only respond if this is the editor we're tracking
+    if (e.textEditor.document.uri.toString() !== lastFileUri) {
+      return;
+    }
+    
+    // Get the primary cursor position (first selection)
+    const selection = e.selections[0];
+    if (!selection) return;
+    
+    const cursorLine = selection.active.line + 1; // Convert to 1-indexed
+    
+    // Debounce to avoid excessive scrolling during rapid cursor movements
+    if (scrollDebounceTimer) {
+      clearTimeout(scrollDebounceTimer);
+    }
+    
+    scrollDebounceTimer = setTimeout(() => {
+      const scrollMessage = {
+        type: 'scrollToOutputLine',
+        line: cursorLine
+      };
+      
+      // Send message to main webview to scroll to this line in output
+      webview.postMessage(scrollMessage);
+      
+      // Also notify detached panels for this file
+      vscode.commands.executeCommand('live-jinja-tester.notifyDetachedScroll', lastFileUri, cursorLine);
+    }, 150); // 150ms debounce
+  });
+  
   // Get current settings from VS Code configuration
   const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
   
@@ -1382,6 +1423,7 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
       changeDocumentSubscription.dispose();
       messageSubscription.dispose();
       activeEditorChangeSubscription.dispose(); // Dispose editor change listener
+      selectionChangeSubscription.dispose(); // Dispose selection change listener
       if (templateWatcher) {
         templateWatcher.dispose(); // Dispose template file watcher
       }

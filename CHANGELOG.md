@@ -4,6 +4,30 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.11.4] - 2026-02-07
+
+### 🐛 Bug Fixes
+- **Fixed output window scroll**: Output container now scrolls properly after AI debug panel was added in v1.11.3
+- **Fixed "Update for Current File" with detached windows**: Command now works correctly when output is detached
+- **Fixed loading indicator timeout**: "Extracting variables..." popup no longer stays on indefinitely
+  - Added 10-second safety timeout to prevent stuck loading indicators
+  - Applies to variable extraction, template updates, and manual re-extraction
+
+### ✨ New Feature: Cursor-to-Output Sync
+- **Auto-scroll output to cursor position**: Output window automatically scrolls to show the line corresponding to your cursor in the editor
+- **Works everywhere**: Sidebar, panel, and detached windows all stay synchronized
+- **Visual feedback**: Subtle highlight shows which line(s) match your cursor (1.5s duration)
+- **Loop-aware**: Highlights all instances if a line appears multiple times (e.g., in loops)
+- **Configurable**: New setting `liveJinjaRenderer.rendering.syncCursorToOutput` (default: enabled)
+- **Performance-optimized**: 150ms debounce prevents excessive scrolling during rapid cursor movements
+
+### 🎯 UX Improvements
+- Smooth scrolling animation when jumping to output lines
+- Extended highlight duration for better visibility during scroll
+- Better support for detached output windows across all features
+
+---
+
 ## [1.11.3] - 2026-02-01
 
 ### 🧠 Enhanced AI Debugger - Smarter Models & Better UX

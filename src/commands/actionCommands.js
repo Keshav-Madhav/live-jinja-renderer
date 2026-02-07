@@ -68,13 +68,32 @@ function registerActionCommands(context, sidebarProvider, getCurrentPanel) {
   
   // Update for Current File
   const updateForCurrentFileCommand = vscode.commands.registerCommand('live-jinja-tester.updateForCurrentFile', () => {
+    const editor = vscode.window.activeTextEditor;
+    const fileName = editor ? editor.document.fileName.split(/[/\\]/).pop() : 'current file';
+    
+    // Try sidebar first
     if (sidebarProvider && sidebarProvider.updateForCurrentFile()) {
-      const editor = vscode.window.activeTextEditor;
-      const fileName = editor ? editor.document.fileName.split(/[/\\]/).pop() : 'current file';
       vscode.window.showInformationMessage(`Updated for: ${fileName}`);
-    } else {
-      vscode.window.showWarningMessage('Jinja Renderer view is not active');
+      return;
     }
+    
+    // Try panel if sidebar didn't work
+    const currentPanel = getCurrentPanel();
+    if (currentPanel && editor) {
+      // Extract variables from the current template
+      const templateContent = editor.document.getText();
+      const extractedVars = extractVariablesFromTemplate(templateContent);
+      
+      currentPanel.webview.postMessage({ 
+        type: 'replaceVariables',
+        extractedVariables: extractedVars
+      });
+      vscode.window.showInformationMessage(`Updated for: ${fileName}`);
+      return;
+    }
+    
+    // If neither sidebar nor panel is active, show warning
+    vscode.window.showWarningMessage('Jinja Renderer view is not active');
   });
   context.subscriptions.push(updateForCurrentFileCommand);
   

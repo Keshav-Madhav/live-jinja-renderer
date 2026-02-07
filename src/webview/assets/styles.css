@@ -572,7 +572,7 @@ textarea:focus {
   border: 1px solid var(--vscode-panel-border);
   border-radius: 2px;
   background-color: var(--vscode-editor-background);
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to allow inner scroll */
   min-height: 0; /* Allow proper flex shrinking */
 }
 
