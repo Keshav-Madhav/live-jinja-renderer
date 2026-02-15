@@ -560,8 +560,7 @@ textarea:focus {
   flex-direction: column;
   min-height: 150px; /* Reduced to allow more space for footer */
   flex: 1;
-  overflow-y: auto; /* Allow scrolling when debug panel is open */
-  overflow-x: hidden;
+  overflow: hidden; /* Don't scroll the entire section — only the output container should scroll */
 }
 
 /* Output Container */
@@ -572,7 +571,7 @@ textarea:focus {
   border: 1px solid var(--vscode-panel-border);
   border-radius: 2px;
   background-color: var(--vscode-editor-background);
-  overflow: visible; /* Changed from hidden to allow inner scroll */
+  overflow: auto; /* Scroll only the output content, not the header/buttons */
   min-height: 0; /* Allow proper flex shrinking */
 }
 
@@ -655,6 +654,185 @@ textarea:focus {
 .output-row.cycle-0.line-stripe-b .output-line-number {
   background-color: rgba(128, 128, 128, 0.05);
 }
+
+/* ============================================================================
+   OUTPUT SEARCH BAR
+   ============================================================================ */
+
+.output-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  border-radius: 2px 2px 0 0;
+  flex-shrink: 0;
+  animation: searchSlideDown 0.15s ease-out;
+}
+
+@keyframes searchSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 2px;
+  padding: 2px 6px;
+  gap: 4px;
+  min-width: 0;
+}
+
+.search-input-wrapper:focus-within {
+  border-color: var(--vscode-focusBorder);
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
+.search-input-wrapper .codicon {
+  font-size: 14px;
+  color: var(--vscode-input-placeholderForeground);
+  flex-shrink: 0;
+}
+
+#output-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--vscode-input-foreground);
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
+  padding: 2px 0;
+  min-width: 0;
+}
+
+#output-search-input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+.search-match-count {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 40px;
+  text-align: right;
+}
+
+.search-match-count.no-results {
+  color: var(--vscode-inputValidation-errorForeground, #f14c4c);
+}
+
+.search-nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.search-nav-btn {
+  width: 22px;
+  height: 22px;
+}
+
+.search-close-btn {
+  width: 22px;
+  height: 22px;
+}
+
+/* Search highlight styles */
+.search-highlight {
+  background-color: var(--vscode-editor-findMatchHighlightBackground, rgba(234, 92, 0, 0.33));
+  border-radius: 1px;
+  outline: 1px solid var(--vscode-editor-findMatchHighlightBorder, transparent);
+}
+
+.search-highlight.current {
+  background-color: var(--vscode-editor-findMatchBackground, rgba(255, 150, 50, 0.55));
+  outline: 2px solid var(--vscode-editor-findMatchBorder, rgba(255, 150, 50, 0.8));
+}
+
+/* When search bar is visible, connect it to the output container */
+.output-search-bar + .output-container {
+  border-top: none;
+  border-radius: 0 0 2px 2px;
+}
+
+/* ============================================================================
+   OUTPUT SYNTAX HIGHLIGHTING - Language-aware token colors
+   ============================================================================ */
+
+/* XML / HTML tokens */
+.syntax-tag { color: var(--vscode-symbolIcon-classForeground, #569cd6); }
+.syntax-attr-name { color: var(--vscode-symbolIcon-propertyForeground, #9cdcfe); }
+.syntax-attr-value { color: var(--vscode-debugTokenExpression-string, #ce9178); }
+.syntax-comment { color: var(--vscode-descriptionForeground, #6a9955); font-style: italic; }
+.syntax-doctype { color: var(--vscode-debugTokenExpression-name, #569cd6); font-style: italic; }
+.syntax-cdata { color: var(--vscode-descriptionForeground, #808080); }
+.syntax-entity { color: var(--vscode-debugTokenExpression-number, #b5cea8); }
+
+/* JSON tokens */
+.syntax-json-key { color: var(--vscode-symbolIcon-propertyForeground, #9cdcfe); }
+.syntax-json-string { color: var(--vscode-debugTokenExpression-string, #ce9178); }
+.syntax-json-number { color: var(--vscode-debugTokenExpression-number, #b5cea8); }
+.syntax-json-boolean { color: var(--vscode-debugTokenExpression-boolean, #569cd6); font-weight: 600; }
+.syntax-json-null { color: var(--vscode-debugTokenExpression-boolean, #569cd6); font-weight: 600; }
+.syntax-json-punctuation { color: var(--vscode-foreground); opacity: 0.7; }
+
+/* YAML tokens */
+.syntax-yaml-key { color: var(--vscode-symbolIcon-propertyForeground, #9cdcfe); }
+.syntax-yaml-string { color: var(--vscode-debugTokenExpression-string, #ce9178); }
+.syntax-yaml-number { color: var(--vscode-debugTokenExpression-number, #b5cea8); }
+.syntax-yaml-boolean { color: var(--vscode-debugTokenExpression-boolean, #569cd6); font-weight: 600; }
+.syntax-yaml-null { color: var(--vscode-debugTokenExpression-boolean, #569cd6); font-weight: 600; }
+.syntax-yaml-comment { color: var(--vscode-descriptionForeground, #6a9955); font-style: italic; }
+.syntax-yaml-anchor { color: var(--vscode-symbolIcon-variableForeground, #dcdcaa); }
+.syntax-yaml-tag { color: var(--vscode-debugTokenExpression-name, #569cd6); }
+
+/* CSS tokens */
+.syntax-css-selector { color: var(--vscode-symbolIcon-classForeground, #d7ba7d); }
+.syntax-css-property { color: var(--vscode-symbolIcon-propertyForeground, #9cdcfe); }
+.syntax-css-value { color: var(--vscode-debugTokenExpression-string, #ce9178); }
+.syntax-css-comment { color: var(--vscode-descriptionForeground, #6a9955); font-style: italic; }
+.syntax-css-at-rule { color: var(--vscode-debugTokenExpression-name, #c586c0); }
+.syntax-css-unit { color: var(--vscode-debugTokenExpression-number, #b5cea8); }
+
+/* SQL tokens */
+.syntax-sql-keyword { color: var(--vscode-debugTokenExpression-name, #569cd6); font-weight: 600; }
+.syntax-sql-string { color: var(--vscode-debugTokenExpression-string, #ce9178); }
+.syntax-sql-number { color: var(--vscode-debugTokenExpression-number, #b5cea8); }
+.syntax-sql-comment { color: var(--vscode-descriptionForeground, #6a9955); font-style: italic; }
+.syntax-sql-function { color: var(--vscode-symbolIcon-methodForeground, #dcdcaa); }
+.syntax-sql-operator { color: var(--vscode-foreground); opacity: 0.8; }
+
+/* INI / TOML / Config tokens */
+.syntax-ini-section { color: var(--vscode-symbolIcon-classForeground, #569cd6); font-weight: 600; }
+.syntax-ini-key { color: var(--vscode-symbolIcon-propertyForeground, #9cdcfe); }
+.syntax-ini-value { color: var(--vscode-debugTokenExpression-string, #ce9178); }
+.syntax-ini-comment { color: var(--vscode-descriptionForeground, #6a9955); font-style: italic; }
+
+/* Markdown tokens */
+.syntax-md-heading { color: var(--vscode-symbolIcon-classForeground, #569cd6); font-weight: 600; }
+.syntax-md-bold { font-weight: 700; }
+.syntax-md-italic { font-style: italic; }
+.syntax-md-code { color: var(--vscode-debugTokenExpression-string, #ce9178); background: var(--vscode-textCodeBlock-background); padding: 0 2px; border-radius: 2px; }
+.syntax-md-link { color: var(--vscode-textLink-foreground, #3794ff); }
+.syntax-md-list-marker { color: var(--vscode-debugTokenExpression-name, #569cd6); font-weight: 600; }
+.syntax-md-blockquote { color: var(--vscode-textBlockQuote-foreground); }
+.syntax-md-hr { color: var(--vscode-descriptionForeground); }
 
 #markdown-output {
   flex: 1;
@@ -1049,6 +1227,52 @@ textarea:focus {
   text-align: center !important;
 }
 
+/* Floating search button - only visible in detached mode */
+.detached-search-btn {
+  display: none; /* Hidden by default, shown in detached mode */
+  position: absolute;
+  top: 6px;
+  right: 20px;
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--vscode-icon-foreground);
+  opacity: 0.6;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.detached-search-btn:hover {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.detached-search-btn:active {
+  opacity: 1;
+  background: var(--vscode-toolbar-activeBackground);
+}
+
+.detached-search-btn .codicon {
+  font-size: 16px;
+}
+
+body.detached-mode .detached-search-btn {
+  display: inline-flex;
+}
+
+/* Hide the floating button when the search bar is open */
+.detached-search-btn.search-active {
+  display: none !important;
+}
+
 /* Detached Mode - For the detached output window */
 body.detached-mode .variables-section,
 body.detached-mode .file-name-display,
@@ -1069,6 +1293,7 @@ body.detached-mode .output-section {
     width: 100vw !important;
     border: none !important;
     padding: 0 !important;
+    position: relative; /* For floating search button positioning */
 }
 
 body.detached-mode .container {

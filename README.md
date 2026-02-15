@@ -1,12 +1,27 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.11.4-blue)
+![Version](https://img.shields.io/badge/version-1.11.5-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 A powerful VS Code extension for **real-time Jinja2 template preview** with authentic Python Jinja2 (via Pyodide). Edit templates and variables side-by-side with instant rendering, **template includes/extends**, markdown support, mermaid diagrams, intelligent whitespace management, smart error navigation, and **full IntelliSense with autocomplete**.
 
 > 🎯 **Perfect for**: Python developers, DevOps engineers, Ansible users, prompt engineering, configuration management, and anyone working with Jinja2 templates.
+
+---
+
+## 🚀 What's New in v1.11.5
+
+### 🔍 Output Search
+- **Find in output**: Press `Ctrl+F` (`Cmd+F`) or click the search icon to search rendered output
+- **Match navigation**: Navigate with Enter / Shift+Enter, shows "3 of 12" match counter
+- **Works everywhere**: Sidebar, panel, and detached output windows
+
+### 🎨 Output Syntax Highlighting
+- **Language-aware coloring**: Output colored based on your file's language
+- **Supports**: XML, HTML, JSON, YAML, CSS, SQL, INI/TOML, Markdown
+- **Smart Jinja detection**: `config.xml.jinja` → XML colors, `email.html.j2` → HTML colors
+- **Theme-integrated**: Colors automatically match your VS Code theme
 
 ---
 
@@ -17,11 +32,9 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 - **Fixed detached window commands**: "Update for Current File" now works with detached windows
 - **Fixed stuck loading indicators**: Variable extraction popup no longer hangs indefinitely
 
-### ✨ New Feature: Cursor-to-Output Sync
+### ✨ Cursor-to-Output Sync
 - **Auto-scroll output**: Output window automatically scrolls to show the line at your cursor position
 - **Works everywhere**: Sidebar, panel, and detached windows all stay synchronized with your cursor
-- **Visual feedback**: Subtle highlight shows which line(s) correspond to your cursor
-- **Configurable**: Enable/disable via `Sync Cursor To Output` setting
 
 ---
 

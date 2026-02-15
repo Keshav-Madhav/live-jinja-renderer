@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🐛 Bug Fixes\n• Fixed output window scroll (broken in v1.11.3)\n• Fixed "Update for Current File" with detached windows\n• Fixed stuck loading indicators\n\n✨ New: Cursor-to-Output Sync\n• Output auto-scrolls to your cursor position\n• Works in sidebar, panel, and detached windows`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🔍 New: Output Search\n• Press Ctrl+F (Cmd+F) to search in output\n• Match count, next/prev navigation\n• Works in sidebar, panel, and detached windows\n\n🎨 New: Output Syntax Highlighting\n• Output colored based on file language\n• Supports XML, HTML, JSON, YAML, CSS, SQL, Markdown & more\n• Auto-detects language from Jinja file extensions`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

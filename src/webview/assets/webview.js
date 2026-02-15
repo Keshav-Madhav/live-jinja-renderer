@@ -26,9 +26,25 @@ const whitespaceIndicators = /** @type {HTMLDivElement | null} */ (document.getE
 const extensionSuggestions = /** @type {HTMLDivElement | null} */ (document.getElementById('extension-suggestions'));
 const extensionSuggestionsList = /** @type {HTMLDivElement | null} */ (document.getElementById('extension-suggestions-list'));
 
+// Output search bar elements
+const outputSearchBar = /** @type {HTMLDivElement} */ (document.getElementById('output-search-bar'));
+const outputSearchInput = /** @type {HTMLInputElement} */ (document.getElementById('output-search-input'));
+const searchMatchCount = /** @type {HTMLSpanElement} */ (document.getElementById('search-match-count'));
+const searchPrevBtn = /** @type {HTMLButtonElement} */ (document.getElementById('search-prev-btn'));
+const searchNextBtn = /** @type {HTMLButtonElement} */ (document.getElementById('search-next-btn'));
+const searchCloseBtn = /** @type {HTMLButtonElement} */ (document.getElementById('search-close-btn'));
+
 // File history management (sidebar only)
 let fileHistory = [];
 let historyEnabled = true;
+
+// Output search state
+let searchMatches = [];
+let currentSearchIndex = -1;
+let searchOriginalContents = null; // Cache of original line contents before highlighting
+
+// Language-aware syntax highlighting
+let currentLanguageId = 'plaintext';
 
 // State variables
 let lastRenderedOutput = '';
@@ -325,6 +341,435 @@ function cullWhitespaceLines(parsedLines) {
   return result;
 }
 
+/* ===== OUTPUT SEARCH FUNCTIONALITY ===== */
+
+function openOutputSearch() {
+  if (!outputSearchBar) return;
+  outputSearchBar.style.display = 'flex';
+  outputSearchInput.focus();
+  outputSearchInput.select();
+  // Hide the floating detached search button when search bar is open
+  const detachedBtn = document.getElementById('detached-search-btn');
+  if (detachedBtn) detachedBtn.classList.add('search-active');
+  // If there's already a search term, re-run the search
+  if (outputSearchInput.value) {
+    performOutputSearch();
+  }
+}
+
+function closeOutputSearch() {
+  if (!outputSearchBar) return;
+  outputSearchBar.style.display = 'none';
+  outputSearchInput.value = '';
+  searchMatchCount.textContent = '';
+  searchMatchCount.classList.remove('no-results');
+  clearSearchHighlights();
+  searchMatches = [];
+  currentSearchIndex = -1;
+  // Show the floating detached search button again
+  const detachedBtn = document.getElementById('detached-search-btn');
+  if (detachedBtn) detachedBtn.classList.remove('search-active');
+}
+
+function clearSearchHighlights() {
+  const highlights = outputDisplay.querySelectorAll('.search-highlight');
+  highlights.forEach(el => {
+    const parent = el.parentNode;
+    if (parent) {
+      parent.replaceChild(document.createTextNode(el.textContent || ''), el);
+      parent.normalize(); // Merge adjacent text nodes
+    }
+  });
+}
+
+function performOutputSearch() {
+  const query = outputSearchInput.value;
+  clearSearchHighlights();
+  searchMatches = [];
+  currentSearchIndex = -1;
+
+  if (!query) {
+    searchMatchCount.textContent = '';
+    searchMatchCount.classList.remove('no-results');
+    return;
+  }
+
+  // Walk through all .output-line-content elements and find text matches
+  const lineContents = outputDisplay.querySelectorAll('.output-line-content');
+  const queryLower = query.toLowerCase();
+
+  lineContents.forEach(lineEl => {
+    highlightTextInElement(lineEl, query, queryLower);
+  });
+
+  // Also search markdown output if visible
+  if (markdownOutput && markdownOutput.style.display !== 'none') {
+    highlightTextInElement(markdownOutput, query, queryLower);
+  }
+
+  // Collect all highlights
+  searchMatches = Array.from(outputDisplay.querySelectorAll('.search-highlight'));
+  if (markdownOutput && markdownOutput.style.display !== 'none') {
+    searchMatches = searchMatches.concat(Array.from(markdownOutput.querySelectorAll('.search-highlight')));
+  }
+
+  if (searchMatches.length > 0) {
+    currentSearchIndex = 0;
+    searchMatches[0].classList.add('current');
+    searchMatches[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    searchMatchCount.textContent = `1 of ${searchMatches.length}`;
+    searchMatchCount.classList.remove('no-results');
+  } else {
+    searchMatchCount.textContent = 'No results';
+    searchMatchCount.classList.add('no-results');
+  }
+}
+
+function highlightTextInElement(element, query, queryLower) {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
+  const textNodes = [];
+  let node;
+  while ((node = walker.nextNode())) {
+    // Skip text inside whitespace-char spans (they are visual-only)
+    if (node.parentElement && node.parentElement.classList.contains('whitespace-char')) continue;
+    textNodes.push(node);
+  }
+
+  // Process in reverse to not invalidate positions
+  for (let i = textNodes.length - 1; i >= 0; i--) {
+    const textNode = textNodes[i];
+    const text = textNode.textContent || '';
+    const textLower = text.toLowerCase();
+    
+    // Find all matches in this text node
+    const matches = [];
+    let searchFrom = 0;
+    while (searchFrom < textLower.length) {
+      const idx = textLower.indexOf(queryLower, searchFrom);
+      if (idx === -1) break;
+      matches.push(idx);
+      searchFrom = idx + queryLower.length;
+    }
+
+    if (matches.length === 0) continue;
+
+    // Split the text node into parts with highlights
+    const fragment = document.createDocumentFragment();
+    let lastEnd = 0;
+
+    for (const matchIdx of matches) {
+      // Text before match
+      if (matchIdx > lastEnd) {
+        fragment.appendChild(document.createTextNode(text.substring(lastEnd, matchIdx)));
+      }
+      // The match
+      const span = document.createElement('span');
+      span.className = 'search-highlight';
+      span.textContent = text.substring(matchIdx, matchIdx + query.length);
+      fragment.appendChild(span);
+      lastEnd = matchIdx + query.length;
+    }
+
+    // Remaining text
+    if (lastEnd < text.length) {
+      fragment.appendChild(document.createTextNode(text.substring(lastEnd)));
+    }
+
+    textNode.parentNode.replaceChild(fragment, textNode);
+  }
+}
+
+function navigateSearchMatch(direction) {
+  if (searchMatches.length === 0) return;
+
+  // Remove current highlight
+  if (currentSearchIndex >= 0 && currentSearchIndex < searchMatches.length) {
+    searchMatches[currentSearchIndex].classList.remove('current');
+  }
+
+  // Move index
+  currentSearchIndex += direction;
+  if (currentSearchIndex >= searchMatches.length) currentSearchIndex = 0;
+  if (currentSearchIndex < 0) currentSearchIndex = searchMatches.length - 1;
+
+  // Apply current highlight and scroll
+  searchMatches[currentSearchIndex].classList.add('current');
+  searchMatches[currentSearchIndex].scrollIntoView({ block: 'center', behavior: 'smooth' });
+  searchMatchCount.textContent = `${currentSearchIndex + 1} of ${searchMatches.length}`;
+}
+
+// Wire up search bar events
+if (outputSearchInput) {
+  let searchDebounce = null;
+  outputSearchInput.addEventListener('input', () => {
+    if (searchDebounce) clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => performOutputSearch(), 150);
+  });
+
+  outputSearchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        navigateSearchMatch(-1);
+      } else {
+        navigateSearchMatch(1);
+      }
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeOutputSearch();
+    }
+  });
+}
+
+if (searchPrevBtn) {
+  searchPrevBtn.addEventListener('click', () => navigateSearchMatch(-1));
+}
+
+if (searchNextBtn) {
+  searchNextBtn.addEventListener('click', () => navigateSearchMatch(1));
+}
+
+if (searchCloseBtn) {
+  searchCloseBtn.addEventListener('click', () => closeOutputSearch());
+}
+
+// Search output button in header (for sidebar/panel mode)
+const searchOutputBtn = document.getElementById('search-output-btn');
+if (searchOutputBtn) {
+  searchOutputBtn.addEventListener('click', () => openOutputSearch());
+}
+
+// Floating search button (for detached mode)
+const detachedSearchBtn = document.getElementById('detached-search-btn');
+if (detachedSearchBtn) {
+  detachedSearchBtn.addEventListener('click', () => openOutputSearch());
+}
+
+// Ctrl+F / Cmd+F to open search
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    e.preventDefault();
+    e.stopPropagation();
+    openOutputSearch();
+  }
+});
+
+/* ===== SYNTAX HIGHLIGHTING FOR OUTPUT ===== */
+
+/**
+ * Resolve the output language from the editor's languageId and file URI.
+ * For Jinja/Django template files, infer the output language from the filename.
+ * E.g., "config.xml.jinja" → "xml", "page.html.j2" → "html", "data.json.jinja2" → "json"
+ */
+function resolveOutputLanguage(languageId, fileUri) {
+  const jinjaLangs = ['jinja', 'jinja-html', 'django-html', 'django-txt'];
+  
+  if (!jinjaLangs.includes(languageId)) {
+    return languageId; // Not a Jinja file — use the language as-is
+  }
+  
+  // Try to extract the "inner" extension from the filename
+  // E.g., "template.xml.jinja" → "xml", "email.html.j2" → "html"
+  try {
+    const fileName = decodeURIComponent(fileUri.split('/').pop() || '');
+    // Remove the Jinja extension
+    const withoutJinja = fileName.replace(/\.(jinja2?|j2|django)$/i, '');
+    // Get the remaining extension
+    const extMatch = withoutJinja.match(/\.(\w+)$/);
+    if (extMatch) {
+      const ext = extMatch[1].toLowerCase();
+      const extToLang = {
+        'html': 'html', 'htm': 'html', 'xhtml': 'html',
+        'xml': 'xml', 'svg': 'xml', 'xsl': 'xml', 'xslt': 'xml', 'rss': 'xml', 'atom': 'xml',
+        'json': 'json', 'jsonl': 'json',
+        'yaml': 'yaml', 'yml': 'yaml',
+        'css': 'css', 'scss': 'scss', 'less': 'less',
+        'sql': 'sql',
+        'ini': 'ini', 'toml': 'toml', 'conf': 'ini', 'cfg': 'ini', 'properties': 'ini',
+        'md': 'markdown', 'markdown': 'markdown',
+        'txt': 'plaintext'
+      };
+      return extToLang[ext] || ext;
+    }
+  } catch {
+    // Ignore parsing errors
+  }
+  
+  // Default: jinja-html likely outputs HTML
+  if (languageId === 'jinja-html' || languageId === 'django-html') {
+    return 'html';
+  }
+  
+  return 'plaintext';
+}
+
+/**
+ * Apply language-aware syntax highlighting to escaped HTML text.
+ * The input text is already HTML-escaped (& < > " ' replaced).
+ * We wrap tokens in <span class="syntax-*"> tags.
+ */
+function applySyntaxHighlighting(escapedText, languageId) {
+  if (!languageId || languageId === 'plaintext' || languageId === 'jinja' || languageId === 'jinja-html') {
+    return escapedText;
+  }
+
+  const lang = languageId.toLowerCase();
+
+  // XML / HTML
+  if (lang === 'xml' || lang === 'html' || lang === 'xhtml' || lang === 'svg' || lang === 'xsl' || lang === 'xslt') {
+    return highlightXmlHtml(escapedText);
+  }
+
+  // JSON
+  if (lang === 'json' || lang === 'jsonc' || lang === 'jsonl') {
+    return highlightJson(escapedText);
+  }
+
+  // YAML
+  if (lang === 'yaml' || lang === 'yml') {
+    return highlightYaml(escapedText);
+  }
+
+  // CSS / SCSS / LESS
+  if (lang === 'css' || lang === 'scss' || lang === 'less') {
+    return highlightCss(escapedText);
+  }
+
+  // SQL
+  if (lang === 'sql' || lang === 'mysql' || lang === 'pgsql' || lang === 'plsql' || lang === 'sqlite') {
+    return highlightSql(escapedText);
+  }
+
+  // INI / TOML / Properties
+  if (lang === 'ini' || lang === 'toml' || lang === 'properties' || lang === 'conf' || lang === 'cfg') {
+    return highlightIni(escapedText);
+  }
+
+  // Markdown
+  if (lang === 'markdown' || lang === 'md') {
+    return highlightMarkdown(escapedText);
+  }
+
+  return escapedText;
+}
+
+function highlightXmlHtml(text) {
+  // Comments: &lt;!-- ... --&gt;
+  text = text.replace(/(&lt;!--)([\s\S]*?)(--&gt;)/g, '<span class="syntax-comment">$1$2$3</span>');
+  // DOCTYPE
+  text = text.replace(/(&lt;!DOCTYPE\b)([\s\S]*?)(&gt;)/gi, '<span class="syntax-doctype">$1$2$3</span>');
+  // CDATA
+  text = text.replace(/(&lt;!\[CDATA\[)([\s\S]*?)(\]\]&gt;)/g, '<span class="syntax-cdata">$1$2$3</span>');
+  // Self-closing and opening tags with attributes
+  text = text.replace(/(&lt;\/?)([\w:.-]+)((?:\s+[\s\S]*?)?)(\/?&gt;)/g, (match, open, tagName, attrs, close) => {
+    let highlightedAttrs = attrs;
+    if (attrs) {
+      // Highlight attribute name="value" pairs
+      highlightedAttrs = attrs.replace(/([\w:.-]+)(=)(&quot;[^&]*?&quot;|&#039;[^&]*?&#039;|\S+)/g, 
+        '<span class="syntax-attr-name">$1</span>$2<span class="syntax-attr-value">$3</span>');
+    }
+    return `<span class="syntax-tag">${open}${tagName}</span>${highlightedAttrs}<span class="syntax-tag">${close}</span>`;
+  });
+  // HTML entities
+  text = text.replace(/(&amp;[\w#]+;)/g, '<span class="syntax-entity">$1</span>');
+  return text;
+}
+
+function highlightJson(text) {
+  // String values (after colon)
+  text = text.replace(/(:[\s]*)(&quot;(?:[^&]|&(?!quot;))*?&quot;)/g, '$1<span class="syntax-json-string">$2</span>');
+  // Keys (before colon) - quoted strings followed by :
+  text = text.replace(/(&quot;(?:[^&]|&(?!quot;))*?&quot;)([\s]*:)/g, '<span class="syntax-json-key">$1</span>$2');
+  // Remaining standalone strings (in arrays)
+  text = text.replace(/(?<=[\[,\s])(&quot;(?:[^&]|&(?!quot;))*?&quot;)(?=[\s,\]\}]|$)/g, '<span class="syntax-json-string">$1</span>');
+  // Numbers
+  text = text.replace(/(?<=[\s:,\[])(-?\d+\.?\d*(?:[eE][+-]?\d+)?)(?=[\s,\]\}]|$)/g, '<span class="syntax-json-number">$1</span>');
+  // Booleans
+  text = text.replace(/\b(true|false)\b/g, '<span class="syntax-json-boolean">$1</span>');
+  // Null
+  text = text.replace(/\b(null)\b/g, '<span class="syntax-json-null">$1</span>');
+  return text;
+}
+
+function highlightYaml(text) {
+  // Comments
+  text = text.replace(/(#.*)$/g, '<span class="syntax-yaml-comment">$1</span>');
+  // Anchors & aliases
+  text = text.replace(/([&*]\w+)/g, '<span class="syntax-yaml-anchor">$1</span>');
+  // Tags
+  text = text.replace(/(!!?\w+)/g, '<span class="syntax-yaml-tag">$1</span>');
+  // Key-value pairs
+  text = text.replace(/^(\s*)([\w][\w\s.-]*)(:)/gm, '$1<span class="syntax-yaml-key">$2</span>$3');
+  // Quoted strings
+  text = text.replace(/(&quot;(?:[^&]|&(?!quot;))*?&quot;)/g, '<span class="syntax-yaml-string">$1</span>');
+  text = text.replace(/(&#039;(?:[^&]|&(?!#039;))*?&#039;)/g, '<span class="syntax-yaml-string">$1</span>');
+  // Booleans
+  text = text.replace(/(?<=:\s+)(true|false|yes|no|on|off)(?=\s*$)/gim, '<span class="syntax-yaml-boolean">$1</span>');
+  // Null
+  text = text.replace(/(?<=:\s+)(null|~)(?=\s*$)/gim, '<span class="syntax-yaml-null">$1</span>');
+  // Numbers
+  text = text.replace(/(?<=:\s+)(-?\d+\.?\d*(?:[eE][+-]?\d+)?)(?=\s*$)/gm, '<span class="syntax-yaml-number">$1</span>');
+  return text;
+}
+
+function highlightCss(text) {
+  // Comments
+  text = text.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="syntax-css-comment">$1</span>');
+  // @rules
+  text = text.replace(/(@[\w-]+)/g, '<span class="syntax-css-at-rule">$1</span>');
+  // Properties (word followed by :)
+  text = text.replace(/([\w-]+)(\s*:)(?!:)/g, '<span class="syntax-css-property">$1</span>$2');
+  // Units
+  text = text.replace(/(\d+)(px|em|rem|vh|vw|%|pt|cm|mm|in|pc|ex|ch|vmin|vmax|fr|deg|rad|grad|turn|s|ms|Hz|kHz|dpi|dpcm|dppx)/g, 
+    '<span class="syntax-css-unit">$1$2</span>');
+  return text;
+}
+
+function highlightSql(text) {
+  // Comments
+  text = text.replace(/(--.*$)/gm, '<span class="syntax-sql-comment">$1</span>');
+  // Strings
+  text = text.replace(/(&#039;(?:[^&]|&(?!#039;))*?&#039;)/g, '<span class="syntax-sql-string">$1</span>');
+  // Numbers
+  text = text.replace(/\b(\d+\.?\d*)\b/g, '<span class="syntax-sql-number">$1</span>');
+  // Keywords
+  const sqlKeywords = /\b(SELECT|FROM|WHERE|INSERT|INTO|UPDATE|SET|DELETE|CREATE|ALTER|DROP|TABLE|INDEX|VIEW|JOIN|INNER|LEFT|RIGHT|OUTER|CROSS|ON|AND|OR|NOT|IN|IS|NULL|LIKE|BETWEEN|EXISTS|HAVING|GROUP|BY|ORDER|ASC|DESC|LIMIT|OFFSET|UNION|ALL|DISTINCT|AS|CASE|WHEN|THEN|ELSE|END|BEGIN|COMMIT|ROLLBACK|GRANT|REVOKE|IF|PRIMARY|KEY|FOREIGN|REFERENCES|CONSTRAINT|DEFAULT|VALUES|COUNT|SUM|AVG|MIN|MAX|CAST|COALESCE|NULLIF|WITH|RECURSIVE)\b/gi;
+  text = text.replace(sqlKeywords, '<span class="syntax-sql-keyword">$1</span>');
+  return text;
+}
+
+function highlightIni(text) {
+  // Comments
+  text = text.replace(/^(\s*[;#].*)$/gm, '<span class="syntax-ini-comment">$1</span>');
+  // Sections [section]
+  text = text.replace(/^(\s*\[.*?\]\s*)$/gm, '<span class="syntax-ini-section">$1</span>');
+  // Key = value
+  text = text.replace(/^(\s*[\w.-]+)(\s*=\s*)(.*?)$/gm, '<span class="syntax-ini-key">$1</span>$2<span class="syntax-ini-value">$3</span>');
+  return text;
+}
+
+function highlightMarkdown(text) {
+  // Headings
+  text = text.replace(/^(#{1,6}\s+.*)$/gm, '<span class="syntax-md-heading">$1</span>');
+  // Horizontal rules
+  text = text.replace(/^([-*_]{3,}\s*)$/gm, '<span class="syntax-md-hr">$1</span>');
+  // Inline code
+  text = text.replace(/(`[^`]+`)/g, '<span class="syntax-md-code">$1</span>');
+  // Bold
+  text = text.replace(/(\*\*[^*]+\*\*|__[^_]+__)/g, '<span class="syntax-md-bold">$1</span>');
+  // Italic
+  text = text.replace(/(\*[^*]+\*|_[^_]+_)/g, '<span class="syntax-md-italic">$1</span>');
+  // Links [text](url)
+  text = text.replace(/(\[[^\]]+\]\([^)]+\))/g, '<span class="syntax-md-link">$1</span>');
+  // List markers
+  text = text.replace(/^(\s*[-*+]\s)/gm, '<span class="syntax-md-list-marker">$1</span>');
+  text = text.replace(/^(\s*\d+\.\s)/gm, '<span class="syntax-md-list-marker">$1</span>');
+  // Blockquote
+  text = text.replace(/^(&gt;\s*.*)$/gm, '<span class="syntax-md-blockquote">$1</span>');
+  return text;
+}
+
 function renderWhitespace(text) {
   const parsedLines = parseOutputWithMarkers(text);
   
@@ -346,14 +791,21 @@ function renderWhitespace(text) {
   let stripeToggle = false;
   
   for (let i = 0; i < finalLines.length; i++) {
+    // Step 1: HTML-escape the raw text
     let lineContent = finalLines[i].text
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
-      .replace(/ /g, '<span class="whitespace-char space"> </span>')
-      .replace(/\t/g, '<span class="whitespace-char tab">\t</span>');
+      .replace(/'/g, '&#039;');
+    
+    // Step 2: Apply syntax highlighting (before whitespace spans)
+    lineContent = applySyntaxHighlighting(lineContent, currentLanguageId);
+    
+    // Step 3: Replace whitespace with visible spans (only outside existing HTML tags)
+    lineContent = lineContent
+      .replace(/ (?![^<]*>)/g, '<span class="whitespace-char space"> </span>')
+      .replace(/\t(?![^<]*>)/g, '<span class="whitespace-char tab">\t</span>');
       
     // If line is empty, ensure it has height
     if (lineContent === '') lineContent = '<span class="whitespace-char space"> </span>';
@@ -1609,6 +2061,11 @@ result
     outputDisplay.classList.add('error');
     outputDisplay.style.display = 'block';
     markdownOutput.style.display = 'none';
+  }
+  
+  // Re-apply search highlights if search bar is active
+  if (outputSearchBar && outputSearchBar.style.display !== 'none' && outputSearchInput.value) {
+    setTimeout(() => performOutputSearch(), 50);
   }
 }
 
@@ -2933,6 +3390,12 @@ async function handleMessage(message) {
       currentTemplate = message.template;
       currentFileUri = message.fileUri || '';
       currentSelectionRange = message.selectionRange || null;
+      
+      // Update language ID for syntax highlighting
+      // For Jinja files, try to infer output language from filename (e.g., template.xml.jinja → xml)
+      if (message.languageId) {
+        currentLanguageId = resolveOutputLanguage(message.languageId, message.fileUri || '');
+      }
       
       updateFileNameDisplay(currentFileUri, currentSelectionRange);
       

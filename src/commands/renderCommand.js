@@ -110,6 +110,7 @@ function registerRenderCommand(context, intelliSenseManager = null, sidebarProvi
           vscode.ViewColumn.Beside,
           {
               enableScripts: true,
+              enableFindWidget: false, // Disable VS Code's built-in find so Ctrl+F reaches our custom search
               localResourceRoots: [vscode.Uri.file(context.extensionPath)]
           }
       );
@@ -219,7 +220,8 @@ function registerRenderCommand(context, intelliSenseManager = null, sidebarProvi
       `Render: ${fileName}${titleSuffix}`, // Title with optional line range
       vscode.ViewColumn.Beside, // Open in a new tab to the side
       {
-        enableScripts: true // Allow JavaScript to run in the webview
+        enableScripts: true, // Allow JavaScript to run in the webview
+        enableFindWidget: false // Disable VS Code's built-in find so Ctrl+F reaches our custom search
       }
     );
     

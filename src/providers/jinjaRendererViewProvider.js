@@ -242,7 +242,8 @@ class JinjaRendererViewProvider {
           extractedVariables: extractedVars,
           ghostVariables: ghostVars,
           fileUri: historyItem.fileUri,
-          selectionRange: historyItem.selectionRange
+          selectionRange: historyItem.selectionRange,
+          languageId: editor.document.languageId
         });
       }, 50);
       

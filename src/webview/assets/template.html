@@ -95,6 +95,9 @@
             <div class="header-group">
                 <h2>Output</h2>
                 <div class="header-actions">
+                    <button class="icon-button" id="search-output-btn" title="Search Output (Ctrl+F)">
+                        <i class="codicon codicon-search"></i>
+                    </button>
                     <button class="icon-button" id="detach-output-btn" title="Detach Output Window">
                         <i class="codicon codicon-link-external"></i>
                     </button>
@@ -127,6 +130,27 @@
                 <span id="extensions-list"></span>
             </div>
             {{PANEL_CONTROLS}}
+            <button class="detached-search-btn" id="detached-search-btn" title="Search Output (Ctrl+F)">
+                <i class="codicon codicon-search"></i>
+            </button>
+            <div class="output-search-bar" id="output-search-bar" style="display: none;">
+                <div class="search-input-wrapper">
+                    <i class="codicon codicon-search"></i>
+                    <input type="text" id="output-search-input" placeholder="Find in output..." autocomplete="off" spellcheck="false">
+                    <span class="search-match-count" id="search-match-count"></span>
+                </div>
+                <div class="search-nav-buttons">
+                    <button class="icon-button search-nav-btn" id="search-prev-btn" title="Previous Match (Shift+Enter)">
+                        <i class="codicon codicon-chevron-up"></i>
+                    </button>
+                    <button class="icon-button search-nav-btn" id="search-next-btn" title="Next Match (Enter)">
+                        <i class="codicon codicon-chevron-down"></i>
+                    </button>
+                    <button class="icon-button search-close-btn" id="search-close-btn" title="Close (Escape)">
+                        <i class="codicon codicon-close"></i>
+                    </button>
+                </div>
+            </div>
             <div class="output-container" id="output-container">
                 <pre id="output"></pre>
                 <div id="markdown-output" style="display: none;"></div>

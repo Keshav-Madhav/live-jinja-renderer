@@ -4,6 +4,26 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.11.5] - 2026-02-15
+
+### 🔍 New Feature: Output Search
+- **Live match count**: Shows "3 of 12" style match counter as you type
+- **Highlight matches**: All matches highlighted with current match emphasized (uses VS Code theme colors)
+- **Auto-refresh**: Search results automatically update after each re-render
+- **Works everywhere**: Sidebar, panel, and detached output windows
+
+### 🎨 New Feature: Output Syntax Highlighting
+- **Language-aware coloring**: Output is syntax-highlighted based on the active editor's language
+- **Supported languages**: XML, HTML, SVG, JSON, YAML, CSS/SCSS/LESS, SQL, INI/TOML, Markdown
+- **Smart Jinja detection**: For Jinja files, infers output language from filename (e.g., `config.xml.jinja` → XML highlighting, `email.html.j2` → HTML highlighting)
+- **Theme-integrated**: All token colors use VS Code CSS variables to match your current theme
+- **Zero config**: Works automatically — just open a Jinja template and the output colors match
+
+### 🐛 Bug Fixes
+- **Fixed output scroll header**: Header and buttons no longer scroll away with the output content
+
+---
+
 ## [1.11.4] - 2026-02-07
 
 ### 🐛 Bug Fixes

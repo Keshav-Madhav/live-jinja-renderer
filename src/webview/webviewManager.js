@@ -428,7 +428,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
         type: 'updateTemplate',
         template: lastTemplate,
         fileUri: lastFileUri,
-        selectionRange: lastSelectionRange
+        selectionRange: lastSelectionRange,
+        languageId: e.document.languageId
       });
     }
   });
@@ -470,7 +471,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
               extractedVariables: extractedVars,
               ghostVariables: ghostVars,
               fileUri: lastFileUri,
-              selectionRange: lastSelectionRange
+              selectionRange: lastSelectionRange,
+              languageId: editor.document.languageId
             });
             // Only mark as no longer initial load if not forced
             // This allows repeated force refreshes to work
@@ -483,7 +485,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
               type: 'updateTemplate',
               template: lastTemplate,
               fileUri: lastFileUri,
-              selectionRange: lastSelectionRange
+              selectionRange: lastSelectionRange,
+              languageId: editor.document.languageId
             });
           }
           return;
