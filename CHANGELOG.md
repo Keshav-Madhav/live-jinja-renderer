@@ -4,6 +4,27 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [Unreleased]
+
+---
+
+## [1.11.6] - 2026-02-21
+
+### ⌨️ Standard Editor Shortcuts
+- `Ctrl+/` / `Cmd+/` toggles Jinja block comments `{# ... #}`
+- Auto-indent/dedent and code folding for Jinja blocks (`if`, `for`, `block`, `set`, etc.)
+
+### 🎨 Enhanced Syntax Highlighting
+- **TextMate grammar** for native VS Code theme integration
+- **Context-aware tokens**: methods (`.get()`), properties (`.name`), filters (`| default`), tests (`is defined`), operators, and keywords each get distinct colors
+
+### 🛠️ Autocomplete Settings
+- Respects `editor.quickSuggestions` and `editor.suggestOnTriggerCharacters`
+- New setting: `liveJinjaRenderer.intellisense.enableAutocompletion`
+- Removed forced autocomplete defaults for plaintext files
+
+---
+
 ## [1.11.5] - 2026-02-15
 
 ### 🔍 New Feature: Output Search

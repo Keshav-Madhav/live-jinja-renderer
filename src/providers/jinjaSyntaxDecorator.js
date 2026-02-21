@@ -8,6 +8,7 @@ class JinjaSyntaxDecorator {
     this.decorationTypes = this.createDecorationTypes();
     this.activeEditor = vscode.window.activeTextEditor;
     this.timeout = null;
+    this.lastUpdateTime = 0;
   }
 
   createDecorationTypes() {
@@ -31,14 +32,13 @@ class JinjaSyntaxDecorator {
         color: new vscode.ThemeColor('debugTokenExpression.name')
       }),
       function: vscode.window.createTextEditorDecorationType({
-        color: '#DCDCAA',  // Yellow-gold for macros/user functions
-        fontWeight: '500'
+        color: '#DCDCAA'
       }),
       method: vscode.window.createTextEditorDecorationType({
-        color: '#C586C0',  // Purple for built-in methods (like VS Code class/interface color)
+        color: '#C586C0'
       }),
       filter: vscode.window.createTextEditorDecorationType({
-        color: '#C586C0',  // Purple like VS Code keywords/special functions
+        color: '#C586C0',
         fontWeight: '500'
       }),
       comment: vscode.window.createTextEditorDecorationType({
@@ -50,6 +50,20 @@ class JinjaSyntaxDecorator {
       }),
       builtin: vscode.window.createTextEditorDecorationType({
         color: new vscode.ThemeColor('symbolIcon.classForeground')
+      }),
+      test: vscode.window.createTextEditorDecorationType({
+        color: '#4EC9B0',
+        fontStyle: 'italic'
+      }),
+      pipe: vscode.window.createTextEditorDecorationType({
+        color: new vscode.ThemeColor('editorBracketHighlight.foreground3')
+      }),
+      property: vscode.window.createTextEditorDecorationType({
+        color: '#9CDCFE',
+        fontStyle: 'italic'
+      }),
+      bracket: vscode.window.createTextEditorDecorationType({
+        color: new vscode.ThemeColor('editorBracketHighlight.foreground2')
       })
     };
   }
@@ -96,7 +110,11 @@ class JinjaSyntaxDecorator {
       comment: [],
       boolean: [],
       builtin: [],
-      method: []
+      method: [],
+      test: [],
+      pipe: [],
+      property: [],
+      bracket: []
     };
 
     const keywords = new Set([
@@ -124,18 +142,6 @@ class JinjaSyntaxDecorator {
       'sort', 'string', 'striptags', 'sum', 'title', 'tojson', 'trim', 'truncate',
       'unique', 'upper', 'urlencode', 'urlize', 'wordcount', 'wordwrap', 'xmlattr',
       'range', 'lipsum', 'dict', 'cycler', 'joiner', 'namespace'
-    ]);
-
-    // Common Python/Jinja methods for lists, strings, dicts, etc.
-    const methods = new Set([
-      'append', 'extend', 'insert', 'remove', 'pop', 'clear', 'index', 'count',
-      'copy', 'split', 'rsplit', 'strip', 'lstrip', 'rstrip', 'startswith', 
-      'endswith', 'find', 'rfind', 'upper', 'lower', 'capitalize', 'title',
-      'swapcase', 'isdigit', 'isalpha', 'isalnum', 'isspace', 'isupper', 'islower',
-      'ljust', 'rjust', 'center', 'zfill', 'format', 'encode', 'decode',
-      'keys', 'values', 'items', 'get', 'update', 'setdefault', 'fromkeys',
-      'sort', 'sorted', 'reverse', 'reversed', 'min', 'max', 'sum', 'len',
-      'enumerate', 'zip', 'filter', 'map', 'reduce', 'any', 'all'
     ]);
 
     const booleans = new Set(['true', 'false', 'True', 'False', 'none', 'None']);
@@ -184,16 +190,18 @@ class JinjaSyntaxDecorator {
         decorations,
         keywords,
         builtins,
-        booleans,
-        methods
+        booleans
       );
     }
 
     return decorations;
   }
 
-  tokenizeContent(content, baseOffset, fullText, decorations, keywords, builtins, booleans, methods) {
+  tokenizeContent(content, baseOffset, fullText, decorations, keywords, builtins, booleans) {
     let i = 0;
+    let afterPipe = false;
+    let afterIs = false;
+    let afterDot = false;
 
     while (i < content.length) {
       const char = content[i];
@@ -224,6 +232,9 @@ class JinjaSyntaxDecorator {
           )
         });
         i = stringEnd;
+        afterPipe = false;
+        afterIs = false;
+        afterDot = false;
         continue;
       }
 
@@ -240,13 +251,61 @@ class JinjaSyntaxDecorator {
           )
         });
         i = numEnd;
+        afterPipe = false;
+        afterIs = false;
+        afterDot = false;
+        continue;
+      }
+
+      // Brackets and parentheses
+      if (/[\[\]()]/.test(char)) {
+        decorations.bracket.push({
+          range: new vscode.Range(
+            this.getPosition(fullText, baseOffset + i),
+            this.getPosition(fullText, baseOffset + i + 1)
+          )
+        });
+        i++;
+        afterPipe = false;
+        afterIs = false;
+        afterDot = false;
+        continue;
+      }
+
+      // Dot for property access
+      if (char === '.') {
+        decorations.operator.push({
+          range: new vscode.Range(
+            this.getPosition(fullText, baseOffset + i),
+            this.getPosition(fullText, baseOffset + i + 1)
+          )
+        });
+        i++;
+        afterDot = true;
+        afterPipe = false;
+        afterIs = false;
+        continue;
+      }
+
+      // Pipe for filters
+      if (char === '|') {
+        decorations.pipe.push({
+          range: new vscode.Range(
+            this.getPosition(fullText, baseOffset + i),
+            this.getPosition(fullText, baseOffset + i + 1)
+          )
+        });
+        i++;
+        afterPipe = true;
+        afterIs = false;
+        afterDot = false;
         continue;
       }
 
       // Operators
-      if (/[+\-*/%=!<>|&~^]/.test(char)) {
+      if (/[+\-*/%=!<>&~^]/.test(char)) {
         let opEnd = i + 1;
-        if (opEnd < content.length && /[=<>|&]/.test(content[opEnd])) {
+        if (opEnd < content.length && /[=<>&*/]/.test(content[opEnd])) {
           opEnd++;
         }
         decorations.operator.push({
@@ -256,18 +315,9 @@ class JinjaSyntaxDecorator {
           )
         });
         i = opEnd;
-        continue;
-      }
-
-      // Pipe for filters
-      if (char === '|') {
-        decorations.filter.push({
-          range: new vscode.Range(
-            this.getPosition(fullText, baseOffset + i),
-            this.getPosition(fullText, baseOffset + i + 1)
-          )
-        });
-        i++;
+        afterPipe = false;
+        afterIs = false;
+        afterDot = false;
         continue;
       }
 
@@ -289,14 +339,33 @@ class JinjaSyntaxDecorator {
         const end = this.getPosition(fullText, baseOffset + identEnd);
         const range = new vscode.Range(start, end);
 
-        if (keywords.has(lowerIdent)) {
+        if (afterPipe) {
+          decorations.filter.push({ range });
+          afterPipe = false;
+        } else if (afterIs) {
+          if (lowerIdent === 'not') {
+            decorations.keyword.push({ range });
+          } else {
+            decorations.test.push({ range });
+            afterIs = false;
+          }
+        } else if (afterDot) {
+          if (isFunction) {
+            decorations.method.push({ range });
+          } else {
+            decorations.property.push({ range });
+          }
+          afterDot = false;
+        } else if (keywords.has(lowerIdent)) {
           decorations.keyword.push({ range });
+          // Check if this is 'is' keyword
+          if (lowerIdent === 'is') {
+            afterIs = true;
+          }
         } else if (booleans.has(ident)) {
           decorations.boolean.push({ range });
         } else if (builtins.has(lowerIdent)) {
           decorations.builtin.push({ range });
-        } else if (methods.has(lowerIdent)) {
-          decorations.method.push({ range });
         } else if (isFunction) {
           decorations.function.push({ range });
         } else {
@@ -307,8 +376,11 @@ class JinjaSyntaxDecorator {
         continue;
       }
 
-      // Skip other characters
+      // Skip other characters (commas, colons, etc.)
       i++;
+      afterPipe = false;
+      afterIs = false;
+      afterDot = false;
     }
   }
 
@@ -344,10 +416,23 @@ class JinjaSyntaxDecorator {
       clearTimeout(this.timeout);
       this.timeout = null;
     }
-    if (throttle) {
-      this.timeout = setTimeout(() => this.updateDecorations(), 200);
-    } else {
+    if (!throttle) {
       this.updateDecorations();
+      this.lastUpdateTime = Date.now();
+      return;
+    }
+
+    const now = Date.now();
+    const elapsed = now - this.lastUpdateTime;
+
+    if (elapsed >= 150) {
+      this.updateDecorations();
+      this.lastUpdateTime = now;
+    } else {
+      this.timeout = setTimeout(() => {
+        this.updateDecorations();
+        this.lastUpdateTime = Date.now();
+      }, 100);
     }
   }
 

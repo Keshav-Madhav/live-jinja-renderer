@@ -113,6 +113,35 @@ class JinjaCompletionProvider {
    * @returns {boolean}
    */
   shouldProvideCompletions(document) {
+    // First, check if the extension's autocomplete setting is enabled
+    const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+    const autocompletionEnabled = config.get('intellisense.enableAutocompletion', true);
+    
+    if (!autocompletionEnabled) {
+      return false;
+    }
+
+    // Check VSCode's editor-level autocomplete settings (scoped to the document's language)
+    const editorConfig = vscode.workspace.getConfiguration('editor', document.uri);
+    const quickSuggestions = editorConfig.get('quickSuggestions');
+    const suggestOnTriggerCharacters = editorConfig.get('suggestOnTriggerCharacters', true);
+    
+    // quickSuggestions can be boolean false or an object with "on"/"off"/"inline"/true/false per category
+    if (quickSuggestions === false || quickSuggestions === 'off') {
+      return false;
+    }
+    
+    if (typeof quickSuggestions === 'object' && quickSuggestions !== null) {
+      const other = quickSuggestions.other;
+      if (other === false || other === 'off') {
+        return false;
+      }
+    }
+    
+    if (!suggestOnTriggerCharacters) {
+      return false;
+    }
+
     const fileName = document.fileName.toLowerCase();
     const langId = document.languageId;
     
@@ -126,7 +155,6 @@ class JinjaCompletionProvider {
     
     // For text files, check the setting
     if (fileName.endsWith('.txt') || langId === 'plaintext') {
-      const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
       return config.get('general.enableForTextFiles', true);
     }
     

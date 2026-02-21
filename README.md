@@ -1,12 +1,26 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.11.5-blue)
+![Version](https://img.shields.io/badge/version-1.11.6-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 A powerful VS Code extension for **real-time Jinja2 template preview** with authentic Python Jinja2 (via Pyodide). Edit templates and variables side-by-side with instant rendering, **template includes/extends**, markdown support, mermaid diagrams, intelligent whitespace management, smart error navigation, and **full IntelliSense with autocomplete**.
 
 > 🎯 **Perfect for**: Python developers, DevOps engineers, Ansible users, prompt engineering, configuration management, and anyone working with Jinja2 templates.
+
+---
+
+## 🚀 What's New in v1.11.6
+
+### ⌨️ Standard Editor Shortcuts
+- `Ctrl+/` / `Cmd+/` toggles Jinja block comments, auto-indent/dedent and code folding for Jinja blocks
+
+### 🎨 Enhanced Syntax Highlighting
+- **TextMate grammar** — colors adapt to your VS Code theme
+- **Context-aware**: methods, properties, filters, tests, operators, and keywords each get distinct colors
+
+### 🛠️ Autocomplete Settings
+- Respects VS Code's `editor.quickSuggestions` setting; new toggle: `liveJinjaRenderer.intellisense.enableAutocompletion`
 
 ---
 
@@ -57,8 +71,9 @@ Smarter AI models and better debugging experience for Jinja2 templates!
 
 ### 🎨 **Syntax Highlighting**
 - **Editor Highlighting**: Real-time Jinja2 syntax highlighting in your text editor
-  - Highlights delimiters, keywords, variables, strings, numbers, filters, and comments
-  - Works automatically with `.jinja`, `.j2`, and `.txt` files
+  - Context-aware: keywords, variables, filters, tests, methods, properties, strings, numbers, operators, and comments each get distinct colors
+  - TextMate grammar for native theme integration — colors adapt to your VS Code theme
+  - Works automatically with `.jinja`, `.j2`, `.jinja2`, and `.txt` files
 - **Template Preview**: Syntax-highlighted template display in sidebar/panel
 
 ### 💡 **Full IntelliSense System**
@@ -402,22 +417,37 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 
 ## Recent Updates
 
+### 1.11.6 - Editor Shortcuts & Syntax Highlighting
+- **Comment toggling** (`Ctrl+/`), smart indentation, and code folding for Jinja blocks
+- **TextMate grammar** for native VS Code theme integration
+- **Context-aware highlighting** — methods, properties, filters, tests each get distinct colors
+- **Autocomplete settings** — respects `editor.quickSuggestions`, new toggle setting
+
+### 1.11.5 - Output Search & Syntax Highlighting
+- **Output search** — `Ctrl+F` / `Cmd+F` with live match count ("3 of 12") and navigation
+- **Language-aware output coloring** — XML, HTML, JSON, YAML, CSS, SQL, INI/TOML, Markdown
+- **Smart Jinja detection** — `config.xml.jinja` → XML colors, `email.html.j2` → HTML colors
+- Auto-refresh search results after each re-render
+
+### 1.11.4 - Cursor-to-Output Sync & Bug Fixes
+- **Auto-scroll output** to match cursor position in editor
+- **Works everywhere** — Sidebar, panel, and detached windows stay synchronized
+- Fixed output scroll, detached window commands, and stuck loading indicators
+
+### 1.11.3 - Enhanced AI Debugger
+- **Upgraded models** — GPT-5.2, Claude Opus 4.5, Gemini 2.5-pro
+- **Provider selection** — Choose which AI to debug with (Copilot/OpenAI/Claude/Gemini)
+- **Smarter root cause detection** — Focuses on Jinja syntax errors, not symptoms
+- **Individual fix actions** — Each fix has its own "Apply Fix" and "Go to Line" buttons
+
 ### 1.11.1 - Debug with AI (Initial)
-- **Debug with AI** - Initial AI-powered error analysis feature
-- **Root cause analysis** with fix suggestions and null safety tips
+- **Debug with AI** — AI-powered error analysis with root cause detection
 - **Apply Fix & Go to Line** quick action buttons
+- Fix suggestions and null safety tips
 
 ### 1.11.0 - JSON Editor Upgrade
 - CodeMirror-powered JSON editor with syntax highlighting, matching brackets, active-line
-- Softer selection/active-line colors that respect your VS Code theme
-- Variable tree edits now live-sync to main and detached views
-
-### 1.11.3 - Enhanced AI Debugger
-- **Upgraded models** - GPT-5.2, Claude Opus 4.5, Gemini 2.5-pro
-- **Provider selection** - Choose which AI to debug with (Copilot/OpenAI/Claude/Gemini)
-- **Smarter root cause detection** - Focuses on Jinja syntax errors, not symptoms
-- **Individual fix actions** - Each fix has its own "Apply Fix" and "Go to Line" buttons
-- **Scrollable debug panel** - Fixed overflow issues
+- Variable tree edits live-sync to main and detached views
 
 ### 1.10.6 - Claude API Integration
 - **Claude button** (orange) - `claude-opus-4.5` model

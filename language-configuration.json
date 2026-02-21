@@ -1,6 +1,6 @@
 {
   "comments": {
-    "blockComment": ["{#", "#}"]
+    "blockComment": ["{# ", " #}"]
   },
   "brackets": [
     ["{%", "%}"],
@@ -11,14 +11,14 @@
     ["(", ")"]
   ],
   "autoClosingPairs": [
-    { "open": "{%", "close": "%}" },
-    { "open": "{{", "close": "}}" },
+    { "open": "{%", "close": "%}", "notIn": ["string", "comment"] },
+    { "open": "{{", "close": "}}", "notIn": ["string", "comment"] },
     { "open": "{#", "close": "#}" },
-    { "open": "{", "close": "}" },
-    { "open": "[", "close": "]" },
-    { "open": "(", "close": ")" },
-    { "open": "\"", "close": "\"", "notIn": ["string"] },
-    { "open": "'", "close": "'", "notIn": ["string"] }
+    { "open": "{", "close": "}", "notIn": ["string", "comment"] },
+    { "open": "[", "close": "]", "notIn": ["string", "comment"] },
+    { "open": "(", "close": ")", "notIn": ["string", "comment"] },
+    { "open": "\"", "close": "\"", "notIn": ["string", "comment"] },
+    { "open": "'", "close": "'", "notIn": ["string", "comment"] }
   ],
   "surroundingPairs": [
     ["{%", "%}"],
@@ -32,8 +32,33 @@
   ],
   "folding": {
     "markers": {
-      "start": "^\\s*\\{%-?\\s*(block|for|if|macro|call|filter|with)\\b",
-      "end": "^\\s*\\{%-?\\s*end(block|for|if|macro|call|filter|with)\\b"
+      "start": "^\\s*\\{%-?\\s*(block|for|if|macro|call|filter|with|autoescape|trans|set)\\b",
+      "end": "^\\s*\\{%-?\\s*end(block|for|if|macro|call|filter|with|autoescape|trans|set)\\b"
     }
-  }
+  },
+  "wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\#\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>\\/\\?\\s]+)",
+  "indentationRules": {
+    "increaseIndentPattern": "^\\s*\\{%-?\\s*(block|for|if|elif|else|macro|call|filter|with|autoescape|trans|set)\\b",
+    "decreaseIndentPattern": "^\\s*\\{%-?\\s*(elif|else|end(block|for|if|macro|call|filter|with|autoescape|trans|set))\\b"
+  },
+  "onEnterRules": [
+    {
+      "beforeText": "^\\s*\\{%-?\\s*(block|for|if|macro|call|filter|with|autoescape|trans|set)\\b.*$",
+      "action": {
+        "indent": "indent"
+      }
+    },
+    {
+      "beforeText": "^\\s*\\{%-?\\s*elif\\b.*$",
+      "action": {
+        "indent": "indent"
+      }
+    },
+    {
+      "beforeText": "^\\s*\\{%-?\\s*else\\b.*$",
+      "action": {
+        "indent": "indent"
+      }
+    }
+  ]
 }

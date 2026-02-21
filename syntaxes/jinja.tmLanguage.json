@@ -1,0 +1,190 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Jinja",
+  "scopeName": "source.jinja",
+  "patterns": [
+    { "include": "#jinja-comment" },
+    { "include": "#jinja-statement" },
+    { "include": "#jinja-expression" }
+  ],
+  "repository": {
+    "jinja-comment": {
+      "name": "comment.block.jinja",
+      "begin": "\\{#-?",
+      "end": "-?#\\}"
+    },
+    "jinja-statement": {
+      "name": "meta.embedded.block.jinja",
+      "begin": "\\{%-?",
+      "end": "-?%\\}",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.tag.begin.jinja" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.tag.end.jinja" }
+      },
+      "patterns": [
+        { "include": "#jinja-statement-content" }
+      ]
+    },
+    "jinja-expression": {
+      "name": "meta.embedded.expression.jinja",
+      "begin": "\\{\\{-?",
+      "end": "-?\\}\\}",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.tag.begin.jinja" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.tag.end.jinja" }
+      },
+      "patterns": [
+        { "include": "#jinja-expression-content" }
+      ]
+    },
+    "jinja-statement-content": {
+      "patterns": [
+        { "include": "#jinja-keywords" },
+        { "include": "#jinja-operators" },
+        { "include": "#jinja-strings" },
+        { "include": "#jinja-numbers" },
+        { "include": "#jinja-booleans" },
+        { "include": "#jinja-filters" },
+        { "include": "#jinja-tests" },
+        { "include": "#jinja-builtins" },
+        { "include": "#jinja-functions" },
+        { "include": "#jinja-properties" },
+        { "include": "#jinja-variables" }
+      ]
+    },
+    "jinja-expression-content": {
+      "patterns": [
+        { "include": "#jinja-operators" },
+        { "include": "#jinja-strings" },
+        { "include": "#jinja-numbers" },
+        { "include": "#jinja-booleans" },
+        { "include": "#jinja-filters" },
+        { "include": "#jinja-tests" },
+        { "include": "#jinja-builtins" },
+        { "include": "#jinja-functions" },
+        { "include": "#jinja-properties" },
+        { "include": "#jinja-keywords-expression" },
+        { "include": "#jinja-variables" }
+      ]
+    },
+    "jinja-keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.jinja",
+          "match": "\\b(if|elif|else|endif|for|endfor|in|block|endblock|extends|include|import|from|macro|endmacro|call|endcall|filter|endfilter|set|endset|with|endwith|autoescape|endautoescape|trans|endtrans|pluralize|do|break|continue|scoped|recursive|ignore|missing|as)\\b"
+        },
+        {
+          "name": "keyword.operator.logical.jinja",
+          "match": "\\b(not|and|or|is)\\b"
+        }
+      ]
+    },
+    "jinja-keywords-expression": {
+      "patterns": [
+        {
+          "name": "keyword.operator.logical.jinja",
+          "match": "\\b(not|and|or|is)\\b"
+        }
+      ]
+    },
+    "jinja-operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.comparison.jinja",
+          "match": "==|!=|<=|>=|<|>"
+        },
+        {
+          "name": "keyword.operator.assignment.jinja",
+          "match": "=(?!=)"
+        },
+        {
+          "name": "keyword.operator.arithmetic.jinja",
+          "match": "\\*\\*|[+\\-*/%~]"
+        },
+        {
+          "name": "keyword.operator.pipe.jinja",
+          "match": "\\|"
+        },
+        {
+          "name": "punctuation.accessor.jinja",
+          "match": "\\."
+        },
+        {
+          "name": "punctuation.separator.jinja",
+          "match": "[,:]"
+        },
+        {
+          "name": "punctuation.bracket.jinja",
+          "match": "[\\[\\]()]"
+        }
+      ]
+    },
+    "jinja-strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.jinja",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.jinja",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.jinja",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.jinja",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "jinja-numbers": {
+      "name": "constant.numeric.jinja",
+      "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+    },
+    "jinja-booleans": {
+      "name": "constant.language.boolean.jinja",
+      "match": "\\b(true|false|True|False|none|None)\\b"
+    },
+    "jinja-filters": {
+      "match": "(?<=\\|)(\\s*)(abs|attr|batch|capitalize|center|default|d|dictsort|escape|e|filesizeformat|first|float|forceescape|format|groupby|indent|int|join|last|length|list|lower|map|max|min|pprint|random|reject|rejectattr|replace|reverse|round|safe|select|selectattr|slice|sort|string|striptags|sum|title|tojson|trim|truncate|unique|upper|urlencode|urlize|wordcount|wordwrap|xmlattr)\\b",
+      "captures": {
+        "2": { "name": "support.function.builtin.jinja" }
+      }
+    },
+    "jinja-tests": {
+      "match": "(?<=\\bis\\s)(not\\s+)?(boolean|callable|defined|divisibleby|eq|equalto|escaped|even|false|filter|float|ge|gt|in|integer|iterable|le|lower|lt|mapping|ne|none|number|odd|sameas|sequence|string|test|true|undefined|upper)\\b",
+      "captures": {
+        "1": { "name": "keyword.operator.logical.jinja" },
+        "2": { "name": "entity.name.type.jinja" }
+      }
+    },
+    "jinja-builtins": {
+      "name": "support.class.jinja",
+      "match": "\\b(range|lipsum|dict|cycler|joiner|namespace)\\b"
+    },
+    "jinja-functions": {
+      "name": "entity.name.function.jinja",
+      "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)(?=\\s*\\()"
+    },
+    "jinja-properties": {
+      "name": "variable.other.property.jinja",
+      "match": "(?<=\\.)([a-zA-Z_][a-zA-Z0-9_]*)"
+    },
+    "jinja-variables": {
+      "name": "variable.other.readwrite.jinja",
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+    }
+  }
+}

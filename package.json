@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with include/extends support, markdown, mermaid diagrams, and IntelliSense",
-  "version": "1.11.5",
+  "version": "1.11.6",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -49,31 +49,24 @@
   ],
   "main": "./extension.js",
   "contributes": {
-    "configurationDefaults": {
-      "[plaintext]": {
-        "editor.quickSuggestions": {
-          "other": "on",
-          "comments": "off",
-          "strings": "off"
-        },
-        "editor.snippetSuggestions": "top"
-      }
-    },
     "languages": [
       {
         "id": "jinja",
         "aliases": ["Jinja"],
-        "extensions": [".jinja", ".j2"]
+        "extensions": [".jinja", ".j2"],
+        "configuration": "./language-configuration.json"
       },
       {
         "id": "jinja-html",
         "aliases": ["Jinja HTML"],
-        "extensions": [".jinja.html"]
+        "extensions": [".jinja.html"],
+        "configuration": "./language-configuration.json"
       },
       {
         "id": "jinja2",
         "aliases": ["Jinja2"],
-        "extensions": [".jinja2"]
+        "extensions": [".jinja2"],
+        "configuration": "./language-configuration.json"
       },
       {
         "id": "django-html",
@@ -84,6 +77,23 @@
         "id": "django-txt",
         "aliases": ["Django Text"],
         "extensions": [".django.txt"]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "jinja",
+        "scopeName": "source.jinja",
+        "path": "./syntaxes/jinja.tmLanguage.json"
+      },
+      {
+        "language": "jinja-html",
+        "scopeName": "source.jinja",
+        "path": "./syntaxes/jinja.tmLanguage.json"
+      },
+      {
+        "language": "jinja2",
+        "scopeName": "source.jinja",
+        "path": "./syntaxes/jinja.tmLanguage.json"
       }
     ],
     "viewsContainers": {
@@ -838,6 +848,12 @@
           "default": true,
           "description": "Enable Live Jinja Renderer for .txt and plain text files. Disable this if you use text files for non-Jinja purposes and find the extension intrusive.",
           "order": 0
+        },
+        "liveJinjaRenderer.intellisense.enableAutocompletion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable autocomplete/IntelliSense suggestions for Jinja templates. When disabled, the extension will not provide any autocomplete suggestions. This respects VSCode's global autocomplete settings.",
+          "order": 0.5
         },
         "liveJinjaRenderer.highlighting.enableForTextFiles": {
           "type": "boolean",
