@@ -23,24 +23,29 @@ function registerActionCommands(context, sidebarProvider, getCurrentPanel) {
     
     // Extract variables from the current template
     const templateContent = editor.document.getText();
-    const extractedVars = extractVariablesFromTemplate(templateContent);
-    
+    let extractedVars = null;
+    try {
+      extractedVars = extractVariablesFromTemplate(templateContent);
+    } catch (err) {
+      console.error('Variable extraction failed:', err);
+    }
+
     // Send to sidebar if visible
     if (sidebarProvider && sidebarProvider._view && sidebarProvider._view.visible) {
-      sidebarProvider._view.webview.postMessage({ 
+      sidebarProvider._view.webview.postMessage({
         type: 'replaceVariables',
         extractedVariables: extractedVars
       });
       vscode.window.showInformationMessage('Variables extracted from template');
-    } 
+    }
     // Send to panel if active
     else if (currentPanel) {
-      currentPanel.webview.postMessage({ 
+      currentPanel.webview.postMessage({
         type: 'replaceVariables',
         extractedVariables: extractedVars
       });
       vscode.window.showInformationMessage('Variables extracted from template');
-    } 
+    }
     else {
       vscode.window.showWarningMessage('Jinja Renderer view is not active');
     }
@@ -82,9 +87,14 @@ function registerActionCommands(context, sidebarProvider, getCurrentPanel) {
     if (currentPanel && editor) {
       // Extract variables from the current template
       const templateContent = editor.document.getText();
-      const extractedVars = extractVariablesFromTemplate(templateContent);
-      
-      currentPanel.webview.postMessage({ 
+      let extractedVars = null;
+      try {
+        extractedVars = extractVariablesFromTemplate(templateContent);
+      } catch (err) {
+        console.error('Variable extraction failed:', err);
+      }
+
+      currentPanel.webview.postMessage({
         type: 'replaceVariables',
         extractedVariables: extractedVars
       });

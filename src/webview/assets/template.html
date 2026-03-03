@@ -20,6 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/matchbrackets.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/closebrackets.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/selection/active-line.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/search/searchcursor.min.js"></script>
 
     <!-- VS Code Codicons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.35/dist/codicon.css">
@@ -65,19 +66,32 @@
                                 <path d="M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z" fill="currentColor"/>
                             </svg>
                         </button>
-                        <button class="icon-button" id="save-variables-btn" title="Save / Export Variables">
-                            <i class="codicon codicon-save"></i>
-                        </button>
-                        <button class="icon-button" id="load-variables-btn" title="Load / Import Variables">
-                            <i class="codicon codicon-folder-opened"></i>
-                        </button>
-                        <button class="icon-button" id="show-inspector-btn" title="Open Variable Inspector">
+                        <span class="header-divider"></span>
+                        <button class="ai-generate-btn inspector-btn" id="show-inspector-btn" title="Open Variable Inspector">
                             <i class="codicon codicon-symbol-variable"></i>
                         </button>
-                        <button class="icon-button" id="show-graph-btn" title="Show Template Dependency Graph">
+                        <button class="ai-generate-btn graph-btn" id="show-graph-btn" title="Show Template Dependency Graph">
                             <i class="codicon codicon-graph"></i>
                         </button>
                     </div>
+                </div>
+            </div>
+            <div class="variables-search-bar" id="variables-search-bar" style="display: none;">
+                <div class="search-input-wrapper">
+                    <i class="codicon codicon-search"></i>
+                    <input type="text" id="variables-search-input" placeholder="Find in variables..." autocomplete="off" spellcheck="false">
+                    <span class="search-match-count" id="variables-search-match-count"></span>
+                </div>
+                <div class="search-nav-buttons">
+                    <button class="icon-button search-nav-btn" id="variables-search-prev-btn" title="Previous Match (Shift+Enter)">
+                        <i class="codicon codicon-chevron-up"></i>
+                    </button>
+                    <button class="icon-button search-nav-btn" id="variables-search-next-btn" title="Next Match (Enter)">
+                        <i class="codicon codicon-chevron-down"></i>
+                    </button>
+                    <button class="icon-button search-close-btn" id="variables-search-close-btn" title="Close (Escape)">
+                        <i class="codicon codicon-close"></i>
+                    </button>
                 </div>
             </div>
             <textarea id="variables">{

@@ -4,7 +4,19 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [1.11.7] - 2026-03-03
+
+### 🔧 Critical Bug Fix
+- **Fixed large template crash**: Complex/long Jinja templates (500+ lines) no longer break the extension — caused by `setNestedPath` failing when a short variable path set a leaf value that a deeper path tried to traverse through
+- **Graceful error handling**: All `extractVariablesFromTemplate()` calls are now wrapped in try/catch so a variable extraction failure no longer kills the entire webview
+
+### 🔍 Variables Search
+- **Find in variables**: Press `Ctrl+F` / `Cmd+F` while the variables editor is focused to search within your JSON variables
+- **Match highlighting**: All matches highlighted in the CodeMirror editor with current match emphasized
+- **Match navigation**: Navigate with Enter / Shift+Enter, shows "3 of 12" match counter
+
+### 📋 Copy Output Fix
+- **Line numbers no longer copied**: Copy Output now extracts text only from line content elements, excluding line numbers
 
 ---
 

@@ -221,13 +221,18 @@ class JinjaRendererViewProvider {
         }
         
         // Extract variables
-        const extractedVars = extractVariablesFromTemplate(templateContent);
-        
+        let extractedVars = null;
+        try {
+          extractedVars = extractVariablesFromTemplate(templateContent);
+        } catch (err) {
+          console.error('Variable extraction failed:', err);
+        }
+
         // Update IntelliSense providers with extracted variables
         if (this._intelliSenseManager && extractedVars) {
           this._intelliSenseManager.updateVariables(extractedVars);
         }
-        
+
         // Load ghost variables for this context
         const ghostVariables = this._context.workspaceState.get('jinjaGhostVariables', {});
         const ghostKey = historyItem.selectionRange
@@ -504,8 +509,13 @@ class JinjaRendererViewProvider {
         setTimeout(() => {
           if (this._view && this._view.webview && editor && editor.document) {
             // Extract variables directly
-            const extractedVars = extractVariablesFromTemplate(templateContent);
-            
+            let extractedVars = null;
+            try {
+              extractedVars = extractVariablesFromTemplate(templateContent);
+            } catch (err) {
+              console.error('Variable extraction failed:', err);
+            }
+
             // Update IntelliSense providers with extracted variables
             if (this._intelliSenseManager && extractedVars) {
               this._intelliSenseManager.updateVariables(extractedVars);

@@ -243,6 +243,121 @@ function findStringEnd(template, startPos, quote) {
 }
 
 // ============================================================================
+// BALANCED BRACKET HELPERS
+// ============================================================================
+
+/**
+ * Find the balanced closing bracket starting from a position after an opening '('.
+ * Handles nested (), {}, [] and respects string literals.
+ *
+ * @param {string} str - The string to scan
+ * @param {number} startPos - Position right after the opening '('
+ * @returns {number} - Position of the matching ')' or -1 if not found
+ */
+function findBalancedClose(str, startPos) {
+  let depth = 1;
+  let pos = startPos;
+  const len = str.length;
+
+  while (pos < len && depth > 0) {
+    const ch = str[pos];
+
+    // Skip string literals
+    if (ch === '"' || ch === "'") {
+      const endStr = findStringEnd(str, pos + 1, ch);
+      if (endStr === -1) return -1;
+      pos = endStr + 1;
+      continue;
+    }
+
+    if (ch === '(' || ch === '{' || ch === '[') {
+      depth++;
+    } else if (ch === ')' || ch === '}' || ch === ']') {
+      depth--;
+      if (depth === 0) return pos;
+    }
+    pos++;
+  }
+
+  return -1;
+}
+
+/**
+ * Find method calls in a string, properly handling nested brackets.
+ * Yields {objectPath, methodName, args, matchStart, matchEnd} for each method call found.
+ *
+ * @param {string} str - The expression string to scan
+ * @returns {Array<{objectPath: string, methodName: string, args: string, matchStart: number, matchEnd: number}>}
+ */
+function findMethodCalls(str) {
+  const results = [];
+  // Match: identifier(.identifier)* . identifier (
+  // We scan for the pattern and then use balanced bracket matching for the args
+  const methodStartPattern = /([a-zA-Z_][a-zA-Z0-9_]*(?:\s*\.\s*[a-zA-Z_][a-zA-Z0-9_]*)*)\s*\.\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g;
+
+  let match;
+  while ((match = methodStartPattern.exec(str)) !== null) {
+    const openParenPos = match.index + match[0].length - 1; // position of '('
+    const closeParenPos = findBalancedClose(str, openParenPos + 1);
+
+    if (closeParenPos === -1) continue; // unbalanced, skip
+
+    const args = str.slice(openParenPos + 1, closeParenPos);
+    results.push({
+      objectPath: match[1].replace(/\s+/g, ''),
+      methodName: match[2],
+      args,
+      matchStart: match.index,
+      matchEnd: closeParenPos + 1
+    });
+
+    // Advance the regex past this match to avoid partial re-matches
+    methodStartPattern.lastIndex = closeParenPos + 1;
+  }
+
+  return results;
+}
+
+/**
+ * Split method arguments at the top level (not inside nested brackets/strings).
+ * Returns the first argument and the remaining arguments string.
+ *
+ * @param {string} args - The arguments string
+ * @returns {{firstArg: string, remainingArgs: string}}
+ */
+function splitFirstArg(args) {
+  let depth = 0;
+  let pos = 0;
+  const len = args.length;
+
+  while (pos < len) {
+    const ch = args[pos];
+
+    // Skip string literals
+    if (ch === '"' || ch === "'") {
+      const endStr = findStringEnd(args, pos + 1, ch);
+      if (endStr === -1) break;
+      pos = endStr + 1;
+      continue;
+    }
+
+    if (ch === '(' || ch === '{' || ch === '[') {
+      depth++;
+    } else if (ch === ')' || ch === '}' || ch === ']') {
+      depth--;
+    } else if (ch === ',' && depth === 0) {
+      return {
+        firstArg: args.slice(0, pos).trim(),
+        remainingArgs: args.slice(pos + 1).trim()
+      };
+    }
+    pos++;
+  }
+
+  return { firstArg: args.trim(), remainingArgs: '' };
+}
+
+// ============================================================================
 // EXPRESSION PARSER
 // ============================================================================
 
@@ -309,34 +424,37 @@ function parseExpression(expr, localVars = new Set(), importedNames = new Set())
   
   // ==========================================================================
   // PASS 2: Handle method calls - extract objects and arguments
+  // Uses balanced-bracket scanning to handle nested (), {}, [] in arguments
   // ==========================================================================
-  const methodPattern = /([a-zA-Z_][a-zA-Z0-9_]*(?:\s*\.\s*[a-zA-Z_][a-zA-Z0-9_]*)*)\s*\.\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)/g;
-    let methodMatch;
-    
-  while ((methodMatch = methodPattern.exec(noStrings)) !== null) {
-    const objectPath = methodMatch[1].replace(/\s+/g, '');
-      const methodName = methodMatch[2];
-      const args = methodMatch[3];
+  const methodCalls = findMethodCalls(noStrings);
+
+  for (const mc of methodCalls) {
+    const objectPath = mc.objectPath;
+    const methodName = mc.methodName;
+    const args = mc.args;
     const rootName = objectPath.split('.')[0];
-    
+
     // Handle dict key methods: .get(), .pop(), .setdefault()
     if (DICT_KEY_METHODS.has(methodName) && shouldExtract(rootName)) {
       // Look for chained access after the method call
-      const afterMatch = noStrings.slice(methodMatch.index + methodMatch[0].length);
+      const afterMatch = noStrings.slice(mc.matchEnd);
       const chainedMatch = afterMatch.match(/^((?:\s*\.\s*[a-zA-Z_][a-zA-Z0-9_]*)*)/);
       const chainedAccess = chainedMatch ? chainedMatch[1] : '';
-        
+
+      // Split first arg properly (handles nested brackets)
+      const { firstArg, remainingArgs } = splitFirstArg(args);
+
       // Extract string literal key (which will be a placeholder now)
-      const keyMatch = args.match(/^\s*(['"])([^'"]*)\1/);
-        
+      const keyMatch = firstArg.match(/^\s*(['"])([^'"]*)\1\s*$/);
+
       if (keyMatch) {
         // String literal key (placeholder) - resolve it
         const placeholder = keyMatch[2];
         const resolvedKey = resolveString(placeholder);
-        
+
         // Build full path including key
         let fullPath = objectPath + '.' + resolvedKey;
-          
+
         // Add chained property access
         if (chainedAccess) {
           const chainedProps = chainedAccess.match(/\.\s*([a-zA-Z_][a-zA-Z0-9_]*)/g);
@@ -346,28 +464,33 @@ function parseExpression(expr, localVars = new Set(), importedNames = new Set())
             }
           }
           // Mark chained range to skip in pass 3
-          const getEndPos = methodMatch.index + methodMatch[0].length;
-          skipRanges.push({ start: getEndPos, end: getEndPos + chainedAccess.length });
+          skipRanges.push({ start: mc.matchEnd, end: mc.matchEnd + chainedAccess.length });
         }
-          
+
         addVariable(rootName, fullPath, 'dict_method');
         seen.add(`${rootName}:${objectPath}`); // Mark object path as handled
       } else {
         // Variable key - add object as dict
         addVariable(rootName, objectPath, 'dict');
+
+        // The first arg is a variable reference - extract it
+        if (firstArg) {
+          for (const v of parseExpression(firstArg, localVars, importedNames)) {
+            addVariable(v.name, v.path, v.accessType);
+          }
+        }
       }
-      
+
       // Extract variables from remaining arguments (e.g., default value)
-      // Remove the first argument (key) to process rest
-      const remainingArgs = args.replace(/^\s*(['"])([^'"]*)\1\s*,?/, '').trim();
-      if (remainingArgs) {
+      // Skip dict/list literals - they don't contain variable references
+      if (remainingArgs && !(/^\s*[\{\[]/.test(remainingArgs))) {
         for (const v of parseExpression(remainingArgs, localVars, importedNames)) {
           addVariable(v.name, v.path, v.accessType);
         }
       }
       continue;
     }
-    
+
     // General method call - add the object
     if (shouldExtract(rootName)) {
       const pathParts = objectPath.split('.');
@@ -377,9 +500,9 @@ function parseExpression(expr, localVars = new Set(), importedNames = new Set())
         addVariable(rootName, objectPath, 'property');
       }
     }
-    
+
     // Extract variables from method arguments
-      if (args.trim()) {
+    if (args.trim()) {
       for (const v of parseExpression(args, localVars, importedNames)) {
         addVariable(v.name, v.path, v.accessType);
       }
@@ -403,14 +526,21 @@ function parseExpression(expr, localVars = new Set(), importedNames = new Set())
     let accessChain = identMatch[2] || '';
     
     if (!shouldExtract(rootName)) continue;
-    
-    // Skip if preceded by | (it's a filter)
+
     const preceding = noStrings.slice(0, identMatch.index).trim();
+
+    // Skip if preceded by . (it's a property access or method name, not a standalone variable)
+    if (preceding.endsWith('.')) continue;
+
+    // Skip if preceded by | (it's a filter)
     if (preceding.endsWith('|') && JINJA_FILTERS.has(rootName)) continue;
     
-    // Skip if it's a method call (already handled)
-    if (/\.\s*[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*$/.test(identMatch[0])) continue;
-    
+    // Skip if this identifier is part of a method call already handled in Pass 2
+    const isHandledByPass2 = methodCalls.some(mc =>
+      identMatch.index >= mc.matchStart && identMatch.index < mc.matchEnd
+    );
+    if (isHandledByPass2) continue;
+
     // Skip if followed by dict key method call
     const after = noStrings.slice(identMatch.index + identMatch[0].length);
     if (/^\s*\.\s*(?:get|pop|setdefault)\s*\(/.test(after)) continue;
@@ -494,8 +624,8 @@ function buildPath(rootName, accessChain, stringResolver = null) {
 function parseStatement(content) {
   const trimmed = content.trim();
   
-  // For loop
-  const forMatch = trimmed.match(/^for\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s*,\s*([a-zA-Z_][a-zA-Z0-9_]*))?\s+in\s+(.+)$/);
+  // For loop - use 's' flag so . matches newlines for multiline iterables
+  const forMatch = trimmed.match(/^for\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s*,\s*([a-zA-Z_][a-zA-Z0-9_]*))?\s+in\s+(.+)$/s);
   if (forMatch) {
     return {
       type: 'for',
@@ -510,8 +640,8 @@ function parseStatement(content) {
     return { type: 'endfor', data: {} };
   }
   
-  // Set statement (inline)
-  const setInlineMatch = trimmed.match(/^set\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$/);
+  // Set statement (inline) - use 's' flag so . matches newlines for multiline expressions
+  const setInlineMatch = trimmed.match(/^set\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$/s);
   if (setInlineMatch) {
     return {
       type: 'set',
@@ -536,13 +666,13 @@ function parseStatement(content) {
     return { type: 'endset', data: {} };
   }
   
-  // If/elif/else/endif
-  const ifMatch = trimmed.match(/^if\s+(.+)$/);
+  // If/elif/else/endif - use 's' flag for multiline conditions
+  const ifMatch = trimmed.match(/^if\s+(.+)$/s);
   if (ifMatch) {
     return { type: 'if', data: { condition: ifMatch[1].trim() } };
   }
-  
-  const elifMatch = trimmed.match(/^elif\s+(.+)$/);
+
+  const elifMatch = trimmed.match(/^elif\s+(.+)$/s);
   if (elifMatch) {
     return { type: 'elif', data: { condition: elifMatch[1].trim() } };
   }
@@ -576,8 +706,8 @@ function parseStatement(content) {
     };
   }
   
-  // With
-  const withMatch = trimmed.match(/^with\s+(.+)$/);
+  // With - use 's' flag for multiline expressions
+  const withMatch = trimmed.match(/^with\s+(.+)$/s);
   if (withMatch) {
     return { type: 'with', data: { expression: withMatch[1].trim() } };
   }
@@ -622,22 +752,22 @@ function parseStatement(content) {
   }
   
   // Call
-  const callMatch = trimmed.match(/^call(?:\s*\([^)]*\))?\s+(.+)$/);
+  const callMatch = trimmed.match(/^call(?:\s*\([^)]*\))?\s+(.+)$/s);
   if (callMatch) {
     return { type: 'call', data: { expression: callMatch[1] } };
   }
   if (/^endcall\s*$/.test(trimmed)) {
     return { type: 'endcall', data: {} };
   }
-  
+
   // Do
-  const doMatch = trimmed.match(/^do\s+(.+)$/);
+  const doMatch = trimmed.match(/^do\s+(.+)$/s);
   if (doMatch) {
     return { type: 'do', data: { expression: doMatch[1] } };
   }
-  
+
   // Filter
-  const filterMatch = trimmed.match(/^filter\s+(.+)$/);
+  const filterMatch = trimmed.match(/^filter\s+(.+)$/s);
   if (filterMatch) {
     return { type: 'filter', data: { filter: filterMatch[1] } };
   }
@@ -1067,23 +1197,35 @@ function buildNestedStructure(paths, defaultValue) {
  */
 function setNestedPath(obj, parts, value) {
   let current = obj;
-  
+
   for (let i = 0; i < parts.length - 1; i++) {
     const key = parts[i];
-    if (!(key in current)) {
+    // If current is not an object/array (e.g. a leaf string from a shorter path),
+    // promote it to an object so deeper paths can be set
+    if (typeof current !== 'object' || current === null) {
+      return; // Can't set nested path on a primitive - bail out
+    }
+    if (!(key in current) || (typeof current[key] !== 'object' || current[key] === null)) {
       const nextKey = parts[i + 1];
       current[key] = /^\d+$/.test(nextKey) ? [] : {};
     }
     current = current[key];
   }
-  
+
+  if (typeof current !== 'object' || current === null) {
+    return; // Can't set property on a primitive
+  }
+
   const lastKey = parts[parts.length - 1];
   if (Array.isArray(current) && /^\d+$/.test(lastKey)) {
     const index = parseInt(lastKey, 10);
     while (current.length <= index) current.push('');
     current[index] = value;
-      } else {
-    current[lastKey] = value;
+  } else {
+    // Only set if not already a deeper structure
+    if (!(lastKey in current) || (typeof current[lastKey] !== 'object')) {
+      current[lastKey] = value;
+    }
   }
 }
 

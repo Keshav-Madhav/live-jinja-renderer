@@ -707,7 +707,8 @@ textarea:focus {
   flex-shrink: 0;
 }
 
-#output-search-input {
+#output-search-input,
+#variables-search-input {
   flex: 1;
   background: transparent;
   border: none;
@@ -719,7 +720,8 @@ textarea:focus {
   min-width: 0;
 }
 
-#output-search-input::placeholder {
+#output-search-input::placeholder,
+#variables-search-input::placeholder {
   color: var(--vscode-input-placeholderForeground);
 }
 
@@ -769,6 +771,43 @@ textarea:focus {
 .output-search-bar + .output-container {
   border-top: none;
   border-radius: 0 0 2px 2px;
+}
+
+/* ============================================================================
+   VARIABLES SEARCH BAR
+   ============================================================================ */
+
+.variables-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-bottom: none;
+  border-radius: 2px 2px 0 0;
+  flex-shrink: 0;
+  animation: searchSlideDown 0.15s ease-out;
+}
+
+/* When variables search bar is visible, connect it to the editor below.
+   Uses the .variables-search-active class toggled by JS. */
+.variables-section.variables-search-active textarea,
+.variables-section.variables-search-active .CodeMirror {
+  border-top: none;
+  border-radius: 0 0 2px 2px;
+}
+
+/* CodeMirror search highlight markers */
+.cm-search-highlight {
+  background-color: var(--vscode-editor-findMatchHighlightBackground, rgba(234, 92, 0, 0.33));
+  border-radius: 1px;
+  outline: 1px solid var(--vscode-editor-findMatchHighlightBorder, transparent);
+}
+
+.cm-search-highlight-current {
+  background-color: var(--vscode-editor-findMatchBackground, rgba(255, 150, 50, 0.55));
+  outline: 2px solid var(--vscode-editor-findMatchBorder, rgba(255, 150, 50, 0.8));
 }
 
 /* ============================================================================
@@ -2075,6 +2114,62 @@ body.detached-active .status-render-time {
   border-radius: 50%;
   border: 1px solid var(--vscode-editor-background);
   z-index: 2;
+}
+
+/* Variable Inspector Button - Teal theme */
+.inspector-btn {
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  box-shadow: 0 1px 4px rgba(20, 184, 166, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.inspector-btn:hover {
+  box-shadow:
+    0 2px 8px rgba(20, 184, 166, 0.5),
+    0 0 12px rgba(13, 148, 136, 0.3);
+}
+
+.inspector-btn:focus {
+  outline: 2px solid rgba(20, 184, 166, 0.5);
+}
+
+.inspector-btn::before {
+  animation: shimmer 3.8s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+/* Dependency Graph Button - Slate/indigo theme */
+.graph-btn {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  box-shadow: 0 1px 4px rgba(99, 102, 241, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.graph-btn:hover {
+  box-shadow:
+    0 2px 8px rgba(99, 102, 241, 0.5),
+    0 0 12px rgba(79, 70, 229, 0.3);
+}
+
+.graph-btn:focus {
+  outline: 2px solid rgba(99, 102, 241, 0.5);
+}
+
+.graph-btn::before {
+  animation: shimmer 4.2s ease-in-out infinite;
+  animation-delay: 2.5s;
+}
+
+/* Vertical divider between button groups */
+.header-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--vscode-panel-border);
+  opacity: 0.6;
+  flex-shrink: 0;
+  margin: 0 2px;
 }
 
 /* Variables header with generate button */

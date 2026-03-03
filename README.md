@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.11.6-blue)
+![Version](https://img.shields.io/badge/version-1.11.7-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,60 +10,20 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.11.6
+## 🚀 What's New in v1.11.7
 
-### ⌨️ Standard Editor Shortcuts
-- `Ctrl+/` / `Cmd+/` toggles Jinja block comments, auto-indent/dedent and code folding for Jinja blocks
+### 🔧 Critical Bug Fix
+- **Large template crash resolved**: Complex Jinja templates (500+ lines) no longer break the extension — previously, deeply nested variable paths would crash the extractor and leave the webview blank with no output, no variables, and no error
+- **Graceful error handling**: Variable extraction failures are now caught gracefully so the rest of the extension continues to work even if extraction hits an edge case
 
-### 🎨 Enhanced Syntax Highlighting
-- **TextMate grammar** — colors adapt to your VS Code theme
-- **Context-aware**: methods, properties, filters, tests, operators, and keywords each get distinct colors
+### 🔍 Variables Search
+- **Find in variables**: Press `Ctrl+F` / `Cmd+F` while the variables editor is focused to search within your JSON variables
+- **Match highlighting**: All matches are highlighted in the CodeMirror editor with the current match distinctly emphasized using VS Code theme colors
+- **Match navigation**: Navigate between matches with Enter / Shift+Enter, with a live "3 of 12" style match counter
+- **Context-aware shortcut**: `Ctrl+F` opens variables search when the editor is focused, or output search when elsewhere
 
-### 🛠️ Autocomplete Settings
-- Respects VS Code's `editor.quickSuggestions` setting; new toggle: `liveJinjaRenderer.intellisense.enableAutocompletion`
-
----
-
-## 🚀 What's New in v1.11.5
-
-### 🔍 Output Search
-- **Find in output**: Press `Ctrl+F` (`Cmd+F`) or click the search icon to search rendered output
-- **Match navigation**: Navigate with Enter / Shift+Enter, shows "3 of 12" match counter
-- **Works everywhere**: Sidebar, panel, and detached output windows
-
-### 🎨 Output Syntax Highlighting
-- **Language-aware coloring**: Output colored based on your file's language
-- **Supports**: XML, HTML, JSON, YAML, CSS, SQL, INI/TOML, Markdown
-- **Smart Jinja detection**: `config.xml.jinja` → XML colors, `email.html.j2` → HTML colors
-- **Theme-integrated**: Colors automatically match your VS Code theme
-
----
-
-## 🚀 What's New in v1.11.4
-
-### 🐛 Critical Bug Fixes
-- **Fixed output window scroll**: Output scrolling now works properly (broken in v1.11.3)
-- **Fixed detached window commands**: "Update for Current File" now works with detached windows
-- **Fixed stuck loading indicators**: Variable extraction popup no longer hangs indefinitely
-
-### ✨ Cursor-to-Output Sync
-- **Auto-scroll output**: Output window automatically scrolls to show the line at your cursor position
-- **Works everywhere**: Sidebar, panel, and detached windows all stay synchronized with your cursor
-
----
-
-## 🚀 What's New in v1.11.3
-
-### 🧠 Enhanced AI Debugger
-Smarter AI models and better debugging experience for Jinja2 templates!
-
-- **Upgraded Models**: GPT-5.2, Claude Opus 4.5, Gemini 2.5-pro for superior error analysis
-- **Choose Your Provider**: Click the AI icon you prefer - Copilot, OpenAI, Claude, or Gemini
-- **Smarter Root Cause Detection**: AI focuses on TRUE root causes, not symptoms
-  - Prioritizes Jinja syntax errors (unclosed `{% %}`, `{{ }}`, `{# #}`)
-  - Won't be fooled by content after syntax errors
-- **Individual Fix Actions**: Each suggested fix has its own "Apply Fix" and "Go to Line" buttons
-- **Scrollable Debug Panel**: Fixed overflow issues for better usability
+### 📋 Copy Output Fix
+- **Line numbers excluded**: Copy Output now correctly copies only the rendered text — line numbers from the gutter are no longer included in the clipboard
 
 ---
 
@@ -416,6 +376,11 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 ---
 
 ## Recent Updates
+
+### 1.11.7 - Large Template Fix, Variables Search & Copy Fix
+- **Critical fix** — Large/complex Jinja templates no longer crash the extension
+- **Variables search** — `Ctrl+F` / `Cmd+F` in variables editor with match highlighting and navigation
+- **Copy output fix** — Line numbers no longer included when copying output
 
 ### 1.11.6 - Editor Shortcuts & Syntax Highlighting
 - **Comment toggling** (`Ctrl+/`), smart indentation, and code folding for Jinja blocks

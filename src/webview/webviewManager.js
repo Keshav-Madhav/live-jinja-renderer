@@ -455,16 +455,21 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
           const autoExtract = config.get('variables.autoExtract', true);
           
           if ((isInitialLoad || message.force) && autoExtract) {
-            const extractedVars = extractVariablesFromTemplate(lastTemplate);
-            
+            let extractedVars = null;
+            try {
+              extractedVars = extractVariablesFromTemplate(lastTemplate);
+            } catch (err) {
+              console.error('Variable extraction failed:', err);
+            }
+
             // Try to load ghost-saved variables for this file (with selection range)
             const ghostSaveEnabled = config.get('advanced.ghostSave', true);
             const ghostVariables = context.workspaceState.get('jinjaGhostVariables', {});
-            const ghostKey = lastSelectionRange 
+            const ghostKey = lastSelectionRange
               ? `${lastFileUri}:${lastSelectionRange.startLine}-${lastSelectionRange.endLine}`
               : lastFileUri;
             const ghostVars = (ghostSaveEnabled && ghostVariables[ghostKey]) || null;
-            
+
             webview.postMessage({
               type: 'updateTemplate',
               template: lastTemplate,
@@ -493,13 +498,18 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
         
         case 'reextractVariables':
           // Extract variables from the current template
-          const reextractedVars = extractVariablesFromTemplate(lastTemplate);
-          
+          let reextractedVars = null;
+          try {
+            reextractedVars = extractVariablesFromTemplate(lastTemplate);
+          } catch (err) {
+            console.error('Variable re-extraction failed:', err);
+          }
+
           // Update IntelliSense with newly extracted variables
           if (intelliSenseManager && reextractedVars) {
             intelliSenseManager.updateVariables(reextractedVars);
           }
-          
+
           // Send fresh extraction (this will replace existing variables)
           webview.postMessage({
             type: 'replaceVariables',

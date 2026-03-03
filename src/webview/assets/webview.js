@@ -34,6 +34,14 @@ const searchPrevBtn = /** @type {HTMLButtonElement} */ (document.getElementById(
 const searchNextBtn = /** @type {HTMLButtonElement} */ (document.getElementById('search-next-btn'));
 const searchCloseBtn = /** @type {HTMLButtonElement} */ (document.getElementById('search-close-btn'));
 
+// Variables search bar elements
+const variablesSearchBar = /** @type {HTMLDivElement} */ (document.getElementById('variables-search-bar'));
+const variablesSearchInput = /** @type {HTMLInputElement} */ (document.getElementById('variables-search-input'));
+const variablesSearchMatchCount = /** @type {HTMLSpanElement} */ (document.getElementById('variables-search-match-count'));
+const variablesSearchPrevBtn = /** @type {HTMLButtonElement} */ (document.getElementById('variables-search-prev-btn'));
+const variablesSearchNextBtn = /** @type {HTMLButtonElement} */ (document.getElementById('variables-search-next-btn'));
+const variablesSearchCloseBtn = /** @type {HTMLButtonElement} */ (document.getElementById('variables-search-close-btn'));
+
 // File history management (sidebar only)
 let fileHistory = [];
 let historyEnabled = true;
@@ -42,6 +50,11 @@ let historyEnabled = true;
 let searchMatches = [];
 let currentSearchIndex = -1;
 let searchOriginalContents = null; // Cache of original line contents before highlighting
+
+// Variables search state
+let varSearchMarkers = [];
+let varSearchMatches = []; // Array of {from, to} positions
+let currentVarSearchIndex = -1;
 
 // Language-aware syntax highlighting
 let currentLanguageId = 'plaintext';
@@ -133,7 +146,11 @@ function initializeVariablesEditor() {
     autoCloseBrackets: true,
     styleActiveLine: true,
     viewportMargin: Infinity,
-    theme: 'default'
+    theme: 'default',
+    extraKeys: {
+      'Cmd-F': () => openVariablesSearch(),
+      'Ctrl-F': () => openVariablesSearch()
+    }
   });
 
   variablesCodeMirror.setSize('100%', '100%');
@@ -546,14 +563,189 @@ if (detachedSearchBtn) {
   detachedSearchBtn.addEventListener('click', () => openOutputSearch());
 }
 
-// Ctrl+F / Cmd+F to open search
+// Ctrl+F / Cmd+F to open search (context-aware)
 document.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
     e.preventDefault();
     e.stopPropagation();
-    openOutputSearch();
+    // Check if focus is within the variables section (CodeMirror or textarea)
+    const variablesSection = document.getElementById('variables-section');
+    const activeEl = document.activeElement;
+    const isInVariables = variablesSection && (
+      variablesSection.contains(activeEl) ||
+      (activeEl && activeEl.closest && activeEl.closest('.CodeMirror'))
+    );
+    if (isInVariables) {
+      openVariablesSearch();
+    } else {
+      openOutputSearch();
+    }
   }
 });
+
+/* ===== VARIABLES SEARCH FUNCTIONALITY ===== */
+
+function openVariablesSearch() {
+  if (!variablesSearchBar) return;
+  variablesSearchBar.style.display = 'flex';
+  const section = document.getElementById('variables-section');
+  if (section) section.classList.add('variables-search-active');
+  variablesSearchInput.focus();
+  variablesSearchInput.select();
+  if (variablesSearchInput.value) {
+    performVariablesSearch();
+  }
+}
+
+function closeVariablesSearch() {
+  if (!variablesSearchBar) return;
+  variablesSearchBar.style.display = 'none';
+  const section = document.getElementById('variables-section');
+  if (section) section.classList.remove('variables-search-active');
+  variablesSearchInput.value = '';
+  variablesSearchMatchCount.textContent = '';
+  variablesSearchMatchCount.classList.remove('no-results');
+  clearVariablesSearchHighlights();
+  varSearchMatches = [];
+  currentVarSearchIndex = -1;
+}
+
+function clearVariablesSearchHighlights() {
+  varSearchMarkers.forEach(marker => marker.clear());
+  varSearchMarkers = [];
+}
+
+function performVariablesSearch() {
+  const query = variablesSearchInput.value;
+  clearVariablesSearchHighlights();
+  varSearchMatches = [];
+  currentVarSearchIndex = -1;
+
+  if (!query) {
+    variablesSearchMatchCount.textContent = '';
+    variablesSearchMatchCount.classList.remove('no-results');
+    return;
+  }
+
+  if (variablesCodeMirror) {
+    // Use CodeMirror search cursor for highlighting
+    const cursor = variablesCodeMirror.getSearchCursor(query, null, { caseFold: true });
+    while (cursor.findNext()) {
+      const from = cursor.from();
+      const to = cursor.to();
+      varSearchMatches.push({ from, to });
+      const marker = variablesCodeMirror.markText(from, to, {
+        className: 'cm-search-highlight'
+      });
+      varSearchMarkers.push(marker);
+    }
+  } else if (variablesEditor) {
+    // Fallback: simple text search on textarea (no highlighting possible)
+    const text = variablesEditor.value.toLowerCase();
+    const queryLower = query.toLowerCase();
+    let pos = 0;
+    while (pos < text.length) {
+      const idx = text.indexOf(queryLower, pos);
+      if (idx === -1) break;
+      varSearchMatches.push({ from: idx, to: idx + queryLower.length });
+      pos = idx + queryLower.length;
+    }
+  }
+
+  if (varSearchMatches.length > 0) {
+    currentVarSearchIndex = 0;
+    highlightCurrentVarMatch();
+    variablesSearchMatchCount.textContent = `1 of ${varSearchMatches.length}`;
+    variablesSearchMatchCount.classList.remove('no-results');
+  } else {
+    variablesSearchMatchCount.textContent = 'No results';
+    variablesSearchMatchCount.classList.add('no-results');
+  }
+}
+
+function highlightCurrentVarMatch() {
+  if (currentVarSearchIndex < 0 || currentVarSearchIndex >= varSearchMatches.length) return;
+
+  // Remove 'current' class from all markers by re-marking
+  varSearchMarkers.forEach(marker => {
+    const pos = marker.find();
+    if (pos) {
+      marker.clear();
+    }
+  });
+  varSearchMarkers = [];
+
+  // Re-mark all matches, with the current one using a different class
+  varSearchMatches.forEach((match, i) => {
+    if (variablesCodeMirror) {
+      const className = i === currentVarSearchIndex
+        ? 'cm-search-highlight cm-search-highlight-current'
+        : 'cm-search-highlight';
+      const marker = variablesCodeMirror.markText(match.from, match.to, { className });
+      varSearchMarkers.push(marker);
+    }
+  });
+
+  // Scroll the current match into view
+  if (variablesCodeMirror) {
+    const match = varSearchMatches[currentVarSearchIndex];
+    variablesCodeMirror.scrollIntoView({ from: match.from, to: match.to }, 50);
+  }
+}
+
+function navigateVarSearchMatch(direction) {
+  if (varSearchMatches.length === 0) return;
+
+  currentVarSearchIndex += direction;
+  if (currentVarSearchIndex >= varSearchMatches.length) currentVarSearchIndex = 0;
+  if (currentVarSearchIndex < 0) currentVarSearchIndex = varSearchMatches.length - 1;
+
+  highlightCurrentVarMatch();
+  variablesSearchMatchCount.textContent = `${currentVarSearchIndex + 1} of ${varSearchMatches.length}`;
+}
+
+// Wire up variables search bar events
+if (variablesSearchInput) {
+  let varSearchDebounce = null;
+  variablesSearchInput.addEventListener('input', () => {
+    if (varSearchDebounce) clearTimeout(varSearchDebounce);
+    varSearchDebounce = setTimeout(() => performVariablesSearch(), 150);
+  });
+
+  variablesSearchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        navigateVarSearchMatch(-1);
+      } else {
+        navigateVarSearchMatch(1);
+      }
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeVariablesSearch();
+      // Return focus to the editor
+      if (variablesCodeMirror) {
+        variablesCodeMirror.focus();
+      } else if (variablesEditor) {
+        variablesEditor.focus();
+      }
+    }
+  });
+}
+
+if (variablesSearchPrevBtn) {
+  variablesSearchPrevBtn.addEventListener('click', () => navigateVarSearchMatch(-1));
+}
+
+if (variablesSearchNextBtn) {
+  variablesSearchNextBtn.addEventListener('click', () => navigateVarSearchMatch(1));
+}
+
+if (variablesSearchCloseBtn) {
+  variablesSearchCloseBtn.addEventListener('click', () => closeVariablesSearch());
+}
+
 
 /* ===== SYNTAX HIGHLIGHTING FOR OUTPUT ===== */
 
@@ -2423,26 +2615,30 @@ if (!isSidebarMode) {
 const saveVariablesBtn = document.getElementById('save-variables-btn');
 const loadVariablesBtn = document.getElementById('load-variables-btn');
 
-saveVariablesBtn.addEventListener('click', () => {
-  // Show QuickPick with save/export options
-  try {
-    const variables = JSON.parse(variablesEditor.value || '{}');
-    vscode.postMessage({ 
-      type: 'showSaveQuickPick',
-      variables: variables
-    });
-  } catch {
-    vscode.postMessage({
-      type: 'showError',
-      message: 'Invalid JSON in variables'
-    });
-  }
-});
+if (saveVariablesBtn) {
+  saveVariablesBtn.addEventListener('click', () => {
+    // Show QuickPick with save/export options
+    try {
+      const variables = JSON.parse(variablesEditor.value || '{}');
+      vscode.postMessage({
+        type: 'showSaveQuickPick',
+        variables: variables
+      });
+    } catch {
+      vscode.postMessage({
+        type: 'showError',
+        message: 'Invalid JSON in variables'
+      });
+    }
+  });
+}
 
-loadVariablesBtn.addEventListener('click', () => {
-  // Show QuickPick with load/import options
-  vscode.postMessage({ type: 'showLoadQuickPick' });
-});
+if (loadVariablesBtn) {
+  loadVariablesBtn.addEventListener('click', () => {
+    // Show QuickPick with load/import options
+    vscode.postMessage({ type: 'showLoadQuickPick' });
+  });
+}
 
 // Smart Generate button handler
 const smartGenerateBtn = document.getElementById('smart-generate-btn');
@@ -3283,11 +3479,17 @@ if (templateIndicatorEl && templateDropdown) {
 // Panel mode: Action button listeners
 if (!isSidebarMode) {
   copyOutputBtn.addEventListener('click', async function() {
-    const textToCopy = isMarkdownMode || isMermaidMode 
-      ? lastRenderedOutput 
-      : outputDisplay.textContent;
-    
-    vscode.postMessage({ 
+    let textToCopy;
+    if (isMarkdownMode || isMermaidMode) {
+      textToCopy = lastRenderedOutput;
+    } else {
+      const lineContents = outputDisplay.querySelectorAll('.output-line-content');
+      textToCopy = lineContents.length > 0
+        ? Array.from(lineContents).map(el => el.textContent).join('\n')
+        : outputDisplay.textContent;
+    }
+
+    vscode.postMessage({
       type: 'copyToClipboard',
       text: textToCopy
     });
@@ -3594,16 +3796,23 @@ async function handleMessage(message) {
       }
       break;
     
-    case 'copyOutput':
-      const textToCopy = isMarkdownMode || isMermaidMode 
-        ? lastRenderedOutput 
-        : outputDisplay.textContent;
-      
-      vscode.postMessage({ 
+    case 'copyOutput': {
+      let copyText;
+      if (isMarkdownMode || isMermaidMode) {
+        copyText = lastRenderedOutput;
+      } else {
+        const lineEls = outputDisplay.querySelectorAll('.output-line-content');
+        copyText = lineEls.length > 0
+          ? Array.from(lineEls).map(el => el.textContent).join('\n')
+          : outputDisplay.textContent;
+      }
+
+      vscode.postMessage({
         type: 'copyToClipboard',
-        text: textToCopy
+        text: copyText
       });
       break;
+    }
     
     case 'requestVariables':
       if (message.presetName) {

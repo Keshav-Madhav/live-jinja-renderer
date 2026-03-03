@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n⌨️ Editor Shortcuts\n• Ctrl+/ (Cmd+/) toggles Jinja block comments {# ... #}\n• Smart indentation & code folding for Jinja blocks\n\n🎨 Enhanced Syntax Highlighting\n• TextMate grammar — colors adapt to your VS Code theme\n• Context-aware: methods, properties, filters, tests distinctly colored\n• Faster live updates while typing\n\n🐛 Bug Fixes\n• Fixed highlighting delay on new text\n• Respects editor.quickSuggestions "off" setting`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🔧 Critical Bug Fix\n• Large/complex Jinja templates no longer crash the extension\n• Graceful error handling for variable extraction failures\n\n🔍 Variables Search\n• Ctrl+F / Cmd+F in the variables editor to search JSON variables\n• Match highlighting and navigation with counter\n\n📋 Copy Output Fix\n• Line numbers are no longer included when copying output\n\n🎯 Variable Extraction\n• Multiline {% set %} and statement support\n• Fixed false positive property access extractions`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',
