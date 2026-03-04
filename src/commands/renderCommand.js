@@ -283,6 +283,7 @@ function registerConfigurationListener(context, sidebarProvider) {
           showWhitespace,
           cullWhitespace,
           autoRerender,
+          variablesFormat: config.get('variables.format', 'json'),
           autoExtractVariables: config.get('variables.autoExtract', true),
           ghostSaveEnabled: config.get('advanced.ghostSave', true),
           historyEnabled: config.get('history.enabled', true),

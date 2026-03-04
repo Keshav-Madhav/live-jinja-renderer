@@ -85,6 +85,9 @@ let enabledExtensions = {
 };
 let customExtensions = '';
 
+// Variables format (json, yaml, toml)
+let currentVariablesFormat = 'json';
+
 // Jinja2 Environment Settings
 let stripBlockWhitespace = true;
 
@@ -136,7 +139,7 @@ function initializeVariablesEditor() {
   }
 
   variablesCodeMirror = CodeMirror.fromTextArea(variablesEditor, {
-    mode: { name: 'javascript', json: true },
+    mode: getCodeMirrorMode(currentVariablesFormat),
     lineNumbers: true,
     lineWrapping: true,
     indentUnit: 2,
@@ -210,6 +213,184 @@ function scrollVariablesEditorToBottom() {
     variablesCodeMirror.scrollTo(info.left, info.height);
   } else if (variablesEditor) {
     variablesEditor.scrollTop = variablesEditor.scrollHeight;
+  }
+}
+
+/* ===== VARIABLE FORMAT PARSING/SERIALIZATION ===== */
+
+// TOML library (lazy-loaded via dynamic import)
+let _tomlLib = null;
+let _tomlLoadPromise = null;
+
+/**
+ * Load the TOML library on demand
+ * @returns {Promise<{parse: Function, stringify: Function}|null>}
+ */
+function loadTomlLibrary() {
+  if (_tomlLib) return Promise.resolve(_tomlLib);
+  if (_tomlLoadPromise) return _tomlLoadPromise;
+  _tomlLoadPromise = import('https://cdn.jsdelivr.net/npm/smol-toml@1.3.1/+esm')
+    .then(mod => {
+      _tomlLib = { parse: mod.parse, stringify: mod.stringify };
+      return _tomlLib;
+    })
+    .catch(err => {
+      console.warn('Failed to load TOML library:', err);
+      _tomlLoadPromise = null;
+      return null;
+    });
+  return _tomlLoadPromise;
+}
+
+/**
+ * Parse variables text from the current format into a JS object
+ * @param {string} text - The raw text from the variables editor
+ * @param {string} [format] - The format to parse (defaults to currentVariablesFormat)
+ * @returns {object} Parsed JS object
+ */
+function parseVariablesText(text, format) {
+  format = format || currentVariablesFormat;
+  const trimmed = (text || '').trim();
+  if (!trimmed) return {};
+
+  switch (format) {
+    case 'yaml':
+      if (typeof jsyaml === 'undefined') throw new Error('YAML parser not loaded');
+      const result = jsyaml.load(trimmed);
+      if (result === null || result === undefined) return {};
+      if (typeof result !== 'object' || Array.isArray(result)) {
+        throw new Error('Variables must be a YAML mapping (key-value pairs), not a scalar or list');
+      }
+      return result;
+
+    case 'toml':
+      if (!_tomlLib) throw new Error('TOML parser is still loading, please try again');
+      return _tomlLib.parse(trimmed);
+
+    case 'json':
+    default:
+      return JSON.parse(trimmed);
+  }
+}
+
+/**
+ * Serialize a JS object to the current format string
+ * @param {object} obj - The JS object to serialize
+ * @param {string} [format] - The format to serialize to (defaults to currentVariablesFormat)
+ * @returns {string} Formatted string
+ */
+function serializeVariables(obj, format) {
+  format = format || currentVariablesFormat;
+  if (!obj || Object.keys(obj).length === 0) {
+    switch (format) {
+      case 'yaml': return '';
+      case 'toml': return '';
+      case 'json':
+      default: return '{}';
+    }
+  }
+
+  switch (format) {
+    case 'yaml':
+      if (typeof jsyaml === 'undefined') return JSON.stringify(obj, null, 2);
+      return jsyaml.dump(obj, { indent: 2, lineWidth: -1, noRefs: true }).trimEnd();
+
+    case 'toml':
+      if (!_tomlLib) return JSON.stringify(obj, null, 2);
+      return _tomlLib.stringify(obj).trimEnd();
+
+    case 'json':
+    default:
+      return JSON.stringify(obj, null, 2);
+  }
+}
+
+/**
+ * Get the CodeMirror mode config for a given format
+ * @param {string} format
+ * @returns {object|string} CodeMirror mode config
+ */
+function getCodeMirrorMode(format) {
+  switch (format) {
+    case 'yaml': return 'yaml';
+    case 'toml': return 'toml';
+    case 'json':
+    default: return { name: 'javascript', json: true };
+  }
+}
+
+/**
+ * Update the variables header to reflect the current format
+ */
+function updateVariablesFormatHeader() {
+  const header = document.querySelector('.variables-header-left h2');
+  if (header) {
+    const label = currentVariablesFormat.toUpperCase();
+    header.textContent = `Variables (${label})`;
+  }
+}
+
+/**
+ * Switch the variables editor to a new format, converting existing content
+ * @param {string} newFormat - 'json', 'yaml', or 'toml'
+ */
+async function switchVariablesFormat(newFormat) {
+  if (newFormat === currentVariablesFormat) return;
+
+  // Pre-load TOML library if switching to TOML
+  if (newFormat === 'toml' && !_tomlLib) {
+    await loadTomlLibrary();
+  }
+
+  const currentText = getVariablesText().trim();
+
+  // If editor is empty or has only the default empty object, just switch mode — no conversion needed
+  if (!currentText || currentText === '{}' || currentText === '""') {
+    currentVariablesFormat = newFormat;
+    if (variablesCodeMirror) {
+      variablesCodeMirror.setOption('mode', getCodeMirrorMode(newFormat));
+    }
+    // Set the empty representation for the new format
+    setVariablesText('', { emitInputEvent: false });
+    updateVariablesFormatHeader();
+    const errorIndicator = document.getElementById('json-error-indicator');
+    if (errorIndicator) errorIndicator.style.display = 'none';
+    return;
+  }
+
+  const oldFormat = currentVariablesFormat;
+  let obj;
+  try {
+    obj = parseVariablesText(currentText, oldFormat);
+  } catch (e) {
+    // Can't parse current content — abort to avoid data loss
+    const errorIndicator = document.getElementById('json-error-indicator');
+    const errorMessage = document.getElementById('json-error-message');
+    if (errorIndicator && errorMessage) {
+      errorIndicator.style.display = 'flex';
+      errorMessage.textContent = `Cannot switch format: ${e.message}`;
+    }
+    return;
+  }
+
+  currentVariablesFormat = newFormat;
+
+  // Update CodeMirror mode
+  if (variablesCodeMirror) {
+    variablesCodeMirror.setOption('mode', getCodeMirrorMode(newFormat));
+  }
+
+  // Convert and set text
+  const newText = serializeVariables(obj, newFormat);
+  setVariablesText(newText, { emitInputEvent: true });
+
+  // Update header
+  updateVariablesFormatHeader();
+
+  // Clear any error indicators
+  const errorIndicator = document.getElementById('json-error-indicator');
+  if (errorIndicator) {
+    errorIndicator.style.display = 'none';
   }
 }
 
@@ -1781,7 +1962,10 @@ function updateFileHistoryUI(history, enabled = true) {
 async function setupPyodide() {
   try {
     showLoading('Loading Python environment...');
-    
+
+    // Pre-load TOML library in background (non-blocking)
+    loadTomlLibrary();
+
     pyodide = await loadPyodide();
     
     showLoading('Loading Jinja2...');
@@ -1820,10 +2004,10 @@ async function update() {
 
   // In detached mode, variablesEditor might be hidden but still exists
   try {
-    context = JSON.parse(getVariablesText() || '{}');
+    context = parseVariablesText(getVariablesText());
   } catch (e) {
     if (!isDetachedMode) {
-      outputDisplay.textContent = `Error in variables:\n${e.message}`;
+      outputDisplay.textContent = `Error in variables (${currentVariablesFormat.toUpperCase()}):\n${e.message}`;
       outputDisplay.classList.add('error');
       outputDisplay.style.display = 'block';
       markdownOutput.style.display = 'none';
@@ -2286,7 +2470,7 @@ function ghostSaveVariables() {
   }
   
   try {
-    const variables = JSON.parse(getVariablesText() || '{}');
+    const variables = parseVariablesText(getVariablesText());
     vscode.postMessage({
       type: 'ghostSaveVariables',
       fileUri: currentFileUri,
@@ -2294,7 +2478,7 @@ function ghostSaveVariables() {
       selectionRange: currentSelectionRange
     });
   } catch {
-    // Silent fail - invalid JSON, nothing to save
+    // Silent fail - invalid format, nothing to save
   }
 }
 
@@ -2500,33 +2684,35 @@ const jsonErrorMessage = document.getElementById('json-error-message');
  */
 function validateJsonAndShowError() {
   const value = getVariablesText().trim();
-  
+
   // Empty is valid (will default to {})
   if (!value) {
     variablesEditor.classList.remove('json-error');
     if (jsonErrorIndicator) jsonErrorIndicator.classList.remove('visible');
     return true;
   }
-  
+
   try {
-    JSON.parse(value);
+    parseVariablesText(value);
     variablesEditor.classList.remove('json-error');
     if (jsonErrorIndicator) jsonErrorIndicator.classList.remove('visible');
     return true;
   } catch (e) {
     variablesEditor.classList.add('json-error');
     if (jsonErrorIndicator && jsonErrorMessage) {
-      // Extract useful part of error message
       let errorMsg = e.message;
-      const posMatch = errorMsg.match(/position (\d+)/);
-      if (posMatch) {
-        const pos = parseInt(posMatch[1]);
-        const lines = value.substring(0, pos).split('\n');
-        const line = lines.length;
-        const col = lines[lines.length - 1].length + 1;
-        errorMsg = `Line ${line}, Col ${col}: ${errorMsg.split(' at ')[0]}`;
+      // For JSON, extract position info
+      if (currentVariablesFormat === 'json') {
+        const posMatch = errorMsg.match(/position (\d+)/);
+        if (posMatch) {
+          const pos = parseInt(posMatch[1]);
+          const lines = value.substring(0, pos).split('\n');
+          const line = lines.length;
+          const col = lines[lines.length - 1].length + 1;
+          errorMsg = `Line ${line}, Col ${col}: ${errorMsg.split(' at ')[0]}`;
+        }
       }
-      jsonErrorMessage.textContent = errorMsg;
+      jsonErrorMessage.textContent = `${currentVariablesFormat.toUpperCase()}: ${errorMsg}`;
       jsonErrorIndicator.classList.add('visible');
     }
     return false;
@@ -2619,7 +2805,7 @@ if (saveVariablesBtn) {
   saveVariablesBtn.addEventListener('click', () => {
     // Show QuickPick with save/export options
     try {
-      const variables = JSON.parse(variablesEditor.value || '{}');
+      const variables = parseVariablesText(variablesEditor.value);
       vscode.postMessage({
         type: 'showSaveQuickPick',
         variables: variables
@@ -2627,7 +2813,7 @@ if (saveVariablesBtn) {
     } catch {
       vscode.postMessage({
         type: 'showError',
-        message: 'Invalid JSON in variables'
+        message: `Invalid ${currentVariablesFormat.toUpperCase()} in variables`
       });
     }
   });
@@ -2650,7 +2836,7 @@ if (smartGenerateBtn) {
     // Get current variables to preserve structure
     let currentVars = {};
     try {
-      currentVars = JSON.parse(variablesEditor.value || '{}');
+      currentVars = parseVariablesText(variablesEditor.value);
     } catch {
       // Invalid JSON, start fresh
     }
@@ -2687,7 +2873,7 @@ if (llmGenerateBtn) {
     // Get current variables to preserve structure
     let currentVars = {};
     try {
-      currentVars = JSON.parse(variablesEditor.value || '{}');
+      currentVars = parseVariablesText(variablesEditor.value);
     } catch {
       // Invalid JSON, start fresh
     }
@@ -2724,7 +2910,7 @@ if (openaiGenerateBtn) {
     // Get current variables to preserve structure
     let currentVars = {};
     try {
-      currentVars = JSON.parse(variablesEditor.value || '{}');
+      currentVars = parseVariablesText(variablesEditor.value);
     } catch {
       // Invalid JSON, start fresh
     }
@@ -2783,7 +2969,7 @@ if (claudeGenerateBtn) {
     // Get current variables to preserve structure
     let currentVars = {};
     try {
-      currentVars = JSON.parse(variablesEditor.value || '{}');
+      currentVars = parseVariablesText(variablesEditor.value);
     } catch {
       // Invalid JSON, start fresh
     }
@@ -2831,7 +3017,7 @@ if (geminiGenerateBtn) {
     // Get current variables to preserve structure
     let currentVars = {};
     try {
-      currentVars = JSON.parse(variablesEditor.value || '{}');
+      currentVars = parseVariablesText(variablesEditor.value);
     } catch {
       // Invalid JSON, start fresh
     }
@@ -3155,7 +3341,7 @@ function startAiDebug(provider, btnElement) {
   // Get current variables
   let currentVars = {};
   try {
-    currentVars = JSON.parse(variablesEditor.value || '{}');
+    currentVars = parseVariablesText(variablesEditor.value);
   } catch {
     currentVars = {};
   }
@@ -3525,7 +3711,7 @@ const detachOutputBtn = document.getElementById('detach-output-btn');
 if (detachOutputBtn) {
     detachOutputBtn.addEventListener('click', () => {
         // Gather current state
-    const variables = JSON.parse(getVariablesText() || '{}');
+    const variables = parseVariablesText(getVariablesText());
         
         vscode.postMessage({
             type: 'detachOutput',
@@ -3600,7 +3786,22 @@ async function handleMessage(message) {
       }
       
       updateFileNameDisplay(currentFileUri, currentSelectionRange);
-      
+
+      // Apply format from the message BEFORE serializing variables
+      // This prevents the race condition where ghost vars are serialized as JSON
+      // before the updateSettings message arrives with the actual format
+      if (message.variablesFormat && message.variablesFormat !== currentVariablesFormat) {
+        const newFmt = message.variablesFormat;
+        if (newFmt === 'toml' && !_tomlLib) {
+          await loadTomlLibrary();
+        }
+        currentVariablesFormat = newFmt;
+        if (variablesCodeMirror) {
+          variablesCodeMirror.setOption('mode', getCodeMirrorMode(newFmt));
+        }
+        updateVariablesFormatHeader();
+      }
+
       if (message.extractedVariables) {
         showLoading('Extracting variables...');
         
@@ -3618,7 +3819,7 @@ async function handleMessage(message) {
           baseVars = message.ghostVariables;
         } else {
           try {
-            baseVars = JSON.parse(variablesEditor.value || '{}');
+            baseVars = parseVariablesText(variablesEditor.value);
           } catch {
             baseVars = {};
           }
@@ -3644,17 +3845,17 @@ async function handleMessage(message) {
           }
         }
         
-        setVariablesText(JSON.stringify(mergedVars, null, 2));
+        setVariablesText(serializeVariables(mergedVars));
         autoResizeVariablesSection({ isAutoGenerated: true });
         clearTimeout(loadingTimeout); // Clear the safety timeout
         hideLoading();
       }
-      
+
       if (autoRerender) {
         await update();
       }
       break;
-    
+
     case 'replaceVariables':
       if (message.extractedVariables) {
         showLoading('Updating variables...');
@@ -3669,26 +3870,26 @@ async function handleMessage(message) {
         
         let currentVars = {};
         try {
-          currentVars = JSON.parse(variablesEditor.value || '{}');
+          currentVars = parseVariablesText(variablesEditor.value);
         } catch {
           currentVars = {};
         }
-        
+
         const mergedVars = {};
         const extractedVarNames = Object.keys(message.extractedVariables);
-        
+
         // In detached mode, just use the variables directly without merging logic
         if (isDetachedMode) {
-          setVariablesText(JSON.stringify(message.extractedVariables, null, 2));
+          setVariablesText(serializeVariables(message.extractedVariables));
         } else {
           // Normal mode: merge with existing
           for (const varName of extractedVarNames) {
             if (varName in currentVars) {
               const extractedValue = message.extractedVariables[varName];
               const currentValue = currentVars[varName];
-              
+
               const hasCustomValue = !isDefaultValue(currentValue, extractedValue);
-              
+
               if (hasCustomValue) {
                 mergedVars[varName] = currentValue;
               } else {
@@ -3698,8 +3899,8 @@ async function handleMessage(message) {
               mergedVars[varName] = message.extractedVariables[varName];
             }
           }
-          
-          setVariablesText(JSON.stringify(mergedVars, null, 2));
+
+          setVariablesText(serializeVariables(mergedVars));
         }
         
         autoResizeVariablesSection({ isAutoGenerated: true });
@@ -3774,9 +3975,14 @@ async function handleMessage(message) {
           updateFileNameDisplay(currentFileUri, currentSelectionRange);
         }
         
+        // Update variables format if changed
+        if (message.settings.variablesFormat && message.settings.variablesFormat !== currentVariablesFormat) {
+          await switchVariablesFormat(message.settings.variablesFormat);
+        }
+
         updateAutoRerenderToggle();
         updateExtensionsIndicator();
-        
+
         // Update file history dropdown visibility based on history enabled setting
         if (isSidebarMode && fileHistoryDropdown) {
           fileHistoryDropdown.style.display = historyEnabled ? 'flex' : 'none';
@@ -3817,7 +4023,7 @@ async function handleMessage(message) {
     case 'requestVariables':
       if (message.presetName) {
         try {
-          const currentVars = JSON.parse(variablesEditor.value || '{}');
+          const currentVars = parseVariablesText(variablesEditor.value);
           vscode.postMessage({
             type: 'saveVariables',
             presetName: message.presetName,
@@ -3826,7 +4032,7 @@ async function handleMessage(message) {
         } catch {
           vscode.postMessage({
             type: 'showError',
-            message: 'Invalid JSON in variables'
+            message: `Invalid ${currentVariablesFormat.toUpperCase()} in variables`
           });
         }
       }
@@ -3834,7 +4040,7 @@ async function handleMessage(message) {
     
     case 'loadVariables':
       if (message.variables) {
-        setVariablesText(JSON.stringify(message.variables, null, 2));
+        setVariablesText(serializeVariables(message.variables));
         autoResizeVariablesSection({ isAutoGenerated: true });
         await update();
       }
@@ -3952,7 +4158,7 @@ async function handleMessage(message) {
       }
       
       if (message.generatedData) {
-        setVariablesText(JSON.stringify(message.generatedData, null, 2));
+        setVariablesText(serializeVariables(message.generatedData));
         validateJsonAndShowError();
         autoResizeVariablesSection({ isAutoGenerated: true });
         debouncedGhostSave();
@@ -4010,7 +4216,7 @@ async function handleMessage(message) {
       
       if (message.generatedData) {
         // Set final formatted JSON
-        setVariablesText(JSON.stringify(message.generatedData, null, 2));
+        setVariablesText(serializeVariables(message.generatedData));
         validateJsonAndShowError();
         autoResizeVariablesSection({ isAutoGenerated: true });
         debouncedGhostSave();
@@ -4068,7 +4274,7 @@ async function handleMessage(message) {
       
       if (message.generatedData) {
         // Set final formatted JSON
-        setVariablesText(JSON.stringify(message.generatedData, null, 2));
+        setVariablesText(serializeVariables(message.generatedData));
         validateJsonAndShowError();
         autoResizeVariablesSection({ isAutoGenerated: true });
         debouncedGhostSave();
@@ -4130,13 +4336,17 @@ async function handleMessage(message) {
       }
       
       if (message.generatedData) {
-        // Set final formatted JSON
-        setVariablesText(JSON.stringify(message.generatedData, null, 2));
+        // Set final formatted data
+        setVariablesText(serializeVariables(message.generatedData));
         validateJsonAndShowError();
         autoResizeVariablesSection({ isAutoGenerated: true });
+        debouncedGhostSave();
+        if (autoRerender) {
+          await update();
+        }
       }
       break;
-    
+
     case 'claudeKeyUpdated':
       // Key was added or removed - update UI
       updateClaudeButtonVisibility(message.available);
@@ -4190,7 +4400,7 @@ async function handleMessage(message) {
       
       if (message.generatedData) {
         // Set final formatted JSON
-        setVariablesText(JSON.stringify(message.generatedData, null, 2));
+        setVariablesText(serializeVariables(message.generatedData));
         validateJsonAndShowError();
         autoResizeVariablesSection({ isAutoGenerated: true });
         debouncedGhostSave();
@@ -4366,6 +4576,7 @@ if (closeGraphBtn) {
 /* ===== VARIABLE INSPECTOR ===== */
 
 let expandedPaths = new Set();
+let inspectorHasRendered = false;
 
 function buildVariableTree(obj, path = '', parentIsArray = false) {
   const tree = [];
@@ -4482,11 +4693,11 @@ function refreshInspectorTree() {
   
   let variables = {};
   try {
-    variables = JSON.parse(variablesEditor.value || '{}');
+    variables = parseVariablesText(variablesEditor.value);
   } catch (e) {
     inspectorTree.innerHTML = `
       <div style="color: var(--vscode-errorForeground); padding: 16px; text-align: center;">
-        <i class="codicon codicon-error"></i> Invalid JSON
+        <i class="codicon codicon-error"></i> Invalid ${currentVariablesFormat.toUpperCase()}
       </div>
     `;
     return;
@@ -4503,19 +4714,20 @@ function refreshInspectorTree() {
     return;
   }
   
-  // Auto-expand all nodes on first render if expandedPaths is empty
-  if (expandedPaths.size === 0) {
-    const expandAll = (nodes) => {
+  // Auto-expand all nodes on first render only
+  if (!inspectorHasRendered) {
+    inspectorHasRendered = true;
+    const expandAllNodes = (nodes) => {
       nodes.forEach(node => {
         if (node.isExpandable) {
           expandedPaths.add(node.path);
           if (node.children) {
-            expandAll(node.children);
+            expandAllNodes(node.children);
           }
         }
       });
     };
-    expandAll(tree);
+    expandAllNodes(tree);
   }
   
   let html = '';
@@ -4573,17 +4785,12 @@ function attachTreeEventListeners() {
       
       currentArray.push(newValue);
       setValueAtPath(path, currentArray);
-      
-      // Update variables editor
-      const variables = JSON.parse(getVariablesText() || '{}');
-      setVariablesText(JSON.stringify(variables, null, 2), { emitInputEvent: true });
-      debouncedGhostSave();
       autoResizeVariablesSection();
-      
+
       // Expand the array to show new item
       expandedPaths.add(path);
       refreshInspectorTree();
-      
+
       if (autoRerender) {
         update();
       }
@@ -4610,15 +4817,9 @@ function attachTreeEventListeners() {
       // Remove item
       parentArray.splice(index, 1);
       setValueAtPath(parentPath, parentArray);
-      
-      // Update variables editor
-      const variables = JSON.parse(getVariablesText() || '{}');
-      setVariablesText(JSON.stringify(variables, null, 2), { emitInputEvent: true });
-      debouncedGhostSave();
       autoResizeVariablesSection();
-      
       refreshInspectorTree();
-      
+
       if (autoRerender) {
         update();
       }
@@ -4698,24 +4899,18 @@ function attachTreeEventListeners() {
           try {
             const newValue = JSON.parse(textarea.value);
             setValueAtPath(path, newValue);
-            
-            // Update variables editor
-            const variables = JSON.parse(getVariablesText() || '{}');
-            setVariablesText(JSON.stringify(variables, null, 2), { emitInputEvent: true });
-            debouncedGhostSave();
             autoResizeVariablesSection();
-            
             refreshInspectorTree();
-            
+
             if (autoRerender) {
               update();
             }
           } catch (err) {
             textarea.style.borderColor = 'var(--vscode-inputValidation-errorBorder)';
-            textarea.title = `Invalid JSON: ${err.message}`;
+            textarea.title = `Invalid value: ${err.message}`;
           }
         };
-        
+
         saveBtn.addEventListener('click', saveEdit);
         cancelBtn.addEventListener('click', () => {
           editContainer.remove();
@@ -4744,37 +4939,36 @@ function attachTreeEventListeners() {
         header.after(editContainer);
         input.focus();
         input.select();
-        
+
+        let editSaved = false;
         const saveEdit = () => {
+          if (editSaved) return;
+          editSaved = true;
+
           let newValue = input.value;
-          
+
           // Try to parse as JSON for numbers, booleans, etc.
           try {
             newValue = JSON.parse(newValue);
           } catch {
             // Keep as string if not valid JSON
           }
-          
+
           setValueAtPath(path, newValue);
-          
-          // Update variables editor
-          const variables = JSON.parse(getVariablesText() || '{}');
-          setVariablesText(JSON.stringify(variables, null, 2), { emitInputEvent: true });
-          debouncedGhostSave();
           autoResizeVariablesSection();
-          
           refreshInspectorTree();
-          
+
           if (autoRerender) {
             update();
           }
         };
-        
+
         input.addEventListener('blur', saveEdit);
         input.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
-            saveEdit();
+            input.blur(); // triggers saveEdit via blur
           } else if (e.key === 'Escape') {
+            editSaved = true; // prevent blur from saving
             editContainer.remove();
           }
         });
@@ -4786,7 +4980,7 @@ function attachTreeEventListeners() {
 function getValueAtPath(path) {
   let variables = {};
   try {
-    variables = JSON.parse(getVariablesText() || '{}');
+    variables = parseVariablesText(getVariablesText());
   } catch {
     return undefined;
   }
@@ -4805,7 +4999,7 @@ function getValueAtPath(path) {
 function setValueAtPath(path, value) {
   let variables = {};
   try {
-    variables = JSON.parse(getVariablesText() || '{}');
+    variables = parseVariablesText(getVariablesText());
   } catch {
     variables = {};
   }
@@ -4822,7 +5016,7 @@ function setValueAtPath(path, value) {
   }
   
   current[parts[parts.length - 1]] = value;
-  setVariablesText(JSON.stringify(variables, null, 2), { emitInputEvent: true });
+  setVariablesText(serializeVariables(variables), { emitInputEvent: true });
   debouncedGhostSave();
 }
 
@@ -4856,15 +5050,22 @@ if (collapseAllBtn) {
 
 if (expandAllBtn) {
   expandAllBtn.addEventListener('click', () => {
-    // Expand all paths
-    const inspectorTree = document.getElementById('inspector-tree');
-    if (inspectorTree) {
-      inspectorTree.querySelectorAll('.tree-node').forEach(node => {
-        const path = node.getAttribute('data-path');
-        if (path) expandedPaths.add(path);
+    // Build tree from current variables and expand all expandable nodes
+    let variables = {};
+    try {
+      variables = parseVariablesText(getVariablesText());
+    } catch { return; }
+    const tree = buildVariableTree(variables);
+    const expandAllNodes = (nodes) => {
+      nodes.forEach(node => {
+        if (node.isExpandable) {
+          expandedPaths.add(node.path);
+          if (node.children) expandAllNodes(node.children);
+        }
       });
-      refreshInspectorTree();
-    }
+    };
+    expandAllNodes(tree);
+    refreshInspectorTree();
   });
 }
 

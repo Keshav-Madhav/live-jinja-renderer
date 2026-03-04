@@ -170,6 +170,7 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
     showWhitespace,
     cullWhitespace,
     autoRerender,
+    variablesFormat: config.get('variables.format', 'json'),
     autoExtractVariables: config.get('variables.autoExtract', true),
     ghostSaveEnabled: config.get('advanced.ghostSave', true),
     historyEnabled: config.get('history.enabled', true),
@@ -477,7 +478,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
               ghostVariables: ghostVars,
               fileUri: lastFileUri,
               selectionRange: lastSelectionRange,
-              languageId: editor.document.languageId
+              languageId: editor.document.languageId,
+              variablesFormat: config.get('variables.format', 'json')
             });
             // Only mark as no longer initial load if not forced
             // This allows repeated force refreshes to work
@@ -491,7 +493,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
               template: lastTemplate,
               fileUri: lastFileUri,
               selectionRange: lastSelectionRange,
-              languageId: editor.document.languageId
+              languageId: editor.document.languageId,
+              variablesFormat: config.get('variables.format', 'json')
             });
           }
           return;
@@ -658,7 +661,9 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
           // Show native VS Code quick pick for save/export options
           try {
             const variables = message.variables;
-            
+            const varFmt = vscode.workspace.getConfiguration('liveJinjaRenderer').get('variables.format', 'json');
+            const fmtLabel = varFmt.toUpperCase();
+
             const saveOptions = [
               {
                 label: '$(save) Save Preset',
@@ -666,13 +671,13 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
                 action: 'preset'
               },
               {
-                label: '$(export) Export to JSON File',
-                description: 'Save as a formatted JSON file',
+                label: `$(export) Export to ${fmtLabel} File`,
+                description: `Save as a formatted ${fmtLabel} file`,
                 action: 'file'
               },
               {
                 label: '$(clippy) Copy to Clipboard',
-                description: 'Copy to clipboard as JSON',
+                description: `Copy to clipboard as ${fmtLabel}`,
                 action: 'clipboard'
               }
             ];
@@ -706,12 +711,12 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
               },
               {
                 label: '$(file-code) Import from Workspace',
-                description: 'Choose from JSON files in your workspace',
+                description: 'Choose from variable files in your workspace',
                 command: 'live-jinja-tester.importVariablesFromWorkspace'
               },
               {
                 label: '$(folder) Import from File Browser',
-                description: 'Browse and select any JSON file',
+                description: 'Browse and select a variable file (JSON, YAML, TOML)',
                 command: 'live-jinja-tester.importVariablesFromFile'
               }
             ];
@@ -966,7 +971,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
           try {
             const currentVariables = message.currentVariables || {};
             const template = message.template || lastTemplate;
-            
+            const varFormat = vscode.workspace.getConfiguration('liveJinjaRenderer').get('variables.format', 'json');
+
             // Check if Copilot is available
             const copilotAvailable = await isCopilotAvailable();
             if (!copilotAvailable) {
@@ -978,19 +984,19 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
               });
               return;
             }
-            
+
             // Generate data using LLM with streaming
             const generatedData = await generateWithLLMStreaming(
-              currentVariables, 
+              currentVariables,
               template,
               (partialText, isDone) => {
-                // Send streaming chunks to webview
                 webview.postMessage({
                   type: 'llmStreamChunk',
                   text: partialText,
                   isDone: isDone
                 });
-              }
+              },
+              varFormat
             );
             
             // Send final parsed data
@@ -1016,7 +1022,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
           try {
             const currentVariables = message.currentVariables || {};
             const template = message.template || lastTemplate;
-            
+            const varFormat = vscode.workspace.getConfiguration('liveJinjaRenderer').get('variables.format', 'json');
+
             // Check if OpenAI is configured
             if (!isOpenAIConfigured()) {
               vscode.window.showWarningMessage('OpenAI API key not configured. Please add your API key in Settings.');
@@ -1027,10 +1034,10 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
               });
               return;
             }
-            
+
             // Generate data using OpenAI with streaming
             const generatedData = await generateWithOpenAIStreaming(
-              currentVariables, 
+              currentVariables,
               template,
               (partialText, isDone) => {
                 // Send streaming chunks to webview
@@ -1039,7 +1046,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
                   text: partialText,
                   isDone: isDone
                 });
-              }
+              },
+              varFormat
             );
             
             // Send final parsed data
@@ -1065,7 +1073,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
           try {
             const currentVariables = message.currentVariables || {};
             const template = message.template || lastTemplate;
-            
+            const varFormat = vscode.workspace.getConfiguration('liveJinjaRenderer').get('variables.format', 'json');
+
             // Check if Claude is configured
             if (!isClaudeConfigured()) {
               vscode.window.showWarningMessage('Claude API key not configured. Please add your API key via the menu.');
@@ -1076,10 +1085,10 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
               });
               return;
             }
-            
+
             // Generate data using Claude with streaming
             const generatedData = await generateWithClaudeStreaming(
-              currentVariables, 
+              currentVariables,
               template,
               (partialText, isDone) => {
                 // Send streaming chunks to webview
@@ -1088,7 +1097,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
                   text: partialText,
                   isDone: isDone
                 });
-              }
+              },
+              varFormat
             );
             
             // Send final parsed data
@@ -1114,7 +1124,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
           try {
             const currentVariables = message.currentVariables || {};
             const template = message.template || lastTemplate;
-            
+            const varFormat = vscode.workspace.getConfiguration('liveJinjaRenderer').get('variables.format', 'json');
+
             // Check if Gemini is configured
             if (!isGeminiConfigured()) {
               vscode.window.showWarningMessage('Gemini API key not configured. Please add your API key via the menu.');
@@ -1125,10 +1136,10 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
               });
               return;
             }
-            
+
             // Generate data using Gemini with streaming
             const generatedData = await generateWithGeminiStreaming(
-              currentVariables, 
+              currentVariables,
               template,
               (partialText, isDone) => {
                 // Send streaming chunks to webview
@@ -1137,7 +1148,8 @@ function setupWebviewForEditor(webview, editor, context, selectionRange = null, 
                   text: partialText,
                   isDone: isDone
                 });
-              }
+              },
+              varFormat
             );
             
             // Send final parsed data

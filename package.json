@@ -2,7 +2,7 @@
   "name": "live-jinja-renderer",
   "displayName": "Live Jinja Renderer",
   "description": "Real-time Jinja2 template preview with include/extends support, markdown, mermaid diagrams, and IntelliSense",
-  "version": "1.11.7",
+  "version": "1.12.0",
   "publisher": "KilloWatts",
   "author": {
     "name": "Keshav Madhav"
@@ -52,31 +52,52 @@
     "languages": [
       {
         "id": "jinja",
-        "aliases": ["Jinja"],
-        "extensions": [".jinja", ".j2"],
+        "aliases": [
+          "Jinja"
+        ],
+        "extensions": [
+          ".jinja",
+          ".j2"
+        ],
         "configuration": "./language-configuration.json"
       },
       {
         "id": "jinja-html",
-        "aliases": ["Jinja HTML"],
-        "extensions": [".jinja.html"],
+        "aliases": [
+          "Jinja HTML"
+        ],
+        "extensions": [
+          ".jinja.html"
+        ],
         "configuration": "./language-configuration.json"
       },
       {
         "id": "jinja2",
-        "aliases": ["Jinja2"],
-        "extensions": [".jinja2"],
+        "aliases": [
+          "Jinja2"
+        ],
+        "extensions": [
+          ".jinja2"
+        ],
         "configuration": "./language-configuration.json"
       },
       {
         "id": "django-html",
-        "aliases": ["Django HTML"],
-        "extensions": [".django.html"]
+        "aliases": [
+          "Django HTML"
+        ],
+        "extensions": [
+          ".django.html"
+        ]
       },
       {
         "id": "django-txt",
-        "aliases": ["Django Text"],
-        "extensions": [".django.txt"]
+        "aliases": [
+          "Django Text"
+        ],
+        "extensions": [
+          ".django.txt"
+        ]
       }
     ],
     "grammars": [
@@ -300,6 +321,24 @@
         "title": "Open Variable Inspector",
         "icon": "$(symbol-variable)",
         "category": "Jinja"
+      },
+      {
+        "command": "live-jinja-tester.setFormatJson",
+        "title": "JSON",
+        "category": "Jinja",
+        "enablement": "liveJinjaRenderer.variablesFormat != json"
+      },
+      {
+        "command": "live-jinja-tester.setFormatYaml",
+        "title": "YAML",
+        "category": "Jinja",
+        "enablement": "liveJinjaRenderer.variablesFormat != yaml"
+      },
+      {
+        "command": "live-jinja-tester.setFormatToml",
+        "title": "TOML",
+        "category": "Jinja",
+        "enablement": "liveJinjaRenderer.variablesFormat != toml"
       }
     ],
     "submenus": [
@@ -437,6 +476,18 @@
         }
       ],
       "jinjaVariablesSubmenu": [
+        {
+          "command": "live-jinja-tester.setFormatJson",
+          "group": "0_format@1"
+        },
+        {
+          "command": "live-jinja-tester.setFormatYaml",
+          "group": "0_format@2"
+        },
+        {
+          "command": "live-jinja-tester.setFormatToml",
+          "group": "0_format@3"
+        },
         {
           "command": "live-jinja-tester.saveVariables",
           "group": "1_presets@1"
@@ -658,6 +709,15 @@
         },
         {
           "command": "live-jinja-tester.openExtensionSettings"
+        },
+        {
+          "command": "live-jinja-tester.setFormatJson"
+        },
+        {
+          "command": "live-jinja-tester.setFormatYaml"
+        },
+        {
+          "command": "live-jinja-tester.setFormatToml"
         }
       ]
     },
@@ -695,10 +755,6 @@
       },
       {
         "language": "jinja2",
-        "path": "./snippets/jinja.json"
-      },
-      {
-        "language": "j2",
         "path": "./snippets/jinja.json"
       },
       {
@@ -784,6 +840,17 @@
           "default": true,
           "description": "Automatically format variables JSON with proper indentation",
           "order": 9
+        },
+        "liveJinjaRenderer.variables.format": {
+          "type": "string",
+          "enum": [
+            "json",
+            "yaml",
+            "toml"
+          ],
+          "default": "json",
+          "description": "Format for the variables editor (JSON, YAML, or TOML)",
+          "order": 9.5
         },
         "liveJinjaRenderer.variables.autoExtract": {
           "type": "boolean",
@@ -884,7 +951,13 @@
         },
         "liveJinjaRenderer.templates.filePatterns": {
           "type": "array",
-          "default": ["**/*.jinja", "**/*.jinja2", "**/*.j2", "**/*.html", "**/*.txt"],
+          "default": [
+            "**/*.jinja",
+            "**/*.jinja2",
+            "**/*.j2",
+            "**/*.html",
+            "**/*.txt"
+          ],
           "items": {
             "type": "string"
           },
@@ -959,5 +1032,9 @@
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
     "eslint": "^9.36.0"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.1",
+    "smol-toml": "^1.6.0"
   }
 }

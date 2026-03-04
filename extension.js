@@ -113,7 +113,7 @@ async function activate(context) {
       context.globalState.update('extensionVersion', currentVersion);
 
       if (previousVersion) {
-        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n🔧 Critical Bug Fix\n• Large/complex Jinja templates no longer crash the extension\n• Graceful error handling for variable extraction failures\n\n🔍 Variables Search\n• Ctrl+F / Cmd+F in the variables editor to search JSON variables\n• Match highlighting and navigation with counter\n\n📋 Copy Output Fix\n• Line numbers are no longer included when copying output\n\n🎯 Variable Extraction\n• Multiline {% set %} and statement support\n• Fixed false positive property access extractions`;
+        const message = `🎉 Live Jinja Renderer updated to v${currentVersion}!\n\n📋 Multi-Format Variables\n• Switch between JSON, YAML, and TOML — variables convert automatically\n• Syntax highlighting and format-aware error messages for each format\n• Import/export, AI generation, and Variable Inspector all respect the selected format`;
         vscode.window.showInformationMessage(
           message,
           'View Release Notes',

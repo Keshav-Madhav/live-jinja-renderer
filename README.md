@@ -1,6 +1,6 @@
 # Live Jinja Renderer
 
-![Version](https://img.shields.io/badge/version-1.11.7-blue)
+![Version](https://img.shields.io/badge/version-1.12.0-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-^1.85.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -10,20 +10,17 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 ---
 
-## 🚀 What's New in v1.11.7
+## 🚀 What's New in v1.12.0
 
-### 🔧 Critical Bug Fix
-- **Large template crash resolved**: Complex Jinja templates (500+ lines) no longer break the extension — previously, deeply nested variable paths would crash the extractor and leave the webview blank with no output, no variables, and no error
-- **Graceful error handling**: Variable extraction failures are now caught gracefully so the rest of the extension continues to work even if extraction hits an edge case
+### 📋 Multi-Format Variables
+- **JSON, YAML, and TOML**: Switch your variables editor format via the Variables submenu or Command Palette
+- **Seamless conversion**: Existing variables automatically convert when switching formats
+- **Syntax highlighting**: Each format gets its own CodeMirror mode with format-aware error messages
 
-### 🔍 Variables Search
-- **Find in variables**: Press `Ctrl+F` / `Cmd+F` while the variables editor is focused to search within your JSON variables
-- **Match highlighting**: All matches are highlighted in the CodeMirror editor with the current match distinctly emphasized using VS Code theme colors
-- **Match navigation**: Navigate between matches with Enter / Shift+Enter, with a live "3 of 12" style match counter
-- **Context-aware shortcut**: `Ctrl+F` opens variables search when the editor is focused, or output search when elsewhere
-
-### 📋 Copy Output Fix
-- **Line numbers excluded**: Copy Output now correctly copies only the rendered text — line numbers from the gutter are no longer included in the clipboard
+### 📥 Import/Export & AI
+- Import/export supports all three formats (`.json`, `.yaml`, `.toml`) with auto-detection
+- AI generation (Copilot/OpenAI/Claude/Gemini) outputs in your selected format with tailored prompts
+- Variable Inspector works with all formats; fixed Expand All behavior
 
 ---
 
@@ -84,7 +81,7 @@ A powerful VS Code extension for **real-time Jinja2 template preview** with auth
 
 1. Open a `.txt`, `.jinja`, `.j2`, or plaintext file with Jinja2 syntax
 2. Press `Ctrl+Alt+J` (Windows/Linux) or `Cmd+Shift+J` (Mac)
-3. Edit variables in JSON format
+3. Edit variables in JSON, YAML, or TOML format
 4. See rendered output in real-time
 5. Start typing `{{` and enjoy **IntelliSense autocomplete**! 🎉
 
@@ -189,8 +186,8 @@ Save, load, and reuse variable configurations:
 
 ### Import/Export Variables
 Share and backup variable configurations:
-- Export to JSON file or clipboard
-- Import from workspace files, file browser, or active editor
+- Export to JSON, YAML, or TOML file or clipboard (uses your current format)
+- Import from workspace files, file browser, or active editor (auto-detects format)
 
 ### Jinja2 Extensions
 Full support for Jinja2 extensions with instant activation:
@@ -347,6 +344,7 @@ All settings are organized into clear categories:
 ### Variables
 | Setting | Default | Description |
 |---------|---------|-------------|
+| `variables.format` | `"json"` | Format for the variables editor (JSON, YAML, or TOML) |
 | `variables.autoExtract` | `true` | Auto-extract variables |
 | `variables.preserveCustomValues` | `true` | Preserve custom values on re-extract |
 
@@ -376,6 +374,10 @@ Configure Jinja2 extensions via `liveJinjaRenderer.extensions`:
 ---
 
 ## Recent Updates
+
+### 1.12.0 - Multi-Format Variables (JSON, YAML, TOML)
+- **Format switching** — Choose JSON, YAML, or TOML for your variables editor with seamless conversion
+- **Format-aware** — Import/export, AI generation, and Variable Inspector all respect the selected format
 
 ### 1.11.7 - Large Template Fix, Variables Search & Copy Fix
 - **Critical fix** — Large/complex Jinja templates no longer crash the extension

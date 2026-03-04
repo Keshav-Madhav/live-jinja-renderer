@@ -10,6 +10,8 @@
 
 const vscode = require('vscode');
 const https = require('https');
+const jsyaml = require('js-yaml');
+const TOML = require('smol-toml');
 
 /**
  * Check if Copilot is available
@@ -29,9 +31,17 @@ async function isCopilotAvailable() {
  * Build the prompts for LLM generation
  * @param {Object} extractedVars - Variables extracted from template
  * @param {string} templateContent - The template content
+ * @param {string} [format='json'] - Output format: 'json', 'yaml', or 'toml'
  * @returns {{systemPrompt: string, userPrompt: string}}
  */
-function buildPrompts(extractedVars, templateContent) {
+function buildPrompts(extractedVars, templateContent, format = 'json') {
+  const formatUpper = format.toUpperCase();
+  const formatExamples = {
+    json: 'Return ONLY valid JSON, no explanation or markdown formatting.',
+    yaml: 'Return ONLY valid YAML, no explanation or markdown formatting. Use proper YAML indentation (2 spaces).',
+    toml: 'Return ONLY valid TOML, no explanation or markdown formatting. Use [table] headers for nested objects and quote string values. For example:\nname = "John"\nage = 30\n\n[address]\ncity = "New York"\nzip = "10001"\n\nIMPORTANT: Each key must be on its own line. Do NOT put multiple key-value pairs on the same line.'
+  };
+
   const systemPrompt = `You are a helpful assistant that generates realistic test data for Jinja2 templates.
 Your task is to fill in variable values that would make sense given the variable names and template context.
 
@@ -46,7 +56,7 @@ Guidelines:
 - Match the expected data types (string, number, boolean, array, object)
 - Consider the template context to understand what values make sense
 
-IMPORTANT: Return ONLY valid JSON, no explanation or markdown formatting.`;
+IMPORTANT: ${formatExamples[format] || formatExamples.json}`;
 
   const userPrompt = `Given this Jinja2 template:
 \`\`\`jinja
@@ -58,22 +68,22 @@ And these extracted variables with their inferred structure:
 ${JSON.stringify(extractedVars, null, 2)}
 \`\`\`
 
-Generate realistic test data for these variables. Return ONLY the JSON object with filled values, nothing else.`;
+Generate realistic test data for these variables. Return ONLY the ${formatUpper} with filled values, nothing else.`;
 
   return { systemPrompt, userPrompt };
 }
 
 /**
- * Clean up LLM response - remove markdown code blocks
+ * Clean up LLM response - remove markdown code blocks for any format
  * @param {string} text - Raw response text
  * @returns {string} - Cleaned text
  */
 function cleanResponse(text) {
   let cleaned = text.trim();
-  if (cleaned.startsWith('```json')) {
-    cleaned = cleaned.slice(7);
-  } else if (cleaned.startsWith('```')) {
-    cleaned = cleaned.slice(3);
+  // Remove opening code fence with optional language tag
+  const openMatch = cleaned.match(/^```(?:json|yaml|yml|toml)?\s*\n?/);
+  if (openMatch) {
+    cleaned = cleaned.slice(openMatch[0].length);
   }
   if (cleaned.endsWith('```')) {
     cleaned = cleaned.slice(0, -3);
@@ -82,19 +92,87 @@ function cleanResponse(text) {
 }
 
 /**
+ * Strip markdown code fence prefix from streaming display text
+ * @param {string} text - Accumulated response text
+ * @returns {string} - Display text without code fence prefix
+ */
+function stripCodeFencePrefix(text) {
+  const match = text.match(/^```(?:json|yaml|yml|toml)?\s*\n?/);
+  if (match) {
+    return text.slice(match[0].length);
+  }
+  return text;
+}
+
+/**
+ * Parse LLM response text based on the requested format
+ * @param {string} text - Cleaned response text
+ * @param {string} format - 'json', 'yaml', or 'toml'
+ * @returns {Object} - Parsed JS object
+ */
+function parseResponse(text, format) {
+  switch (format) {
+    case 'yaml': {
+      const result = jsyaml.load(text);
+      if (result === null || result === undefined) return {};
+      if (typeof result !== 'object' || Array.isArray(result)) {
+        throw new Error('Expected a YAML mapping, got a scalar or list');
+      }
+      return result;
+    }
+    case 'toml':
+      try {
+        return TOML.parse(text);
+      } catch (tomlErr) {
+        // LLMs often produce invalid TOML — fallback to JSON parse + convert
+        try {
+          return JSON.parse(text);
+        } catch {
+          // Try stripping code fences one more time in case cleanResponse missed something
+          const stripped = text.replace(/^```\w*\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
+          try { return TOML.parse(stripped); } catch { /* ignore */ }
+          try { return JSON.parse(stripped); } catch { /* ignore */ }
+          throw new Error(`Invalid TOML: ${tomlErr.message}`);
+        }
+      }
+    case 'json':
+    default:
+      return JSON.parse(text);
+  }
+}
+
+/**
+ * Serialize a JS object to the given format
+ * @param {Object} obj - JS object
+ * @param {string} format - 'json', 'yaml', or 'toml'
+ * @returns {string}
+ */
+function serializeForFormat(obj, format) {
+  switch (format) {
+    case 'yaml':
+      return jsyaml.dump(obj, { indent: 2, lineWidth: -1, noRefs: true }).trimEnd();
+    case 'toml':
+      return TOML.stringify(obj).trimEnd();
+    case 'json':
+    default:
+      return JSON.stringify(obj, null, 2);
+  }
+}
+
+/**
  * Generate smart data for variables using Copilot LLM (non-streaming)
  * @param {Object} extractedVars - Variables extracted from template (with structure)
  * @param {string} templateContent - The template content for context
  * @returns {Promise<Object>} - Generated data or null if failed
  */
-async function generateWithLLM(extractedVars, templateContent) {
+async function generateWithLLM(extractedVars, templateContent, format = 'json') {
   try {
     // Select the Copilot model
-    const models = await vscode.lm.selectChatModels({ 
+    const models = await vscode.lm.selectChatModels({
       vendor: 'copilot',
       family: 'gpt-5.2'
     });
-    
+
     if (!models || models.length === 0) {
       // Fallback to any available Copilot model
       const fallbackModels = await vscode.lm.selectChatModels({ vendor: 'copilot' });
@@ -103,29 +181,29 @@ async function generateWithLLM(extractedVars, templateContent) {
       }
       models.push(...fallbackModels);
     }
-    
+
     const model = models[0];
-    const { systemPrompt, userPrompt } = buildPrompts(extractedVars, templateContent);
-    
+    const { systemPrompt, userPrompt } = buildPrompts(extractedVars, templateContent, format);
+
     // Create chat messages
     const messages = [
       vscode.LanguageModelChatMessage.User(systemPrompt),
       vscode.LanguageModelChatMessage.User(userPrompt)
     ];
-    
+
     // Send request to Copilot
     const response = await model.sendRequest(messages, {}, new vscode.CancellationTokenSource().token);
-    
+
     // Collect the response
     let responseText = '';
     for await (const chunk of response.text) {
       responseText += chunk;
     }
-    
+
     // Clean up and parse
     responseText = cleanResponse(responseText);
-    const generatedData = JSON.parse(responseText);
-    
+    const generatedData = parseResponse(responseText, format);
+
     return generatedData;
   } catch (error) {
     console.error('LLM generation error:', error);
@@ -140,14 +218,14 @@ async function generateWithLLM(extractedVars, templateContent) {
  * @param {Function} onChunk - Callback for each chunk: (partialText, isDone) => void
  * @returns {Promise<Object>} - Final parsed data
  */
-async function generateWithLLMStreaming(extractedVars, templateContent, onChunk) {
+async function generateWithLLMStreaming(extractedVars, templateContent, onChunk, format = 'json') {
   try {
     // Select the Copilot model
-    const models = await vscode.lm.selectChatModels({ 
+    const models = await vscode.lm.selectChatModels({
       vendor: 'copilot',
       family: 'gpt-5.2'
     });
-    
+
     if (!models || models.length === 0) {
       const fallbackModels = await vscode.lm.selectChatModels({ vendor: 'copilot' });
       if (!fallbackModels || fallbackModels.length === 0) {
@@ -155,50 +233,37 @@ async function generateWithLLMStreaming(extractedVars, templateContent, onChunk)
       }
       models.push(...fallbackModels);
     }
-    
+
     const model = models[0];
-    const { systemPrompt, userPrompt } = buildPrompts(extractedVars, templateContent);
-    
+    const { systemPrompt, userPrompt } = buildPrompts(extractedVars, templateContent, format);
+
     const messages = [
       vscode.LanguageModelChatMessage.User(systemPrompt),
       vscode.LanguageModelChatMessage.User(userPrompt)
     ];
-    
+
     // Send request to Copilot
     const response = await model.sendRequest(messages, {}, new vscode.CancellationTokenSource().token);
-    
+
     // Stream the response
     let responseText = '';
     for await (const chunk of response.text) {
       responseText += chunk;
-      
-      // Clean markdown artifacts as we stream for better display
-      let displayText = responseText;
-      if (displayText.startsWith('```json\n')) {
-        displayText = displayText.slice(8);
-      } else if (displayText.startsWith('```json')) {
-        displayText = displayText.slice(7);
-      } else if (displayText.startsWith('```\n')) {
-        displayText = displayText.slice(4);
-      } else if (displayText.startsWith('```')) {
-        displayText = displayText.slice(3);
-      }
-      
-      // Send chunk to callback
+
       if (onChunk) {
-        onChunk(displayText, false);
+        onChunk(stripCodeFencePrefix(responseText), false);
       }
     }
-    
+
     // Final cleanup and parse
     responseText = cleanResponse(responseText);
-    
+
     // Notify completion
     if (onChunk) {
       onChunk(responseText, true);
     }
-    
-    const generatedData = JSON.parse(responseText);
+
+    const generatedData = parseResponse(responseText, format);
     return generatedData;
   } catch (error) {
     console.error('LLM streaming error:', error);
@@ -304,14 +369,14 @@ async function validateOpenAIKey(apiKey) {
  * @param {Function} onChunk - Callback for each chunk: (partialText, isDone) => void
  * @returns {Promise<Object>} - Final parsed data
  */
-async function generateWithOpenAIStreaming(extractedVars, templateContent, onChunk) {
+async function generateWithOpenAIStreaming(extractedVars, templateContent, onChunk, format = 'json') {
   if (!_openaiApiKey) {
     throw new Error('OpenAI API key not configured');
   }
-  
+
   const apiKey = _openaiApiKey;
-  
-  const { systemPrompt, userPrompt } = buildPrompts(extractedVars, templateContent);
+
+  const { systemPrompt, userPrompt } = buildPrompts(extractedVars, templateContent, format);
   
   return new Promise((resolve, reject) => {
     const requestBody = JSON.stringify({
@@ -375,49 +440,36 @@ async function generateWithOpenAIStreaming(extractedVars, templateContent, onChu
               
               if (content) {
                 responseText += content;
-                
-                // Clean markdown artifacts for display
-                let displayText = responseText;
-                if (displayText.startsWith('```json\n')) {
-                  displayText = displayText.slice(8);
-                } else if (displayText.startsWith('```json')) {
-                  displayText = displayText.slice(7);
-                } else if (displayText.startsWith('```\n')) {
-                  displayText = displayText.slice(4);
-                } else if (displayText.startsWith('```')) {
-                  displayText = displayText.slice(3);
-                }
-                
+
                 if (onChunk) {
-                  onChunk(displayText, false);
+                  onChunk(stripCodeFencePrefix(responseText), false);
                 }
               }
             } catch (e) {
-              // Skip invalid JSON lines
+              // Skip invalid SSE data lines
             }
           }
         }
       });
-      
+
       res.on('end', () => {
         try {
-          // Final cleanup
           responseText = cleanResponse(responseText);
-          
+
           if (onChunk) {
             onChunk(responseText, true);
           }
-          
-          const generatedData = JSON.parse(responseText);
+
+          const generatedData = parseResponse(responseText, format);
           resolve(generatedData);
         } catch (e) {
           reject(new Error(`Failed to parse response: ${e.message}`));
         }
       });
-      
+
       res.on('error', reject);
     });
-    
+
     req.on('error', reject);
     req.write(requestBody);
     req.end();
@@ -498,13 +550,13 @@ async function validateClaudeKey(apiKey) {
  * @param {Function} onChunk - Callback for each chunk: (partialText, isDone) => void
  * @returns {Promise<Object>} - Final parsed data
  */
-async function generateWithClaudeStreaming(extractedVars, templateContent, onChunk) {
+async function generateWithClaudeStreaming(extractedVars, templateContent, onChunk, format = 'json') {
   if (!_claudeApiKey) {
     throw new Error('Claude API key not configured');
   }
-  
+
   const apiKey = _claudeApiKey;
-  const { systemPrompt, userPrompt } = buildPrompts(extractedVars, templateContent);
+  const { systemPrompt, userPrompt } = buildPrompts(extractedVars, templateContent, format);
   
   return new Promise((resolve, reject) => {
     const requestBody = JSON.stringify({
@@ -568,49 +620,36 @@ async function generateWithClaudeStreaming(extractedVars, templateContent, onChu
               // Claude uses content_block_delta for streaming
               if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
                 responseText += parsed.delta.text;
-                
-                // Clean markdown artifacts for display
-                let displayText = responseText;
-                if (displayText.startsWith('```json\n')) {
-                  displayText = displayText.slice(8);
-                } else if (displayText.startsWith('```json')) {
-                  displayText = displayText.slice(7);
-                } else if (displayText.startsWith('```\n')) {
-                  displayText = displayText.slice(4);
-                } else if (displayText.startsWith('```')) {
-                  displayText = displayText.slice(3);
-                }
-                
+
                 if (onChunk) {
-                  onChunk(displayText, false);
+                  onChunk(stripCodeFencePrefix(responseText), false);
                 }
               }
             } catch (e) {
-              // Skip invalid JSON lines
+              // Skip invalid SSE data lines
             }
           }
         }
       });
-      
+
       res.on('end', () => {
         try {
-          // Final cleanup
           responseText = cleanResponse(responseText);
-          
+
           if (onChunk) {
             onChunk(responseText, true);
           }
-          
-          const generatedData = JSON.parse(responseText);
+
+          const generatedData = parseResponse(responseText, format);
           resolve(generatedData);
         } catch (e) {
           reject(new Error(`Failed to parse response: ${e.message}`));
         }
       });
-      
+
       res.on('error', reject);
     });
-    
+
     req.on('error', reject);
     req.write(requestBody);
     req.end();
@@ -677,13 +716,13 @@ async function validateGeminiKey(apiKey) {
  * @param {Function} onChunk - Callback for each chunk: (partialText, isDone) => void
  * @returns {Promise<Object>} - Final parsed data
  */
-async function generateWithGeminiStreaming(extractedVars, templateContent, onChunk) {
+async function generateWithGeminiStreaming(extractedVars, templateContent, onChunk, format = 'json') {
   if (!_geminiApiKey) {
     throw new Error('Gemini API key not configured');
   }
-  
+
   const apiKey = _geminiApiKey;
-  const { systemPrompt, userPrompt } = buildPrompts(extractedVars, templateContent);
+  const { systemPrompt, userPrompt } = buildPrompts(extractedVars, templateContent, format);
   
   return new Promise((resolve, reject) => {
     const requestBody = JSON.stringify({
@@ -747,49 +786,36 @@ async function generateWithGeminiStreaming(extractedVars, templateContent, onChu
               
               if (content) {
                 responseText += content;
-                
-                // Clean markdown artifacts for display
-                let displayText = responseText;
-                if (displayText.startsWith('```json\n')) {
-                  displayText = displayText.slice(8);
-                } else if (displayText.startsWith('```json')) {
-                  displayText = displayText.slice(7);
-                } else if (displayText.startsWith('```\n')) {
-                  displayText = displayText.slice(4);
-                } else if (displayText.startsWith('```')) {
-                  displayText = displayText.slice(3);
-                }
-                
+
                 if (onChunk) {
-                  onChunk(displayText, false);
+                  onChunk(stripCodeFencePrefix(responseText), false);
                 }
               }
             } catch (e) {
-              // Skip invalid JSON lines
+              // Skip invalid SSE data lines
             }
           }
         }
       });
-      
+
       res.on('end', () => {
         try {
-          // Final cleanup
           responseText = cleanResponse(responseText);
-          
+
           if (onChunk) {
             onChunk(responseText, true);
           }
-          
-          const generatedData = JSON.parse(responseText);
+
+          const generatedData = parseResponse(responseText, format);
           resolve(generatedData);
         } catch (e) {
           reject(new Error(`Failed to parse response: ${e.message}`));
         }
       });
-      
+
       res.on('error', reject);
     });
-    
+
     req.on('error', reject);
     req.write(requestBody);
     req.end();

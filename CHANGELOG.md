@@ -4,6 +4,31 @@ All notable changes to the "live-jinja-renderer" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.12.0] - 2026-03-05
+
+### 📋 Multi-Format Variables
+- **Format switching**: Choose between JSON, YAML, and TOML for the variables editor via Variables submenu or Command Palette
+- **Seamless conversion**: Existing variables automatically convert when switching formats
+- **Syntax highlighting**: Each format gets its own CodeMirror mode (JSON with bracket matching, YAML, TOML)
+- **Format-aware validation**: Error messages now indicate which format failed to parse
+- **Header label**: Variables section header dynamically shows current format (e.g., "Variables (YAML)")
+
+### 📥 Format-Aware Import/Export
+- **Import from any format**: File picker and workspace search now support `.json`, `.yaml`, `.yml`, and `.toml`
+- **Auto-detection**: Format detected from file extension first, then by trying each parser
+- **Export in current format**: Variables are serialized in whichever format is active
+
+### 🤖 AI Generation
+- Copilot, OpenAI, Claude, and Gemini all generate data in your selected format
+- Format-specific prompts for better results (e.g., TOML gets `[table]` header guidance)
+
+### 🔧 Fixes & Internal
+- Variable Inspector: format-aware parsing, fixed Expand All, auto-expand only on first render
+- Ghost save/restore respects current format on file switch
+- Added `js-yaml` and `smol-toml` as npm dependencies; TOML lazy-loaded in webview
+
+---
+
 ## [1.11.7] - 2026-03-03
 
 ### 🔧 Critical Bug Fix

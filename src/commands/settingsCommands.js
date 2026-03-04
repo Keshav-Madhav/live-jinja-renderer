@@ -39,7 +39,10 @@ async function updateContextKeys() {
   await vscode.commands.executeCommand('setContext', 'liveJinjaRenderer.mermaidEnabled', mermaidEnabled);
   await vscode.commands.executeCommand('setContext', 'liveJinjaRenderer.showWhitespaceEnabled', showWhitespaceEnabled);
   await vscode.commands.executeCommand('setContext', 'liveJinjaRenderer.cullWhitespaceEnabled', cullWhitespaceEnabled);
-  
+
+  const variablesFormat = config.get('variables.format', 'json');
+  await vscode.commands.executeCommand('setContext', 'liveJinjaRenderer.variablesFormat', variablesFormat);
+
   // Update status bar
   updateStatusBar();
 }
@@ -185,6 +188,28 @@ function registerSettingsCommands(context) {
   });
   context.subscriptions.push(openExtensionSettingsCommand);
   
+  // ============================================
+  // VARIABLE FORMAT COMMANDS
+  // ============================================
+
+  const setFormatJsonCommand = vscode.commands.registerCommand('live-jinja-tester.setFormatJson', async () => {
+    const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+    await config.update('variables.format', 'json', vscode.ConfigurationTarget.Global);
+  });
+  context.subscriptions.push(setFormatJsonCommand);
+
+  const setFormatYamlCommand = vscode.commands.registerCommand('live-jinja-tester.setFormatYaml', async () => {
+    const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+    await config.update('variables.format', 'yaml', vscode.ConfigurationTarget.Global);
+  });
+  context.subscriptions.push(setFormatYamlCommand);
+
+  const setFormatTomlCommand = vscode.commands.registerCommand('live-jinja-tester.setFormatToml', async () => {
+    const config = vscode.workspace.getConfiguration('liveJinjaRenderer');
+    await config.update('variables.format', 'toml', vscode.ConfigurationTarget.Global);
+  });
+  context.subscriptions.push(setFormatTomlCommand);
+
   // ============================================
   // AI API KEY MANAGEMENT COMMANDS
   // ============================================
